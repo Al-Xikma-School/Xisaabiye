@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HisoobBook – مدرسة الحكمة</title>
+<title>XISAABIYE – مدرسة الحكمة</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <!-- Firebase -->
@@ -953,7 +953,7 @@
   font-family:'Plus Jakarta Sans',sans-serif;
 ">
   <div style="font-size:36px">📒</div>
-  <div style="font-size:18px;font-weight:800;color:#f0f2ff">HisoobBook</div>
+  <div style="font-size:18px;font-weight:800;color:#f0f2ff">XISAABIYE</div>
   <div style="font-size:13px;color:#8892b0">Firebase waxaa la soo raraya...</div>
   <div style="
     width:200px;height:4px;background:#252a40;border-radius:4px;overflow:hidden;margin-top:8px
@@ -973,7 +973,7 @@
     <div class="login-logo">
       <div class="login-logo-icon">📒</div>
       <div>
-        <div class="login-logo-text">HisoobBook</div>
+        <div class="login-logo-text">XISAABIYE</div>
         <div class="login-logo-sub">مدرسة الحكمة</div>
       </div>
     </div>
@@ -993,7 +993,7 @@
   <div class="logo">
     <div class="logo-icon">📒</div>
     <div>
-      <div class="logo-text">HisoobBook</div>
+      <div class="logo-text">XISAABIYE</div>
       <div class="logo-sub">مدرسة الحكمة</div>
     </div>
   </div>
@@ -1547,6 +1547,45 @@
           <div id="settingsBooksList"></div>
         </div>
         <!-- Danger Zone -->
+        <!-- General Settings (Dark Theme) -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <div class="settings-icon" style="background:rgba(124,58,237,0.12)">🌙</div>
+            <div>
+              <div class="settings-card-title">Guud</div>
+              <div class="settings-card-sub">Muuqaalka iyo daawashada</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <!-- Dark Theme Row -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:18px">🌙</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text-primary)">Dark Theme</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Midabka madow ee shabakadda</div>
+                </div>
+              </div>
+              <!-- Toggle Switch -->
+              <label class="theme-toggle" style="position:relative;display:inline-block;width:50px;height:27px;cursor:pointer">
+                <input type="checkbox" id="darkThemeToggle" checked onchange="toggleDarkTheme(this.checked)" style="opacity:0;width:0;height:0;position:absolute">
+                <span id="darkThemeSlider" style="
+                  position:absolute;top:0;left:0;right:0;bottom:0;
+                  background:#4f8aff;border-radius:27px;
+                  transition:background 0.3s;
+                ">
+                  <span style="
+                    position:absolute;top:3px;left:3px;
+                    width:21px;height:21px;border-radius:50%;
+                    background:#fff;transition:transform 0.3s;
+                    display:block;
+                  " id="darkThemeThumb"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <div class="settings-card" style="border-color:rgba(255,77,109,0.2)">
           <div class="settings-card-header">
             <div class="settings-icon" style="background:rgba(255,77,109,0.12)">⚠️</div>
@@ -2718,7 +2757,7 @@ function printFilteredTx() {
 
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Macaamiilada – HisoobBook</title>
+  <title>Macaamiilada – XISAABIYE</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Segoe UI',Arial,sans-serif;padding:28px;color:#1a1a2e;background:#fff;font-size:13px}
@@ -2745,7 +2784,7 @@ function printFilteredTx() {
   <div class="header">
     <div>
       <h1>📋 Warbixinta Macaamiilada</h1>
-      <p>HisoobBook · مدرسة الحكمة · Garowe, Puntland</p>
+      <p>XISAABIYE · مدرسة الحكمة · Garowe, Puntland</p>
     </div>
     <div class="header-right">
       <div style="font-weight:700;font-size:13px">${data.length} macaamiil</div>
@@ -2768,7 +2807,7 @@ function printFilteredTx() {
     <thead><tr><th>Taariikhda</th><th>Faahfaahinta</th><th>Buug</th><th>Nooc</th><th>Xaddiga</th><th>Haraaga</th></tr></thead>
     <tbody>${txRows}</tbody>
   </table>
-  <div class="footer">HisoobBook · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
+  <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
   </body></html>`);
   w.document.close();
   w.focus();
@@ -2828,7 +2867,7 @@ function printReport() {
 
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Warbixinta – HisoobBook</title>
+  <title>Warbixinta – XISAABIYE</title>
   <style>
     body{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:30px;color:#1a1a2e;background:#fff}
     .header{text-align:center;border-bottom:3px solid #4f8aff;padding-bottom:16px;margin-bottom:24px}
@@ -2850,7 +2889,7 @@ function printReport() {
   </style></head><body>
   <div class="header">
     <h1>📊 Warbixinta Lacagta</h1>
-    <p>HisoobBook – مدرسة الحكمة</p>
+    <p>XISAABIYE – مدرسة الحكمة</p>
     <p>Taariikhda: ${new Date().toLocaleDateString('so-SO',{dateStyle:'full'})}</p>
   </div>
   <div class="section">
@@ -2887,7 +2926,7 @@ function printReport() {
     <table><thead><tr><th>Taariikhda</th><th>Faahfaahinta</th><th>Buug</th><th>Xaddiga</th></tr></thead>
     <tbody>${txRows}</tbody></table>
   </div>
-  <div class="footer">HisoobBook · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
+  <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
   </body></html>`);
   w.document.close();
   w.focus();
@@ -3280,7 +3319,7 @@ function printBudget() {
 
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Miisaaniyada – HisoobBook</title>
+  <title>Miisaaniyada – XISAABIYE</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Segoe UI',Arial,sans-serif;padding:30px;color:#1a1a2e;background:#fff;font-size:13px}
@@ -3297,7 +3336,7 @@ function printBudget() {
   </style></head><body>
   <div class="header">
     <h1>🎯 Miisaaniyada Iskuulka</h1>
-    <p>HisoobBook – مدرسة الحكمة · Garowe, Puntland</p>
+    <p>XISAABIYE – مدرسة الحكمة · Garowe, Puntland</p>
     <p style="margin-top:4px">La daabacay: ${new Date().toLocaleDateString('en-GB',{dateStyle:'full'})}</p>
   </div>
   <table>
@@ -3313,7 +3352,7 @@ function printBudget() {
     </tr></thead>
     <tbody>${booksRows}${grandRow}</tbody>
   </table>
-  <div class="footer">HisoobBook · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
+  <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
   </body></html>`);
   w.document.close();
   w.focus();
@@ -3333,7 +3372,52 @@ function initApp() {
   document.getElementById('booksBadge').textContent = books.length;
 } // end initApp
 
-// ── MOBILE SIDEBAR TOGGLE ──
+// ── DARK THEME TOGGLE ──
+function toggleDarkTheme(isDark) {
+  const root = document.documentElement;
+  const thumb = document.getElementById('darkThemeThumb');
+  const slider = document.getElementById('darkThemeSlider');
+
+  if (isDark) {
+    // Restore dark theme (default)
+    root.style.setProperty('--bg', '#0d0f1a');
+    root.style.setProperty('--surface', '#151828');
+    root.style.setProperty('--surface2', '#1c2035');
+    root.style.setProperty('--border', '#252a40');
+    root.style.setProperty('--text-primary', '#f0f2ff');
+    root.style.setProperty('--text-secondary', '#8892b0');
+    root.style.setProperty('--text-muted', '#4a5270');
+    if (slider) slider.style.background = '#4f8aff';
+    if (thumb) thumb.style.transform = 'translateX(0)';
+    localStorage.setItem('xisaabiye_theme', 'dark');
+  } else {
+    // Light theme
+    root.style.setProperty('--bg', '#f0f2f8');
+    root.style.setProperty('--surface', '#ffffff');
+    root.style.setProperty('--surface2', '#e8ecf5');
+    root.style.setProperty('--border', '#d0d6e8');
+    root.style.setProperty('--text-primary', '#1a1d2e');
+    root.style.setProperty('--text-secondary', '#4a5270');
+    root.style.setProperty('--text-muted', '#8892b0');
+    if (slider) slider.style.background = '#ccd0e0';
+    if (thumb) thumb.style.transform = 'translateX(23px)';
+    localStorage.setItem('xisaabiye_theme', 'light');
+  }
+}
+
+// Apply saved theme on load
+(function() {
+  const saved = localStorage.getItem('xisaabiye_theme');
+  if (saved === 'light') {
+    // Apply light after DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggle = document.getElementById('darkThemeToggle');
+      if (toggle) { toggle.checked = false; toggleDarkTheme(false); }
+    });
+  }
+})();
+
+
 function toggleSidebar() {
   const sb = document.querySelector('.sidebar');
   const ov = document.getElementById('sidebarOverlay');
