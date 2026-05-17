@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HisoobBook – مدرسة الحكمة</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
-<!-- Firebase Compat SDK (works with file://) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, onSnapshot, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
   const firebaseConfig = {
     apiKey: "AIzaSyDzBH6241k4H8lxmVLY8P3kVN4Klw2Dzfg",
     authDomain: "xisaabiye-3a104.firebaseapp.com",
@@ -19,134 +21,59 @@
     measurementId: "G-X6P3QXNVCT"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  // ── LOAD ALL DATA ON START ──
+  // ── Expose DB helpers to global scope ──
+  window._db = db;
+  window._fbLib = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, onSnapshot, writeBatch, query, orderBy };
+
+  // ── Load all data from Firestore then init app ──
   async function loadAllData() {
     try {
-      // Load books
-      const booksSnap = await db.collection('books').get();
+      // Books
+      const booksSnap = await getDocs(collection(db, 'books'));
       if (!booksSnap.empty) {
-        window.books = [];
-        booksSnap.forEach(d => window.books.push({ _docId: d.id, ...d.data() }));
-        window.books.sort((a,b) => (a.id||0) - (b.id||0));
-      } else {
-        await seedDefaultData();
-        return;
+        window._books = [];
+        booksSnap.forEach(d => window._books.push({ _docId: d.id, ...d.data() }));
+        window._books.sort((a,b) => (a.id||0) - (b.id||0));
       }
 
-      // Load transactions (sorted newest first)
-      const txSnap = await db.collection('transactions').orderBy('createdAt','desc').get();
-      window.allTx = [];
-      txSnap.forEach(d => window.allTx.push({ _docId: d.id, ...d.data() }));
+      // Transactions
+      const txSnap = await getDocs(query(collection(db, 'transactions'), orderBy('dateObj','desc')));
+      window._transactions = [];
+      txSnap.forEach(d => {
+        const data = d.data();
+        // dateObj stored as timestamp or string
+        if (data.dateObj && data.dateObj.toDate) data.dateObj = data.dateObj.toDate();
+        else if (data.dateObj) data.dateObj = new Date(data.dateObj);
+        window._transactions.push({ _docId: d.id, ...data });
+      });
 
-      // Load team members
-      const membersSnap = await db.collection('teamMembers').get();
+      // Team members
+      const membersSnap = await getDocs(collection(db, 'teamMembers'));
       if (!membersSnap.empty) {
-        window.teamMembers = [];
-        membersSnap.forEach(d => window.teamMembers.push({ _docId: d.id, ...d.data() }));
-        window.teamMembers.sort((a,b) => (a.order||0) - (b.order||0));
+        window._teamMembers = [];
+        membersSnap.forEach(d => window._teamMembers.push({ _docId: d.id, ...d.data() }));
       }
 
-      // Load budgets
-      const budgetDoc = await db.collection('budgets').doc('main').get();
-      if (budgetDoc.exists) {
-        const data = budgetDoc.data();
-        Object.keys(data).forEach(k => window.budgets[k] = data[k]);
-      }
+      // Budgets
+      try {
+        const budgSnap = await getDoc(doc(db, 'settings', 'budgets'));
+        if (budgSnap.exists()) window._budgets = JSON.parse(budgSnap.data().data || '{}');
+      } catch(e){}
 
-      // Refresh UI
-      window.renderSidebarBooks && window.renderSidebarBooks();
-      window.renderBooksGrid    && window.renderBooksGrid();
-      window.renderTable        && window.renderTable(window.allTx, 'txTable', 'txCount');
-      window.renderTable        && window.renderTable(window.allTx, 'txTable2', 'txCount2');
-      window.updateStats        && window.updateStats();
-      window.populateBookFilter && window.populateBookFilter();
-      const badge = document.getElementById('booksBadge');
-      if(badge) badge.textContent = window.books.length;
-
-      const loader = document.getElementById('fbLoader');
-      if(loader) loader.remove();
-      console.log('✅ Firebase data loaded');
-    } catch(err) {
-      console.error('Firebase load error:', err);
-      showFirebaseError(err.message);
+      window._firebaseReady = true;
+    } catch(e) {
+      console.error('Firebase load error:', e);
+      window._firebaseReady = true; // still init with default data
     }
+    // Signal that firebase data is ready
+    document.dispatchEvent(new Event('firebaseReady'));
   }
 
-  async function seedDefaultData() {
-    const defaultBooks = [
-      { id:1, name:"Dugsi Sare",       balance:18661.69, color:"#4f8aff", emoji:"🏫", updated:"Hadda" },
-      { id:2, name:"Dugsi Dhexe",      balance:135515.97,color:"#00e09e", emoji:"📗", updated:"Hadda" },
-      { id:3, name:"Dugsi Hose (1)",   balance:123827.8,  color:"#ffc947", emoji:"📘", updated:"Hadda" },
-      { id:4, name:"Dugsi Hoose (2)",  balance:8549.73,   color:"#c084fc", emoji:"📙", updated:"Hadda" },
-      { id:5, name:"Sh Abshir Siciid", balance:317,       color:"#f97316", emoji:"👤", updated:"Hadda" },
-      { id:6, name:"Kharashka D.",     balance:688.27,    color:"#ff4d6d", emoji:"💼", updated:"Hadda" },
-    ];
-    const defaultMembers = [
-      { name:"Farxaan C/risaaq Cilmi", phone:"+252907635814", role:"Admin",  color:"#4f8aff", username:"farxaan", password:"hooyo", allowedBooks:null, order:0 },
-      { name:"Jaamac Siciid Ciise",    phone:"+252907754585", role:"Viewer", color:"#c084fc", username:"jaamac",  password:"hooyo", allowedBooks:null, order:1 },
-    ];
-    const batch = db.batch();
-    defaultBooks.forEach(b => batch.set(db.collection('books').doc(String(b.id)), b));
-    await batch.commit();
-    for(const m of defaultMembers) await db.collection('teamMembers').add(m);
-    console.log('✅ Default data seeded');
-    await loadAllData();
-  }
-
-  function showFirebaseError(msg) {
-    const el = document.getElementById('fbLoader');
-    if(el) el.innerHTML = `<div style="color:#ff4d6d;font-size:14px;padding:28px;text-align:center;font-family:'Plus Jakarta Sans',sans-serif">
-      ⚠️ Firebase khalad:<br><span style="font-size:12px;color:#8892b0;word-break:break-all">${msg}</span><br>
-      <button onclick="location.reload()" style="margin-top:16px;padding:10px 24px;border-radius:10px;border:none;background:#4f8aff;color:#fff;cursor:pointer;font-weight:700;font-size:14px">🔄 Dib u load</button>
-    </div>`;
-  }
-
-  // ── FIREBASE CRUD HELPERS ──
-  window.fbAddTx = async function(tx) {
-    const ref = await db.collection('transactions').add({ ...tx, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    return ref.id;
-  };
-
-  window.fbDeleteTx = async function(docId) {
-    if(!docId) return;
-    await db.collection('transactions').doc(docId).delete();
-  };
-
-  window.fbUpdateBook = async function(bookId, data) {
-    await db.collection('books').doc(String(bookId)).update(data);
-  };
-
-  window.fbAddBook = async function(id, bookData) {
-    await db.collection('books').doc(String(id)).set(bookData);
-  };
-
-  window.fbDeleteBook = async function(bookId) {
-    await db.collection('books').doc(String(bookId)).delete();
-  };
-
-  window.fbSaveMembers = async function(members) {
-    const snap = await db.collection('teamMembers').get();
-    const batch = db.batch();
-    snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    for(const m of members) {
-      const { _docId, ...data } = m;
-      const ref = await db.collection('teamMembers').add(data);
-      m._docId = ref.id;
-    }
-  };
-
-  window.fbSaveBudgets = async function(budgetsObj) {
-    await db.collection('budgets').doc('main').set(budgetsObj);
-  };
-
-  // Load data after page is ready
-  document.addEventListener('DOMContentLoaded', loadAllData);
+  loadAllData();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #0d0f1a;
@@ -690,6 +617,214 @@
   .bpct-ok  { color: var(--accent-green); font-weight: 800; }
   .bpct-warn{ color: var(--accent-gold);  font-weight: 800; }
   .bpct-over{ color: var(--accent-red);   font-weight: 800; }
+
+  /* ══════════ MOBILE RESPONSIVE ══════════ */
+
+  /* Hamburger button - hidden on desktop */
+  .hamburger-btn {
+    display: none;
+    align-items: center; justify-content: center;
+    width: 40px; height: 40px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer; font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Mobile overlay behind sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  /* Bottom nav bar for mobile */
+  .mobile-bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 50;
+    padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+  }
+  .mobile-bottom-nav .mnav-items {
+    display: flex; justify-content: space-around;
+  }
+  .mnav-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 6px 10px; border-radius: 10px;
+    cursor: pointer; transition: all 0.2s;
+    font-size: 10px; color: var(--text-muted); font-weight: 600;
+    flex: 1;
+  }
+  .mnav-item .micon { font-size: 20px; line-height: 1; }
+  .mnav-item.active { color: var(--accent-blue); }
+  .mnav-item.active .micon { transform: scale(1.1); }
+
+  @media (max-width: 768px) {
+    /* Body layout */
+    body {
+      flex-direction: column;
+      height: auto;
+      overflow: auto;
+    }
+
+    /* Sidebar becomes a slide-in drawer */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 260px;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      z-index: 10;
+      overflow-y: auto;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 40px rgba(0,0,0,0.6);
+    }
+
+    /* Show hamburger, hide user pill text on mobile */
+    .hamburger-btn { display: flex; }
+
+    /* Topbar adjustments */
+    .topbar {
+      padding: 0 14px;
+      height: 58px;
+      gap: 10px;
+      position: sticky; top: 0; z-index: 8;
+    }
+    .topbar-title { font-size: 15px; }
+    .topbar-sub { display: none; }
+
+    /* Hide desktop buttons on mobile topbar - use FAB instead */
+    .topbar .btn-green,
+    .topbar .btn-red { display: none; }
+    .user-pill { padding: 6px 8px; }
+    .user-name { display: none; }
+
+    /* Main fills screen */
+    .main {
+      width: 100%;
+      overflow: visible;
+      padding-bottom: 80px; /* space for bottom nav */
+    }
+    .content {
+      padding: 14px 12px;
+      overflow: visible;
+    }
+
+    /* Stat cards: 2 columns on mobile */
+    .stat-cards {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .stat-card { padding: 14px; }
+    .stat-icon { width: 32px; height: 32px; font-size: 15px; margin-bottom: 10px; }
+    .stat-value { font-size: 20px; }
+    .stat-label { font-size: 10px; }
+
+    /* Charts: stack on mobile */
+    .charts-row {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .chart-card { padding: 14px; }
+    .chart-wrap { height: 170px; }
+
+    /* Books grid: 1 column on mobile */
+    .books-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    /* Settings grid: 1 column */
+    .settings-grid {
+      grid-template-columns: 1fr;
+    }
+
+    /* Table: scrollable horizontally */
+    .table-card { overflow-x: auto; }
+    table { min-width: 540px; }
+    th, td { padding: 10px 14px; font-size: 12px; }
+    .table-header { padding: 14px 14px; flex-wrap: wrap; gap: 8px; }
+    .search-box { margin-left: 0; width: 100%; }
+    .search-box input { width: 100%; }
+
+    /* TX summary bar: wrap */
+    .tx-summary-bar {
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      gap: 12px;
+    }
+    .tx-stat-item { flex: 0 0 calc(50% - 6px); }
+    .tx-stat-divider { display: none; }
+    .tx-stat-value { font-size: 16px; }
+
+    /* Filter bar */
+    .filter-bar { padding: 12px 12px; gap: 8px; }
+    .filter-group { flex-wrap: wrap; }
+
+    /* Modal: full-width on mobile */
+    .modal {
+      width: calc(100vw - 24px);
+      max-width: 420px;
+      padding: 22px 18px;
+      border-radius: 16px;
+    }
+    .modal-overlay {
+      align-items: flex-end;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    /* Budget input */
+    .budget-input { width: 100px; }
+
+    /* Toast */
+    .toast {
+      bottom: 90px; right: 12px; left: 12px;
+      text-align: center;
+    }
+
+    /* Show bottom nav */
+    .mobile-bottom-nav { display: block; }
+
+    /* FAB buttons for Cash In / Cash Out */
+    .mobile-fab-group {
+      position: fixed;
+      bottom: 76px; right: 14px;
+      display: flex; flex-direction: column; gap: 10px;
+      z-index: 40;
+    }
+    .fab-btn {
+      width: 52px; height: 52px; border-radius: 50%;
+      border: none; cursor: pointer;
+      font-size: 22px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: all 0.2s;
+    }
+    .fab-btn:active { transform: scale(0.93); }
+    .fab-in  { background: var(--accent-green); color: #0d1a12; }
+    .fab-out { background: var(--accent-red);   color: #fff; }
+
+    /* Tabs: scrollable */
+    .tabs { overflow-x: auto; white-space: nowrap; }
+
+    /* Login box */
+    .login-box { width: calc(100vw - 32px); padding: 28px 20px; }
+  }
+
+  @media (max-width: 400px) {
+    .stat-cards { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 17px; }
+    .content { padding: 10px 8px; }
+  }
 </style>
 </head>
 <body>
@@ -749,10 +884,28 @@
   }
 </style>
 
-<div id="fbLoader" style="position:fixed;inset:0;z-index:10000;background:#0d0f1a;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
-  <div style="width:44px;height:44px;background:linear-gradient(135deg,#4f8aff,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;animation:spin 1.5s linear infinite">📒</div>
-  <div style="color:#8892b0;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif">Firebase waxaa la xirayo...</div>
-  <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
+<!-- Firebase Loading Overlay -->
+<div id="fbLoading" style="
+  position:fixed;inset:0;z-index:9999;
+  background:#0d0f1a;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;
+  font-family:'Plus Jakarta Sans',sans-serif;
+">
+  <div style="font-size:36px">📒</div>
+  <div style="font-size:18px;font-weight:800;color:#f0f2ff">HisoobBook</div>
+  <div style="font-size:13px;color:#8892b0">Firebase waxaa la soo raraya...</div>
+  <div style="
+    width:200px;height:4px;background:#252a40;border-radius:4px;overflow:hidden;margin-top:8px
+  ">
+    <div style="
+      height:100%;width:40%;background:linear-gradient(90deg,#4f8aff,#7c3aed);
+      border-radius:4px;animation:fbLoad 1.2s ease-in-out infinite alternate
+    "></div>
+  </div>
+  <style>
+    @keyframes fbLoad { from{transform:translateX(-60%)} to{transform:translateX(300%)} }
+  </style>
 </div>
 
 <div id="loginScreen">
@@ -816,6 +969,7 @@
 <div class="main">
   <!-- TOPBAR -->
   <div class="topbar">
+    <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
     <div>
       <div class="topbar-title" id="pageTitle">Dashboard</div>
       <div class="topbar-sub">Jaamacad Al-Hikma · Garowe, Puntland</div>
@@ -1494,8 +1648,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATA (window-global for Firebase module access) ──
-window.books = [
+// ── DEFAULT DATA (used only if Firestore is empty) ──
+const DEFAULT_BOOKS = [
   { id: 1, name: "Dugsi Sare",       balance: 18661.69, color: "#4f8aff", emoji: "🏫", updated: "6 days ago" },
   { id: 2, name: "Dugsi Dhexe",      balance: 135515.97, color: "#00e09e", emoji: "📗", updated: "6 days ago" },
   { id: 3, name: "Dugsi Hose (1)",   balance: 123827.8,  color: "#ffc947", emoji: "📘", updated: "5 days ago" },
@@ -1503,24 +1657,137 @@ window.books = [
   { id: 5, name: "Sh Abshir Siciid", balance: 317,       color: "#f97316", emoji: "👤", updated: "6 days ago" },
   { id: 6, name: "Kharashka D.",     balance: 688.27,    color: "#ff4d6d", emoji: "💼", updated: "5 days ago" },
 ];
-// alias
-var books = window.books;
-
-window.allTx = [];
-var allTx = window.allTx;
-
-let currentType = 'in';
-
-// ── TEAM MEMBERS ──
-window.teamMembers = [
-  { name: "Farxaan C/risaaq Cilmi", phone: "+252907635814", role: "Admin",   color: "#4f8aff", username: "farxaan", password: "hooyo",   allowedBooks: null, order: 0 },
-  { name: "Jaamac Siciid Ciise",    phone: "+252907754585", role: "Viewer",  color: "#c084fc", username: "jaamac",  password: "hooyo",   allowedBooks: null, order: 1 },
+const DEFAULT_TRANSACTIONS = [
+  { date: "11 May, 2026", detail: "Muasasatul minhaaj", book: "Dugsi Sare",      type: "out", amount: 150,   balance: -5940,    dateObj: new Date("2026-05-11") },
+  { date: "10 May, 2026", detail: "Mushahar shaqaale",  book: "Dugsi Sare",      type: "out", amount: 5129,  balance: 18661.69, dateObj: new Date("2026-05-10") },
+  { date: "07 May, 2026", detail: "Easy Tech",           book: "Dugsi Sare",      type: "out", amount: 150,   balance: -5790,    dateObj: new Date("2026-05-07") },
+  { date: "07 May, 2026", detail: "Mclin khadar",        book: "Dugsi Sare",      type: "out", amount: 300,   balance: 23790.69, dateObj: new Date("2026-05-07") },
+  { date: "30 Apr, 2026", detail: "Guddoomiya waxbarasho", book:"Dugsi Sare",    type: "out", amount: 100,   balance: -5640,    dateObj: new Date("2026-04-30") },
+  { date: "30 Apr, 2026", detail: "Sh c/shakiur Siciid", book: "Dugsi Sare",     type: "out", amount: 250,   balance: -5540,    dateObj: new Date("2026-04-30") },
+  { date: "25 Apr, 2026", detail: "Waardiyaha khayr",    book: "Dugsi Sare",      type: "out", amount: 130,   balance: -5290,    dateObj: new Date("2026-04-25") },
+  { date: "15 May, 2026", detail: "Kharashka Dugsiga",   book: "Dugsi Dhexe",     type: "out", amount: 4200,  balance: 135515.97,dateObj: new Date("2026-05-15") },
+  { date: "12 May, 2026", detail: "Lacag gashay",        book: "Dugsi Hose (1)",  type: "in",  amount: 8000,  balance: 123827.8, dateObj: new Date("2026-05-12") },
+  { date: "08 May, 2026", detail: "Sh Abshir Siciid – Lacag gashay", book: "Sh Abshir Siciid", type: "in", amount: 317, balance: 317, dateObj: new Date("2026-05-08") },
+  { date: "05 May, 2026", detail: "Khidmadda",           book: "Dugsi Hoose (2)", type: "in",  amount: 1200,  balance: 8549.73,  dateObj: new Date("2026-05-05") },
+  { date: "01 May, 2026", detail: "Dakhliga sanadlaha",  book: "Dugsi Hose (1)",  type: "in",  amount: 15000, balance: 115827.8, dateObj: new Date("2026-05-01") },
 ];
-var teamMembers = window.teamMembers;
-// allowedBooks: null  = buugaagta oo dhan, [1,2,...] = buugaagta la ogol yahay
+const DEFAULT_MEMBERS = [
+  { name: "Farxaan C/risaaq Cilmi", phone: "+252907635814", role: "Admin",  color: "#4f8aff", username: "farxaan", password: "hooyo", allowedBooks: null },
+  { name: "Jaamac Siciid Ciise",    phone: "+252907754585", role: "Viewer", color: "#c084fc", username: "jaamac",  password: "hooyo", allowedBooks: null },
+];
 
-// ── CURRENT LOGGED-IN USER ──
-let currentUser = null;
+// ── LIVE DATA ARRAYS ──
+let books        = [];
+let allTx        = [];
+let teamMembers  = [];
+let currentType  = 'in';
+let currentUser  = null;
+
+// ── FIREBASE HELPERS ──
+function db()  { return window._db; }
+function fbLib(){ return window._fbLib; }
+
+function _docToPlain(obj) {
+  // Remove Firestore _docId before saving
+  const o = {...obj};
+  delete o._docId;
+  // Convert dateObj Date → ISO string for Firestore
+  if (o.dateObj instanceof Date) o.dateObj = o.dateObj.toISOString();
+  return o;
+}
+
+async function fbSaveBook(book) {
+  try {
+    const { doc, setDoc, collection } = fbLib();
+    const ref = book._docId
+      ? doc(db(), 'books', book._docId)
+      : doc(collection(db(), 'books'));
+    if (!book._docId) book._docId = ref.id;
+    await setDoc(ref, _docToPlain(book));
+  } catch(e){ console.error('fbSaveBook', e); }
+}
+
+async function fbDeleteBook(book) {
+  try {
+    if (!book._docId) return;
+    const { doc, deleteDoc } = fbLib();
+    await deleteDoc(doc(db(), 'books', book._docId));
+  } catch(e){ console.error('fbDeleteBook', e); }
+}
+
+async function fbSaveTx(tx) {
+  try {
+    const { doc, setDoc, collection } = fbLib();
+    const ref = tx._docId
+      ? doc(db(), 'transactions', tx._docId)
+      : doc(collection(db(), 'transactions'));
+    if (!tx._docId) tx._docId = ref.id;
+    await setDoc(ref, _docToPlain(tx));
+  } catch(e){ console.error('fbSaveTx', e); }
+}
+
+async function fbDeleteTx(tx) {
+  try {
+    if (!tx._docId) return;
+    const { doc, deleteDoc } = fbLib();
+    await deleteDoc(doc(db(), 'transactions', tx._docId));
+  } catch(e){ console.error('fbDeleteTx', e); }
+}
+
+async function fbSaveMember(member) {
+  try {
+    const { doc, setDoc, collection } = fbLib();
+    const ref = member._docId
+      ? doc(db(), 'teamMembers', member._docId)
+      : doc(collection(db(), 'teamMembers'));
+    if (!member._docId) member._docId = ref.id;
+    await setDoc(ref, _docToPlain(member));
+  } catch(e){ console.error('fbSaveMember', e); }
+}
+
+async function fbDeleteMember(member) {
+  try {
+    if (!member._docId) return;
+    const { doc, deleteDoc } = fbLib();
+    await deleteDoc(doc(db(), 'teamMembers', member._docId));
+  } catch(e){ console.error('fbDeleteMember', e); }
+}
+
+// ── SEED FIRESTORE IF EMPTY ──
+async function seedFirestore() {
+  for (const b of DEFAULT_BOOKS)        { const bCopy = {...b}; await fbSaveBook(bCopy); books.push(bCopy); }
+  for (const t of DEFAULT_TRANSACTIONS) { const tCopy = {...t}; if (typeof tCopy.dateObj === 'string') tCopy.dateObj = new Date(tCopy.dateObj); await fbSaveTx(tCopy); allTx.push(tCopy); }
+  for (const m of DEFAULT_MEMBERS)      { const mCopy = {...m}; await fbSaveMember(mCopy); teamMembers.push(mCopy); }
+}
+
+// ── INIT APP AFTER FIREBASE LOADS ──
+document.addEventListener('firebaseReady', async function() {
+  const loadingEl = document.getElementById('fbLoading');
+
+  if (window._books && window._books.length > 0) {
+    books       = window._books;
+    allTx       = window._transactions || [];
+    teamMembers = window._teamMembers && window._teamMembers.length > 0 ? window._teamMembers : DEFAULT_MEMBERS;
+  } else {
+    // First time: seed Firestore with default data
+    await seedFirestore();
+  }
+
+  // Restore dateObj for transactions loaded from Firestore
+  allTx.forEach(t => {
+    if (t.dateObj && !(t.dateObj instanceof Date)) t.dateObj = new Date(t.dateObj);
+  });
+
+  if (loadingEl) loadingEl.style.display = 'none';
+
+  // Load saved budgets
+  if (window._budgets) {
+    Object.assign(budgets, window._budgets);
+  }
+
+  initApp();
+  document.dispatchEvent(new Event('appReady'));
+});
 
 // ── RENDER SIDEBAR BOOKS ──
 // ── LOGIN / LOGOUT ──
@@ -1809,11 +2076,9 @@ async function deleteTx(idx) {
   if(book) {
     if(tx.type==='in') book.balance -= tx.amount;
     else book.balance += tx.amount;
-    // Sync book balance to Firebase
-    if(window.fbUpdateBook) window.fbUpdateBook(book.id, { balance: book.balance, updated: 'Hadda' }).catch(console.error);
+    await fbSaveBook(book);
   }
-  // Delete from Firebase
-  if(tx._docId && window.fbDeleteTx) window.fbDeleteTx(tx._docId).catch(console.error);
+  await fbDeleteTx(tx);
   allTx.splice(idx, 1);
   renderSidebarBooks();
   renderBooksGrid();
@@ -2041,8 +2306,7 @@ async function createBook() {
   const newId = books.length ? Math.max(...books.map(b=>b.id))+1 : 1;
   const newBook = { id:newId, name, balance, color, emoji, updated:'Hadda' };
   books.push(newBook);
-  // Sync to Firebase
-  if(window.fbAddBook) window.fbAddBook(newId, newBook).catch(console.error);
+  await fbSaveBook(newBook);
   renderSidebarBooks();
   renderBooksGrid();
   updateStats();
@@ -2091,15 +2355,13 @@ async function deleteBook(id) {
   if(books.length<=1) { showToast('⚠️ Ugu yaraan 1 buug waa loo baahan yahay!'); return; }
   const b = books.find(x=>x.id===id);
   if(!confirm(`"${b.name}" ma tirtiraysaa?`)) return;
-  // Delete book transactions from Firebase
-  const bookTxs = allTx.filter(t=>t.book===b.name);
-  bookTxs.forEach(tx => { if(tx._docId && window.fbDeleteTx) window.fbDeleteTx(tx._docId).catch(console.error); });
-  // Delete book from Firebase
-  if(window.fbDeleteBook) window.fbDeleteBook(id).catch(console.error);
   const idx = books.findIndex(x=>x.id===id);
   books.splice(idx,1);
+  // delete related transactions from Firebase
+  const relatedTx = allTx.filter(t=>t.book===b.name);
+  for (const t of relatedTx) await fbDeleteTx(t);
   allTx = allTx.filter(t=>t.book!==b.name);
-  window.allTx = allTx;
+  await fbDeleteBook(b);
   renderSidebarBooks(); renderBooksGrid(); renderSettingsBooks(); updateStats();
   document.getElementById('booksBadge').textContent = books.length;
   showToast(`🗑 "${b.name}" waa la tirtiray`);
@@ -2262,22 +2524,28 @@ async function addMember() {
   const allowedBooks = (rawIds === null || rawIds.length === 0) ? null : rawIds;
   const colors = ['#00e09e','#ffc947','#f97316','#c084fc','#4f8aff'];
   if (amEditIndex >= 0) {
+    // Edit mode
     const m = teamMembers[amEditIndex];
     m.name = name; m.phone = phone; m.username = username;
     m.password = password; m.role = role; m.allowedBooks = allowedBooks;
+    await fbSaveMember(m);
+    closeAddMemberModal();
+    renderMembersList();
+    showToast(`✅ ${name} waa la cusboonaysiiyay!`);
   } else {
-    teamMembers.push({ name, phone, role, color: colors[teamMembers.length % colors.length], username, password, allowedBooks, order: teamMembers.length });
+    // Add mode
+    const newMember = { name, phone, role, color: colors[teamMembers.length % colors.length], username, password, allowedBooks };
+    teamMembers.push(newMember);
+    await fbSaveMember(newMember);
+    closeAddMemberModal();
+    renderMembersList();
+    showToast(`✅ ${name} waa la daray!`);
   }
-  // Sync to Firebase
-  if(window.fbSaveMembers) window.fbSaveMembers(teamMembers).catch(console.error);
-  closeAddMemberModal();
-  renderMembersList();
-  showToast(amEditIndex >= 0 ? `✅ ${name} waa la cusboonaysiiyay!` : `✅ ${name} waa la daray!`);
 }
 async function removeMember(i) {
   if(!confirm(`${teamMembers[i].name} ma saartaa?`)) return;
+  await fbDeleteMember(teamMembers[i]);
   teamMembers.splice(i,1);
-  if(window.fbSaveMembers) window.fbSaveMembers(teamMembers).catch(console.error);
   renderMembersList();
   showToast('🗑 Xubin waa la saaray');
 }
@@ -2290,13 +2558,8 @@ function saveSettings() {
 
 async function confirmClear() {
   if(!confirm('Dhammaan macaamiilada ma tirtiraysan? Tani ma dib loo celin karto.')) return;
-  // Delete all from Firebase
-  if(window.fbDeleteTx) {
-    const promises = allTx.filter(t=>t._docId).map(t => window.fbDeleteTx(t._docId));
-    await Promise.all(promises).catch(console.error);
-  }
+  for (const t of allTx) await fbDeleteTx(t);
   allTx = [];
-  window.allTx = allTx;
   renderTable([], 'txTable', 'txCount');
   renderTable([], 'txTable2', 'txCount2');
   updateStats();
@@ -2345,20 +2608,15 @@ async function submitEntry() {
   const book = books.find(b=>b.id===bookId);
   if(currentType==='in') book.balance += amount;
   else book.balance -= amount;
+  book.updated = 'Hadda';
   // build date string from chosen date/time
   const chosenDate = dateVal ? new Date(dateVal + 'T' + (timeVal||'00:00')) : new Date();
   const dateStr = chosenDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,', ');
-  const newTx = { date:dateStr, dateObj:chosenDate.toISOString(), detail, book:book.name, type:currentType, amount, balance:book.balance };
-  // Save to Firebase
-  if(window.fbAddTx) {
-    try {
-      const docId = await window.fbAddTx(newTx);
-      newTx._docId = docId;
-    } catch(e) { console.error('Tx save error:', e); }
-  }
-  // Sync book balance
-  if(window.fbUpdateBook) window.fbUpdateBook(book.id, { balance: book.balance, updated: 'Hadda' }).catch(console.error);
+  const newTx = { date:dateStr, dateObj:chosenDate, detail, book:book.name, type:currentType, amount, balance:book.balance };
   allTx.unshift(newTx);
+  // Save to Firebase
+  await fbSaveTx(newTx);
+  await fbSaveBook(book);
   renderSidebarBooks();
   renderBooksGrid();
   renderTable(allTx, 'txTable', 'txCount');
@@ -2695,8 +2953,7 @@ function renderReportBooksTable() {
 }
 
 // ── BUDGET ──
-window.budgets = {}; // bookId -> allocated amount
-var budgets = window.budgets;
+let budgets = {}; // bookId -> allocated amount
 
 function renderBudgetPage() {
   const tbody = document.getElementById('budgetTable');
@@ -2894,7 +3151,7 @@ function updateBudgetLive2(type, bookId) {
   renderBudgetPage();
 }
 
-function saveBudgets() {
+async function saveBudgets() {
   if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
   books.forEach(b => {
     const elIn  = document.getElementById('bud_in_'+b.id);
@@ -2902,8 +3159,11 @@ function saveBudgets() {
     if (elIn)  budgets['in_'+b.id]  = parseFloat(elIn.value)  || 0;
     if (elOut) budgets['out_'+b.id] = parseFloat(elOut.value) || 0;
   });
-  // Sync budgets to Firebase
-  if(window.fbSaveBudgets) window.fbSaveBudgets(budgets).catch(console.error);
+  // Save budgets to Firebase
+  try {
+    const { doc, setDoc } = fbLib();
+    await setDoc(doc(db(), 'settings', 'budgets'), { data: JSON.stringify(budgets) });
+  } catch(e){ console.error('saveBudgets firebase error', e); }
   renderBudgetPage();
   showToast('✅ Miisaaniyada waa la keydiyay!');
 }
@@ -3000,22 +3260,89 @@ function printBudget() {
   showToast('🖨️ Dooro "Save as PDF" daabacaadda!');
 }
 
-// ── INIT (Firebase will load data; these just set up UI structure) ──
-renderSidebarBooks();
-renderBooksGrid();
-renderTable(allTx, 'txTable', 'txCount');
-renderTable(allTx, 'txTable2', 'txCount2');
-updateStats();
-buildCharts();
-populateBookFilter();
-document.getElementById('booksBadge').textContent = books.length;
-// Make key render functions accessible to Firebase module
-window.renderSidebarBooks = renderSidebarBooks;
-window.renderBooksGrid = renderBooksGrid;
-window.renderTable = renderTable;
-window.updateStats = updateStats;
-window.populateBookFilter = populateBookFilter;
-window.buildCharts = buildCharts;
+// ── INIT ──
+function initApp() {
+  renderSidebarBooks();
+  renderBooksGrid();
+  renderTable(allTx, 'txTable', 'txCount');
+  renderTable(allTx, 'txTable2', 'txCount2');
+  updateStats();
+  buildCharts();
+  populateBookFilter();
+  document.getElementById('booksBadge').textContent = books.length;
+} // end initApp
+
+// ── MOBILE SIDEBAR TOGGLE ──
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+document.querySelectorAll('.nav-item, .book-item').forEach(el => {
+  el.addEventListener('click', () => {
+    if (window.innerWidth <= 768) closeSidebar();
+  });
+});
+
+// Mobile bottom nav active sync
+function syncMobileNav(page) {
+  document.querySelectorAll('.mnav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+}
+
+// Wrap showPage to also sync mobile nav
+const _origShowPage = showPage;
+window.showPage = function(page) {
+  _origShowPage(page);
+  syncMobileNav(page);
+};
+
+// Called after Firebase + initApp
+document.addEventListener('appReady', function() {
+  window._appReady = true;
+  syncMobileNav('dashboard');
+});
 </script>
+
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- Mobile FAB buttons -->
+<div class="mobile-fab-group">
+  <button class="fab-btn fab-in" onclick="openModal('in')" title="Cash In">＋</button>
+  <button class="fab-btn fab-out" onclick="openModal('out')" title="Cash Out">－</button>
+</div>
+
+<!-- Mobile Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="mnav-items">
+    <div class="mnav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+      <span class="micon">📊</span>Dashboard
+    </div>
+    <div class="mnav-item" data-page="cashbooks" onclick="showPage('cashbooks')">
+      <span class="micon">📚</span>Books
+    </div>
+    <div class="mnav-item" data-page="transactions" onclick="showPage('transactions')">
+      <span class="micon">💸</span>Tx
+    </div>
+    <div class="mnav-item" data-page="reports" onclick="showPage('reports')">
+      <span class="micon">📈</span>Reports
+    </div>
+    <div class="mnav-item" data-page="budget" onclick="showPage('budget')">
+      <span class="micon">🎯</span>Budget
+    </div>
+    <div class="mnav-item" data-page="settings" onclick="showPage('settings')">
+      <span class="micon">⚙️</span>Settings
+    </div>
+  </div>
+</nav>
+
 </body>
 </html>
