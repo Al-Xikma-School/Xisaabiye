@@ -892,50 +892,6 @@
     .stat-value { font-size: 17px; }
     .content { padding: 10px 8px; }
   }
-  /* ── LIGHT THEME OVERRIDES ── */
-  /* Applied via JS class on <html> when light mode is active */
-  /* These fix elements that use hardcoded dark values */
-
-  /* Sidebar in light mode */
-  :root[data-theme="light"] .sidebar,
-  body.light .sidebar {
-    box-shadow: 2px 0 12px rgba(0,0,0,0.06);
-  }
-
-  /* Table row hover in light mode */
-  :root[data-theme="light"] tr:hover td {
-    background: rgba(37,99,235,0.04);
-  }
-
-  /* Select elements */
-  :root[data-theme="light"] select,
-  :root[data-theme="light"] .filter-select,
-  :root[data-theme="light"] .form-input {
-    color: #111827;
-  }
-
-  /* Scrollbar in light mode */
-  :root[data-theme="light"] ::-webkit-scrollbar-thumb {
-    background: #c8cfe0;
-  }
-
-  /* Stat card shadow */
-  :root[data-theme="light"] .stat-card,
-  :root[data-theme="light"] .chart-card,
-  :root[data-theme="light"] .table-card,
-  :root[data-theme="light"] .book-card {
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-
-  /* Nav active state */
-  :root[data-theme="light"] .nav-item.active {
-    background: linear-gradient(135deg, rgba(37,99,235,0.10), rgba(124,58,237,0.06));
-  }
-
-  /* Book item active */
-  :root[data-theme="light"] .book-item.active {
-    background: rgba(5,150,105,0.07);
-  }
 </style>
 </head>
 <body>
@@ -1421,61 +1377,42 @@
       </div>
 
       <!-- Budget Summary Bar -->
-      <div id="budgetSummaryBar" style="
-        display:grid;
-        grid-template-columns:repeat(4,1fr);
-        gap:12px;
-        margin-bottom:4px;
-      ">
+      <div id="budgetSummaryBar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:4px;">
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-green)">
           <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,224,158,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💰</div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Dakhli Miisaaniyad</div>
-            <div style="font-size:20px;font-weight:800;color:var(--accent-green)" id="budTotalAllocIn">$0</div>
-          </div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Dakhli Miisaaniyad</div>
+          <div style="font-size:20px;font-weight:800;color:var(--accent-green)" id="budTotalAllocIn">$0</div></div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-blue)">
           <div style="width:38px;height:38px;border-radius:10px;background:rgba(79,138,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📊</div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Dakhli Soo Gashay</div>
-            <div style="font-size:20px;font-weight:800;color:var(--accent-blue)" id="budTotalIn">$0</div>
-          </div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Dakhli Soo Gashay</div>
+          <div style="font-size:20px;font-weight:800;color:var(--accent-blue)" id="budTotalIn">$0</div></div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-red)">
           <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,77,109,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📉</div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">U Dhiman Dakhli</div>
-            <div style="font-size:20px;font-weight:800" id="budGapIn">–</div>
-          </div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">U Dhiman Dakhli</div>
+          <div style="font-size:20px;font-weight:800" id="budGapIn">–</div></div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-gold);grid-row:1/3">
           <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,201,71,0.12);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚖️</div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Faa'iido / Khasaaro</div>
-            <div style="font-size:24px;font-weight:800" id="budTotalNet">$0</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Dakhli − Kharash</div>
-          </div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Faa'iido / Khasaaro</div>
+          <div style="font-size:24px;font-weight:800" id="budTotalNet">$0</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="budSummaryLabel">Dhammaan iskuulaha</div></div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-gold)">
           <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,201,71,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎯</div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Kharash Miisaaniyad</div>
-            <div style="font-size:20px;font-weight:800;color:var(--accent-gold)" id="budTotalAllocOut">$0</div>
-          </div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Kharash Miisaaniyad</div>
+          <div style="font-size:20px;font-weight:800;color:var(--accent-gold)" id="budTotalAllocOut">$0</div></div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-red)">
           <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,77,109,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📤</div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Kharash la Bixiyay</div>
-            <div style="font-size:20px;font-weight:800;color:var(--accent-red)" id="budTotalOut">$0</div>
-          </div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Kharash la Bixiyay</div>
+          <div style="font-size:20px;font-weight:800;color:var(--accent-red)" id="budTotalOut">$0</div></div>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-green)">
           <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,224,158,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📈</div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">U Dhiman Kharash</div>
-            <div style="font-size:20px;font-weight:800" id="budGapOut">–</div>
-          </div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">U Dhiman Kharash</div>
+          <div style="font-size:20px;font-weight:800" id="budGapOut">–</div></div>
         </div>
       </div>
 
@@ -1483,9 +1420,20 @@
       <div class="filter-bar" id="budgetFilterBar">
         <div class="filter-group">
           <span class="filter-label">📚 Iskuulka</span>
-          <select class="filter-select" id="budFilterBook" onchange="applyBudgetFilter()">
-            <option value="all">Dhammaan</option>
-          </select>
+          <div class="multiselect-wrapper" id="budMultiselectWrapper">
+            <button class="filter-select multiselect-btn" id="budMultiselectBtn"
+              onclick="toggleBudMultiselect(event)"
+              style="cursor:pointer;min-width:160px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span id="budMultiselectLabel">Dhammaan</span>
+              <span style="opacity:0.5;font-size:10px">▾</span>
+            </button>
+            <div class="multiselect-dropdown" id="budMultiselectDropdown" style="display:none">
+              <label class="ms-option" id="budMsAll">
+                <input type="checkbox" value="__all__" checked onchange="onBudMultiChange(this)"> Dhammaan
+              </label>
+              <div id="budMsBookOptions"></div>
+            </div>
+          </div>
         </div>
         <div class="filter-group">
           <span class="filter-label">📋 Nooca</span>
@@ -3369,7 +3317,22 @@ function renderBudgetPage() {
   });
 
   tbody.innerHTML = rows.join('');
-  count.textContent = `${displayBooks.length} iskuul (${books.length} guud)`;  
+  count.textContent = `${displayBooks.length} iskuul (${books.length} guud)`;
+
+  // Update summary label
+  const labelEl = document.getElementById('budSummaryLabel');
+  if (labelEl) {
+    if (_budFilteredBooks !== null && _budFilteredBooks.length === 1) {
+      labelEl.textContent = _budFilteredBooks[0].emoji + ' ' + _budFilteredBooks[0].name;
+      labelEl.style.color = 'var(--accent-blue)'; labelEl.style.fontWeight = '700';
+    } else if (_budFilteredBooks !== null && _budFilteredBooks.length > 0) {
+      labelEl.textContent = _budFilteredBooks.length + ' iskuul la doortay';
+      labelEl.style.color = 'var(--accent-gold)'; labelEl.style.fontWeight = '700';
+    } else {
+      labelEl.textContent = 'Dhammaan iskuulaha';
+      labelEl.style.color = 'var(--text-muted)'; labelEl.style.fontWeight = '400';
+    }
+  }
 
   const totalNet    = totalIn - totalOut;
 
@@ -3471,21 +3434,78 @@ function buildBudgetCharts() {
 // ── BUDGET FILTER ──
 let _budFilteredBooks = null; // null = show all
 
+// ── BUDGET MULTISELECT ──
+let _budSelectedBooks = new Set(['__all__']);
+
+function toggleBudMultiselect(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('budMultiselectDropdown');
+  const wrap = document.getElementById('budMultiselectWrapper');
+  const isOpen = dd.style.display !== 'none';
+  // close all other dropdowns
+  document.querySelectorAll('.multiselect-dropdown').forEach(d => d.style.display = 'none');
+  if (!isOpen) {
+    dd.style.display = 'block';
+    // close when clicking outside
+    setTimeout(() => {
+      document.addEventListener('click', function _close(ev) {
+        if (!wrap.contains(ev.target)) { dd.style.display = 'none'; document.removeEventListener('click', _close); }
+      });
+    }, 0);
+  }
+}
+
+function onBudMultiChange(cb) {
+  if (cb.value === '__all__') {
+    _budSelectedBooks = new Set(['__all__']);
+    document.querySelectorAll('#budMsBookOptions input').forEach(c => c.checked = false);
+    cb.checked = true;
+  } else {
+    _budSelectedBooks.delete('__all__');
+    document.getElementById('budMsAll').querySelector('input').checked = false;
+    if (cb.checked) _budSelectedBooks.add(cb.value);
+    else _budSelectedBooks.delete(cb.value);
+    if (_budSelectedBooks.size === 0) {
+      _budSelectedBooks.add('__all__');
+      document.getElementById('budMsAll').querySelector('input').checked = true;
+    }
+  }
+  _updateBudMultiselectLabel();
+  applyBudgetFilter();
+}
+
+function _updateBudMultiselectLabel() {
+  const lbl = document.getElementById('budMultiselectLabel');
+  if (!lbl) return;
+  if (_budSelectedBooks.has('__all__')) { lbl.textContent = 'Dhammaan'; return; }
+  const names = [..._budSelectedBooks];
+  if (names.length === 1) {
+    const b = books.find(x => String(x.id) === names[0]);
+    lbl.textContent = b ? (b.emoji + ' ' + b.name) : names[0];
+  } else {
+    lbl.textContent = names.length + ' buug';
+  }
+}
+
 function populateBudgetFilter() {
-  const sel = document.getElementById('budFilterBook');
-  if (!sel) return;
-  sel.innerHTML = '<option value="all">Dhammaan</option>' +
-    books.map(b => `<option value="${b.id}">${b.emoji} ${b.name}</option>`).join('');
+  const container = document.getElementById('budMsBookOptions');
+  if (!container) return;
+  container.innerHTML = books.map(b => `
+    <label class="ms-option">
+      <input type="checkbox" value="${b.id}" onchange="onBudMultiChange(this)"
+        ${_budSelectedBooks.has(String(b.id)) ? 'checked' : ''}>
+      <span style="width:8px;height:8px;border-radius:50%;background:${b.color||'#4f8aff'};display:inline-block;flex-shrink:0"></span>
+      ${b.emoji} ${b.name}
+    </label>`).join('');
 }
 
 function applyBudgetFilter() {
-  const bookVal  = document.getElementById('budFilterBook')?.value  || 'all';
   const statVal  = document.getElementById('budFilterStatus')?.value || 'all';
   const search   = (document.getElementById('budFilterSearch')?.value || '').toLowerCase();
 
   _budFilteredBooks = books.filter(b => {
-    // book filter
-    if (bookVal !== 'all' && String(b.id) !== String(bookVal)) return false;
+    // multiselect book filter
+    if (!_budSelectedBooks.has('__all__') && !_budSelectedBooks.has(String(b.id))) return false;
     // search filter
     if (search && !b.name.toLowerCase().includes(search)) return false;
     // status filter
@@ -3500,18 +3520,28 @@ function applyBudgetFilter() {
     }
     return true;
   });
+
+  // if all books selected, treat as no filter
+  if (_budFilteredBooks.length === books.length && _budSelectedBooks.has('__all__')) {
+    _budFilteredBooks = null;
+  }
+
   renderBudgetPage();
 }
 
 function clearBudgetFilter() {
-  const bookSel = document.getElementById('budFilterBook');
   const typeSel = document.getElementById('budFilterType');
   const statSel = document.getElementById('budFilterStatus');
   const srch    = document.getElementById('budFilterSearch');
-  if (bookSel) bookSel.value = 'all';
   if (typeSel) typeSel.value = 'all';
   if (statSel) statSel.value = 'all';
   if (srch)    srch.value   = '';
+  // reset multiselect
+  _budSelectedBooks = new Set(['__all__']);
+  const allCb = document.getElementById('budMsAll')?.querySelector('input');
+  if (allCb) allCb.checked = true;
+  document.querySelectorAll('#budMsBookOptions input').forEach(c => c.checked = false);
+  _updateBudMultiselectLabel();
   _budFilteredBooks = null;
   renderBudgetPage();
 }
@@ -3537,7 +3567,8 @@ function updateBudgetLive2(type, bookId) {
 
 function _updateBudgetSummaryOnly() {
   let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
-  books.forEach(b => {
+  const displayBooks = _budFilteredBooks !== null ? _budFilteredBooks : books;
+  displayBooks.forEach(b => {
     totalAllocIn  += budgets['in_'+b.id]  ?? 0;
     totalAllocOut += budgets['out_'+b.id] ?? 0;
     totalIn  += allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
@@ -3693,7 +3724,6 @@ function toggleDarkTheme(isDark) {
 
   if (isDark) {
     // Restore dark theme (default)
-    root.setAttribute('data-theme', 'dark');
     root.style.setProperty('--bg', '#0d0f1a');
     root.style.setProperty('--surface', '#151828');
     root.style.setProperty('--surface2', '#1c2035');
@@ -3710,7 +3740,7 @@ function toggleDarkTheme(isDark) {
     if (thumb) thumb.style.transform = 'translateX(0)';
     localStorage.setItem('xisaabiye_theme', 'dark');
   } else {
-    // Light theme — clean, professional, well-contrasted
+    // Light theme — clean, professional
     root.setAttribute('data-theme', 'light');
     root.style.setProperty('--bg', '#f4f6fb');
     root.style.setProperty('--surface', '#ffffff');
