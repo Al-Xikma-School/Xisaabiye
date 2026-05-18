@@ -534,7 +534,7 @@
   .ms-option:hover { background: var(--surface2); }
   .ms-option input[type=checkbox] { accent-color: var(--accent-blue); width: 14px; height: 14px; cursor: pointer; }
 
-  /* ── DELETE BTN ── */
+  /* ── DELETE & EDIT BTNS ── */
   .td-delete {
     background: none; border: none; cursor: pointer;
     color: var(--text-muted); font-size: 14px; padding: 4px 8px;
@@ -542,6 +542,13 @@
   }
   tr:hover .td-delete { opacity: 1; }
   .td-delete:hover { background: rgba(255,77,109,0.12); color: var(--accent-red); }
+  .td-edit-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 14px; padding: 4px 8px;
+    border-radius: 6px; transition: all 0.2s; opacity: 0;
+  }
+  tr:hover .td-edit-btn { opacity: 1; }
+  .td-edit-btn:hover { background: rgba(79,138,255,0.12); color: var(--accent-blue); }
 
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -884,6 +891,50 @@
     .stat-cards { grid-template-columns: 1fr 1fr; }
     .stat-value { font-size: 17px; }
     .content { padding: 10px 8px; }
+  }
+  /* ── LIGHT THEME OVERRIDES ── */
+  /* Applied via JS class on <html> when light mode is active */
+  /* These fix elements that use hardcoded dark values */
+
+  /* Sidebar in light mode */
+  :root[data-theme="light"] .sidebar,
+  body.light .sidebar {
+    box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+  }
+
+  /* Table row hover in light mode */
+  :root[data-theme="light"] tr:hover td {
+    background: rgba(37,99,235,0.04);
+  }
+
+  /* Select elements */
+  :root[data-theme="light"] select,
+  :root[data-theme="light"] .filter-select,
+  :root[data-theme="light"] .form-input {
+    color: #111827;
+  }
+
+  /* Scrollbar in light mode */
+  :root[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: #c8cfe0;
+  }
+
+  /* Stat card shadow */
+  :root[data-theme="light"] .stat-card,
+  :root[data-theme="light"] .chart-card,
+  :root[data-theme="light"] .table-card,
+  :root[data-theme="light"] .book-card {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  /* Nav active state */
+  :root[data-theme="light"] .nav-item.active {
+    background: linear-gradient(135deg, rgba(37,99,235,0.10), rgba(124,58,237,0.06));
+  }
+
+  /* Book item active */
+  :root[data-theme="light"] .book-item.active {
+    background: rgba(5,150,105,0.07);
   }
 </style>
 </head>
@@ -1370,62 +1421,93 @@
       </div>
 
       <!-- Budget Summary Bar -->
-      <div class="tx-summary-bar" id="budgetSummaryBar" style="margin-bottom:4px;flex-wrap:wrap;gap:0">
-        <div class="tx-stat-item">
-          <div class="tx-stat-icon" style="background:rgba(0,224,158,0.12);color:var(--accent-green)">💰</div>
+      <div id="budgetSummaryBar" style="
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:12px;
+        margin-bottom:4px;
+      ">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-green)">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,224,158,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💰</div>
           <div>
-            <div class="tx-stat-label">Dakhli Miisaaniyad</div>
-            <div class="tx-stat-value" style="color:var(--accent-green)" id="budTotalAllocIn">$0</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Dakhli Miisaaniyad</div>
+            <div style="font-size:20px;font-weight:800;color:var(--accent-green)" id="budTotalAllocIn">$0</div>
           </div>
         </div>
-        <div class="tx-stat-divider"></div>
-        <div class="tx-stat-item">
-          <div class="tx-stat-icon" style="background:rgba(79,138,255,0.12);color:var(--accent-blue)">📊</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-blue)">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(79,138,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📊</div>
           <div>
-            <div class="tx-stat-label">Dakhli Soo Gashay</div>
-            <div class="tx-stat-value" style="color:var(--accent-blue)" id="budTotalIn">$0</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Dakhli Soo Gashay</div>
+            <div style="font-size:20px;font-weight:800;color:var(--accent-blue)" id="budTotalIn">$0</div>
           </div>
         </div>
-        <div class="tx-stat-divider"></div>
-        <div class="tx-stat-item">
-          <div class="tx-stat-icon" style="background:rgba(255,77,109,0.12);color:var(--accent-red)">📉</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-red)">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,77,109,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📉</div>
           <div>
-            <div class="tx-stat-label">U Dhiman Dakhli</div>
-            <div class="tx-stat-value" id="budGapIn">–</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">U Dhiman Dakhli</div>
+            <div style="font-size:20px;font-weight:800" id="budGapIn">–</div>
           </div>
         </div>
-        <div class="tx-stat-divider"></div>
-        <div class="tx-stat-item">
-          <div class="tx-stat-icon" style="background:rgba(255,201,71,0.12);color:var(--accent-gold)">🎯</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-gold);grid-row:1/3">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,201,71,0.12);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚖️</div>
           <div>
-            <div class="tx-stat-label">Kharash Miisaaniyad</div>
-            <div class="tx-stat-value" style="color:var(--accent-gold)" id="budTotalAllocOut">$0</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Faa'iido / Khasaaro</div>
+            <div style="font-size:24px;font-weight:800" id="budTotalNet">$0</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Dakhli − Kharash</div>
           </div>
         </div>
-        <div class="tx-stat-divider"></div>
-        <div class="tx-stat-item">
-          <div class="tx-stat-icon" style="background:rgba(255,77,109,0.12);color:var(--accent-red)">📤</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-gold)">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,201,71,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎯</div>
           <div>
-            <div class="tx-stat-label">Kharash la Bixiyay</div>
-            <div class="tx-stat-value" style="color:var(--accent-red)" id="budTotalOut">$0</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Kharash Miisaaniyad</div>
+            <div style="font-size:20px;font-weight:800;color:var(--accent-gold)" id="budTotalAllocOut">$0</div>
           </div>
         </div>
-        <div class="tx-stat-divider"></div>
-        <div class="tx-stat-item">
-          <div class="tx-stat-icon" style="background:rgba(255,201,71,0.12);color:var(--accent-gold)">📈</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-red)">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,77,109,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📤</div>
           <div>
-            <div class="tx-stat-label">U Dhiman Kharash</div>
-            <div class="tx-stat-value" id="budGapOut">–</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Kharash la Bixiyay</div>
+            <div style="font-size:20px;font-weight:800;color:var(--accent-red)" id="budTotalOut">$0</div>
           </div>
         </div>
-        <div class="tx-stat-divider"></div>
-        <div class="tx-stat-item">
-          <div class="tx-stat-icon" style="background:rgba(255,201,71,0.12);color:var(--accent-gold)">⚖️</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-green)">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,224,158,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📈</div>
           <div>
-            <div class="tx-stat-label">Faa'iido / Khasaaro</div>
-            <div class="tx-stat-value" id="budTotalNet">$0</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">U Dhiman Kharash</div>
+            <div style="font-size:20px;font-weight:800" id="budGapOut">–</div>
           </div>
         </div>
+      </div>
+
+      <!-- Budget Filter Bar -->
+      <div class="filter-bar" id="budgetFilterBar">
+        <div class="filter-group">
+          <span class="filter-label">📚 Iskuulka</span>
+          <select class="filter-select" id="budFilterBook" onchange="applyBudgetFilter()">
+            <option value="all">Dhammaan</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">📋 Nooca</span>
+          <select class="filter-select" id="budFilterType" onchange="applyBudgetFilter()">
+            <option value="all">Dhammaan</option>
+            <option value="in">Dakhliga Kaliya</option>
+            <option value="out">Kharashka Kaliya</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">📊 Xaalada</span>
+          <select class="filter-select" id="budFilterStatus" onchange="applyBudgetFilter()">
+            <option value="all">Dhammaan</option>
+            <option value="over">Kharash la badan (Over Budget)</option>
+            <option value="ok">Wanaagsan (On Track)</option>
+            <option value="surplus">Dakhli Badan (Surplus)</option>
+          </select>
+        </div>
+        <div class="filter-group" style="margin-left:auto">
+          <input type="text" class="filter-select" id="budFilterSearch" placeholder="🔍 Raadi iskuul..." oninput="applyBudgetFilter()" style="min-width:180px">
+        </div>
+        <button class="filter-clear" onclick="clearBudgetFilter()">✕ Nadiifi</button>
       </div>
 
       <!-- Budget Charts -->
@@ -1744,6 +1826,48 @@
   </div>
 </div>
 
+<!-- EDIT TRANSACTION MODAL -->
+<div class="modal-overlay" id="editTxModal">
+  <div class="modal">
+    <div class="modal-title" id="editTxTitle">✏️ Wax ka beddel Macaamiilka</div>
+    <div class="modal-sub">Hagaaji xogta macaamiilka</div>
+    <div class="form-group">
+      <label class="form-label">Faahfaahinta</label>
+      <input class="form-input" id="etDetail" type="text" placeholder="Faahfaahinta...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Taariikhda</label>
+        <input class="form-input" id="etDate" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Wakhtiga</label>
+        <input class="form-input" id="etTime" type="time">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Xaddiga ($)</label>
+        <input class="form-input" id="etAmount" type="number" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nooca</label>
+        <select class="form-input" id="etType">
+          <option value="in">Cash In</option>
+          <option value="out">Cash Out</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cashbook</label>
+      <select class="form-input" id="etBook"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditTxModal()">Jooji</button>
+      <button class="btn-submit green" onclick="submitEditTx()">✓ Keydi</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2000,19 +2124,29 @@ function renderTable(data, tbodyId, countId) {
   const tbody = document.getElementById(tbodyId);
   const count = document.getElementById(countId);
   if(count) count.textContent = `${data.length} macaamiil`;
+  const isViewer = currentUser && currentUser.role === 'Viewer';
   tbody.innerHTML = data.map((tx, i) => {
     const realIdx = allTx.indexOf(tx);
+    const editedBadge = tx._edited ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px">(Edited)</span>` : '';
+    const actionBtns = isViewer ? '' : `
+      <button class="td-edit-btn" onclick="openEditTxModal(${realIdx})" style="background:none;border:none;cursor:pointer;color:var(--accent-blue);font-size:13px;padding:4px 6px;border-radius:6px;opacity:0;transition:all 0.2s;margin-right:2px;" title="Wax ka beddel">✏️</button>
+      <button class="td-delete" onclick="deleteTx(${realIdx})" title="Tirtir">🗑</button>`;
     return `
     <tr>
       <td><div class="td-date">${tx.date}</div></td>
-      <td><div class="td-detail">${tx.detail}</div><div class="td-sub">Adiga</div></td>
+      <td><div class="td-detail">${tx.detail}${editedBadge}</div><div class="td-sub">Adiga</div></td>
       <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span></td>
       <td><span class="td-badge cash">Cash</span></td>
       <td><div class="td-amount ${tx.type}">${tx.type==='out'?'-':'+'}$${fmtFull(tx.amount).replace('$','')}</div></td>
       <td><div class="td-balance">$${fmtFull(tx.balance).replace('$','')}</div></td>
-      <td><button class="td-delete" onclick="deleteTx(${realIdx})" title="Tirtir">🗑</button></td>
+      <td style="white-space:nowrap">${actionBtns}</td>
     </tr>`;
   }).join('');
+  // hover reveal edit/delete buttons
+  tbody.querySelectorAll('tr').forEach(row => {
+    row.addEventListener('mouseenter', () => row.querySelectorAll('.td-delete,.td-edit-btn').forEach(b=>b.style.opacity='1'));
+    row.addEventListener('mouseleave', () => row.querySelectorAll('.td-delete,.td-edit-btn').forEach(b=>b.style.opacity='0'));
+  });
 }
 
 // ── STATS ──
@@ -2163,11 +2297,98 @@ function showPage(id) {
   });
   if(id==='settings') { renderMembersList(); renderSettingsBooks(); }
   if(id==='transactions') { populateBookFilter(); applyFilters(); }
-  if(id==='budget') { renderBudgetPage(); }
+  if(id==='budget') { populateBudgetFilter(); renderBudgetPage(); }
+}
+
+// ── EDIT TRANSACTION ──
+let _editTxIdx = -1;
+
+function openEditTxModal(idx) {
+  if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
+  if (idx < 0 || idx >= allTx.length) return;
+  _editTxIdx = idx;
+  const tx = allTx[idx];
+  document.getElementById('etDetail').value = tx.detail || '';
+  document.getElementById('etAmount').value = tx.amount || '';
+  document.getElementById('etType').value   = tx.type   || 'in';
+  // populate book select
+  const sel = document.getElementById('etBook');
+  sel.innerHTML = books.map(b=>`<option value="${b.id}" ${b.name===tx.book?'selected':''}>${b.name}</option>`).join('');
+  // parse date/time
+  if (tx.dateObj) {
+    const d = tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj);
+    const yyyy = d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+    const hh=String(d.getHours()).padStart(2,'0'), min=String(d.getMinutes()).padStart(2,'0');
+    document.getElementById('etDate').value = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('etTime').value = `${hh}:${min}`;
+  }
+  document.getElementById('editTxModal').classList.add('open');
+}
+
+function closeEditTxModal() {
+  document.getElementById('editTxModal').classList.remove('open');
+  _editTxIdx = -1;
+}
+
+async function submitEditTx() {
+  if (_editTxIdx < 0) return;
+  const tx      = allTx[_editTxIdx];
+  const detail  = document.getElementById('etDetail').value.trim();
+  const amount  = parseFloat(document.getElementById('etAmount').value);
+  const type    = document.getElementById('etType').value;
+  const bookId  = parseInt(document.getElementById('etBook').value);
+  const dateVal = document.getElementById('etDate').value;
+  const timeVal = document.getElementById('etTime').value;
+  if (!detail || isNaN(amount) || amount <= 0) { showToast('⚠️ Buuxi dhammaan xogta!'); return; }
+
+  // Reverse old effect on old book
+  const oldBook = books.find(b => b.name === tx.book);
+  if (oldBook) {
+    if (tx.type === 'in') oldBook.balance -= tx.amount;
+    else oldBook.balance += tx.amount;
+  }
+
+  // Apply new effect on new book
+  const newBook = books.find(b => b.id === bookId);
+  if (newBook) {
+    if (type === 'in') newBook.balance += amount;
+    else newBook.balance -= amount;
+    newBook.updated = 'Hadda';
+  }
+
+  // Build new date
+  const chosenDate = dateVal ? new Date(dateVal + 'T' + (timeVal || '00:00')) : (tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj));
+  const dateStr = chosenDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,', ');
+
+  // Update tx object
+  tx.detail  = detail;
+  tx.amount  = amount;
+  tx.type    = type;
+  tx.book    = newBook ? newBook.name : tx.book;
+  tx.date    = dateStr;
+  tx.dateObj = chosenDate;
+  tx.balance = newBook ? newBook.balance : tx.balance;
+  tx._edited = true;
+
+  // Save to Firebase
+  try {
+    await fbSaveTx(tx);
+    if (oldBook && oldBook !== newBook) await fbSaveBook(oldBook);
+    if (newBook) await fbSaveBook(newBook);
+  } catch(e) { console.error('edit save error', e); }
+
+  closeEditTxModal();
+  renderSidebarBooks();
+  renderBooksGrid();
+  renderTable(allTx, 'txTable', 'txCount');
+  applyFilters();
+  updateStats();
+  showToast('✅ Macaamiilka waa la cusboonaysiiyay!');
 }
 
 // ── DELETE TRANSACTION ──
 async function deleteTx(idx) {
+  if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
   if(idx < 0 || idx >= allTx.length) return;
   const tx = allTx[idx];
   if(!confirm(`"${tx.detail}" ma tirtiraysaa?`)) return;
@@ -3060,9 +3281,11 @@ function renderBudgetPage() {
   const count  = document.getElementById('budCount');
   if (!tbody) return;
 
+  const displayBooks = _budFilteredBooks !== null ? _budFilteredBooks : books;
+
   let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
 
-  const rows = books.map(b => {
+  const rows = displayBooks.map(b => {
     const allocIn  = budgets['in_'+b.id]  ?? 0;
     const allocOut = budgets['out_'+b.id] ?? 0;
     const bookIn   = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
@@ -3111,12 +3334,13 @@ function renderBudgetPage() {
         </div>
       </td>
       <td style="text-align:right">
-        <input class="budget-input" type="number" min="0" step="100"
+        <input class="budget-input" type="number" min="0" step="1"
           id="bud_in_${b.id}" value="${allocIn}"
-          onchange="updateBudgetLive2('in',${b.id})"
-          oninput="updateBudgetLive2('in',${b.id})"
+          oninput="_budInputDebounce('in',${b.id},this)"
+          onkeydown="if(event.key==='Enter'){this.blur();}"
           placeholder="0"
           ${currentUser && currentUser.role==='Viewer' ? 'disabled style="opacity:0.4;pointer-events:none;cursor:not-allowed"' : ''}>
+      </td>
       </td>
       <td style="text-align:right">
         <div class="td-amount in">+${fmtFull(bookIn)}</div>
@@ -3125,10 +3349,10 @@ function renderBudgetPage() {
         ${gapCell(gapIn, gapInPct, false)}
       </td>
       <td style="text-align:right">
-        <input class="budget-input" type="number" min="0" step="100"
+        <input class="budget-input" type="number" min="0" step="1"
           id="bud_out_${b.id}" value="${allocOut}"
-          onchange="updateBudgetLive2('out',${b.id})"
-          oninput="updateBudgetLive2('out',${b.id})"
+          oninput="_budInputDebounce('out',${b.id},this)"
+          onkeydown="if(event.key==='Enter'){this.blur();}"
           placeholder="0"
           ${currentUser && currentUser.role==='Viewer' ? 'disabled style="opacity:0.4;pointer-events:none;cursor:not-allowed"' : ''}>
       </td>
@@ -3145,7 +3369,7 @@ function renderBudgetPage() {
   });
 
   tbody.innerHTML = rows.join('');
-  count.textContent = `${books.length} iskuul`;
+  count.textContent = `${displayBooks.length} iskuul (${books.length} guud)`;  
 
   const totalNet    = totalIn - totalOut;
 
@@ -3244,11 +3468,100 @@ function buildBudgetCharts() {
   }
 }
 
+// ── BUDGET FILTER ──
+let _budFilteredBooks = null; // null = show all
+
+function populateBudgetFilter() {
+  const sel = document.getElementById('budFilterBook');
+  if (!sel) return;
+  sel.innerHTML = '<option value="all">Dhammaan</option>' +
+    books.map(b => `<option value="${b.id}">${b.emoji} ${b.name}</option>`).join('');
+}
+
+function applyBudgetFilter() {
+  const bookVal  = document.getElementById('budFilterBook')?.value  || 'all';
+  const statVal  = document.getElementById('budFilterStatus')?.value || 'all';
+  const search   = (document.getElementById('budFilterSearch')?.value || '').toLowerCase();
+
+  _budFilteredBooks = books.filter(b => {
+    // book filter
+    if (bookVal !== 'all' && String(b.id) !== String(bookVal)) return false;
+    // search filter
+    if (search && !b.name.toLowerCase().includes(search)) return false;
+    // status filter
+    if (statVal !== 'all') {
+      const allocOut = budgets['out_'+b.id] ?? 0;
+      const allocIn  = budgets['in_'+b.id]  ?? 0;
+      const bOut = allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
+      const bIn  = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
+      if (statVal === 'over'    && !(allocOut > 0 && bOut > allocOut)) return false;
+      if (statVal === 'ok'      && !(allocOut > 0 && bOut <= allocOut)) return false;
+      if (statVal === 'surplus' && !(allocIn  > 0 && bIn  >= allocIn))  return false;
+    }
+    return true;
+  });
+  renderBudgetPage();
+}
+
+function clearBudgetFilter() {
+  const bookSel = document.getElementById('budFilterBook');
+  const typeSel = document.getElementById('budFilterType');
+  const statSel = document.getElementById('budFilterStatus');
+  const srch    = document.getElementById('budFilterSearch');
+  if (bookSel) bookSel.value = 'all';
+  if (typeSel) typeSel.value = 'all';
+  if (statSel) statSel.value = 'all';
+  if (srch)    srch.value   = '';
+  _budFilteredBooks = null;
+  renderBudgetPage();
+}
+
+// Debounce helper so budget inputs update after user pauses typing (no focus jump)
+let _budDebounceTimers = {};
+function _budInputDebounce(type, bookId, inputEl) {
+  const key = type + '_' + bookId;
+  clearTimeout(_budDebounceTimers[key]);
+  _budDebounceTimers[key] = setTimeout(() => {
+    updateBudgetLive2(type, bookId);
+  }, 400);
+}
+
+// Called on blur (after user finishes typing) — update budgets and refresh summary only, NOT full table re-render
 function updateBudgetLive2(type, bookId) {
   if (currentUser && currentUser.role === 'Viewer') return;
   const val = parseFloat(document.getElementById('bud_'+type+'_'+bookId).value) || 0;
   budgets[type+'_'+bookId] = val;
-  renderBudgetPage();
+  // Update summary bar without re-rendering the input table (avoids focus loss)
+  _updateBudgetSummaryOnly();
+}
+
+function _updateBudgetSummaryOnly() {
+  let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
+  books.forEach(b => {
+    totalAllocIn  += budgets['in_'+b.id]  ?? 0;
+    totalAllocOut += budgets['out_'+b.id] ?? 0;
+    totalIn  += allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
+    totalOut += allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
+  });
+  const totalNet = totalIn - totalOut;
+  const el = id => document.getElementById(id);
+  if(el('budTotalAllocIn'))  el('budTotalAllocIn').textContent  = fmtFull(totalAllocIn);
+  if(el('budTotalAllocOut')) el('budTotalAllocOut').textContent = fmtFull(totalAllocOut);
+  if(el('budTotalIn'))       el('budTotalIn').textContent       = fmtFull(totalIn);
+  if(el('budTotalOut'))      el('budTotalOut').textContent      = fmtFull(totalOut);
+  const netEl = el('budTotalNet');
+  if(netEl){ netEl.textContent=(totalNet>=0?'+':'')+fmtFull(totalNet); netEl.style.color=totalNet>=0?'var(--accent-green)':'var(--accent-red)'; }
+  const totalGapIn=totalIn-totalAllocIn, totalGapOut=totalOut-totalAllocOut;
+  function setGapEl(id, gap, alloc, isCost) {
+    const e2 = el(id); if (!e2) return;
+    if (alloc === 0) { e2.textContent = '–'; e2.style.color = 'var(--text-muted)'; return; }
+    const isGood = isCost ? gap <= 0 : gap >= 0;
+    const pct = (gap / alloc * 100);
+    e2.innerHTML = `${gap>=0?'+':''}${fmtFull(gap)}<br><span style="font-size:11px;opacity:0.8">${pct>=0?'+':''}${pct.toFixed(1)}%</span>`;
+    e2.style.color = isGood ? 'var(--accent-green)' : 'var(--accent-red)';
+  }
+  setGapEl('budGapIn',  totalGapIn,  totalAllocIn,  false);
+  setGapEl('budGapOut', totalGapOut, totalAllocOut, true);
 }
 
 async function saveBudgets() {
@@ -3380,6 +3693,7 @@ function toggleDarkTheme(isDark) {
 
   if (isDark) {
     // Restore dark theme (default)
+    root.setAttribute('data-theme', 'dark');
     root.style.setProperty('--bg', '#0d0f1a');
     root.style.setProperty('--surface', '#151828');
     root.style.setProperty('--surface2', '#1c2035');
@@ -3387,19 +3701,30 @@ function toggleDarkTheme(isDark) {
     root.style.setProperty('--text-primary', '#f0f2ff');
     root.style.setProperty('--text-secondary', '#8892b0');
     root.style.setProperty('--text-muted', '#4a5270');
+    root.style.setProperty('--accent-green', '#00e09e');
+    root.style.setProperty('--accent-red',   '#ff4d6d');
+    root.style.setProperty('--accent-blue',  '#4f8aff');
+    root.style.setProperty('--accent-gold',  '#ffc947');
+    root.style.setProperty('--shadow', '0 8px 32px rgba(0,0,0,0.4)');
     if (slider) slider.style.background = '#4f8aff';
     if (thumb) thumb.style.transform = 'translateX(0)';
     localStorage.setItem('xisaabiye_theme', 'dark');
   } else {
-    // Light theme
-    root.style.setProperty('--bg', '#f0f2f8');
+    // Light theme — clean, professional, well-contrasted
+    root.setAttribute('data-theme', 'light');
+    root.style.setProperty('--bg', '#f4f6fb');
     root.style.setProperty('--surface', '#ffffff');
-    root.style.setProperty('--surface2', '#e8ecf5');
-    root.style.setProperty('--border', '#d0d6e8');
-    root.style.setProperty('--text-primary', '#1a1d2e');
-    root.style.setProperty('--text-secondary', '#4a5270');
-    root.style.setProperty('--text-muted', '#8892b0');
-    if (slider) slider.style.background = '#ccd0e0';
+    root.style.setProperty('--surface2', '#eef1f8');
+    root.style.setProperty('--border', '#dde1ef');
+    root.style.setProperty('--text-primary', '#111827');
+    root.style.setProperty('--text-secondary', '#374151');
+    root.style.setProperty('--text-muted', '#6b7280');
+    root.style.setProperty('--accent-green', '#059669');
+    root.style.setProperty('--accent-red',   '#dc2626');
+    root.style.setProperty('--accent-blue',  '#2563eb');
+    root.style.setProperty('--accent-gold',  '#d97706');
+    root.style.setProperty('--shadow', '0 4px 20px rgba(0,0,0,0.08)');
+    if (slider) slider.style.background = '#2563eb';
     if (thumb) thumb.style.transform = 'translateX(23px)';
     localStorage.setItem('xisaabiye_theme', 'light');
   }
