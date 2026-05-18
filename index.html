@@ -10,7 +10,6 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, onSnapshot, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDzBH6241k4H8lxmVLY8P3kVN4Klw2Dzfg",
@@ -24,14 +23,9 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const storage = getStorage(app);
 
   // ── Expose DB helpers to global scope ──
   window._db = db;
-  window._storage = storage;
-  window._storageRef = storageRef;
-  window._uploadBytes = uploadBytes;
-  window._getDownloadURL = getDownloadURL;
   window._fbLib = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, onSnapshot, writeBatch, query, orderBy };
 
   // ── Real-time listeners ──
@@ -1132,7 +1126,6 @@
               <th>Faahfaahinta</th>
               <th>Buug</th>
               <th>Nooc</th>
-              <th>Bill</th>
               <th>Xaddiga</th>
               <th>Haraaga</th>
               <th></th>
@@ -1282,7 +1275,6 @@
               <th>Faahfaahinta</th>
               <th>Buug</th>
               <th>Nooc</th>
-              <th>Bill</th>
               <th>Xaddiga</th>
               <th>Haraaga</th>
               <th></th>
@@ -1775,27 +1767,6 @@
         <select class="form-input" id="mBook"></select>
       </div>
     </div>
-    <div class="form-group" style="margin-top:4px">
-      <label class="form-label">📎 Dukuminti / Cadayn <span style="color:var(--text-muted);font-weight:400">(Ikhtiyaari)</span></label>
-      <div id="attachArea" style="
-        border:2px dashed var(--border);border-radius:10px;padding:14px 16px;
-        display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s;
-        background:var(--surface2);" onclick="document.getElementById('mAttachInput').click()"
-        ondragover="event.preventDefault();this.style.borderColor='var(--accent-blue)'"
-        ondragleave="this.style.borderColor='var(--border)'"
-        ondrop="handleAttachDrop(event)">
-        <span style="font-size:22px">🖼️</span>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:var(--text-secondary)" id="attachLabel">Guji ama jiid sawir / PDF</div>
-          <div style="font-size:11px;color:var(--text-muted)">JPG, PNG, PDF – max 10MB</div>
-        </div>
-        <input type="file" id="mAttachInput" accept="image/*,.pdf" style="display:none" onchange="handleAttachSelect(this)">
-        <button id="attachRemoveBtn" onclick="event.stopPropagation();clearAttach()" title="Ka saar"
-          style="display:none;margin-left:auto;background:rgba(255,77,109,0.12);border:none;
-          color:var(--accent-red);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:700">✕ Ka saar</button>
-      </div>
-      <div id="attachPreview" style="display:none;margin-top:8px;border-radius:8px;overflow:hidden;max-height:120px"></div>
-    </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Jooji</button>
       <button class="btn-submit green" id="mSubmit" onclick="submitEntry()">Xaqiiji</button>
@@ -2114,7 +2085,6 @@ function renderTable(data, tbodyId, countId) {
       <td><div class="td-detail">${tx.detail}${editedBadge}</div><div class="td-sub">Adiga</div></td>
       <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span></td>
       <td><span class="td-badge cash">Cash</span></td>
-      <td>${tx.attachmentUrl ? `<a href="${tx.attachmentUrl}" target="_blank" title="${tx.attachmentName||'Attachment'}" style="display:inline-flex;align-items:center;gap:4px;background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.25);border-radius:8px;padding:3px 9px;font-size:11px;font-weight:700;color:var(--accent-blue);text-decoration:none">📎 1 Attachment</a>` : `<span style="color:var(--text-muted);font-size:12px">–</span>`}</td>
       <td><div class="td-amount ${tx.type}">${tx.type==='out'?'-':'+'}$${fmtFull(tx.amount).replace('$','')}</div></td>
       <td><div class="td-balance">$${fmtFull(tx.balance).replace('$','')}</div></td>
       <td style="white-space:nowrap">${actionBtns}</td>
@@ -2873,60 +2843,6 @@ function showToast(msg) {
   setTimeout(()=>t.classList.remove('show'), 2800);
 }
 
-// ── ATTACHMENT HELPERS ──
-let _attachFile = null;
-
-function handleAttachSelect(input) {
-  if (input.files && input.files[0]) _setAttachFile(input.files[0]);
-}
-function handleAttachDrop(e) {
-  e.preventDefault();
-  document.getElementById('attachArea').style.borderColor = 'var(--border)';
-  const f = e.dataTransfer.files[0];
-  if (f) _setAttachFile(f);
-}
-function _setAttachFile(f) {
-  if (f.size > 10 * 1024 * 1024) { showToast('⚠️ Faylku waa weyn yahay! Max 10MB'); return; }
-  _attachFile = f;
-  document.getElementById('attachLabel').textContent = '✅ ' + f.name;
-  document.getElementById('attachRemoveBtn').style.display = 'inline-block';
-  const prev = document.getElementById('attachPreview');
-  if (f.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      prev.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain">`;
-      prev.style.display = 'block';
-    };
-    reader.readAsDataURL(f);
-  } else {
-    prev.innerHTML = `<div style="padding:10px;background:var(--surface);border-radius:8px;font-size:12px;color:var(--text-secondary)">📄 ${f.name}</div>`;
-    prev.style.display = 'block';
-  }
-}
-function clearAttach() {
-  _attachFile = null;
-  document.getElementById('attachLabel').textContent = 'Guji ama jiid sawir / PDF';
-  document.getElementById('attachRemoveBtn').style.display = 'none';
-  document.getElementById('attachPreview').style.display = 'none';
-  document.getElementById('attachPreview').innerHTML = '';
-  document.getElementById('mAttachInput').value = '';
-}
-async function uploadAttachment(file) {
-  try {
-    const storage  = window._storage;
-    const sRef     = window._storageRef;
-    const upload   = window._uploadBytes;
-    const getURL   = window._getDownloadURL;
-    const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    const ref = sRef(storage, 'attachments/' + fileName);
-    await upload(ref, file);
-    return await getURL(ref);
-  } catch(e) {
-    console.error('upload error', e);
-    return null;
-  }
-}
-
 // ── MODAL ──
 function openModal(type) {
   if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
@@ -2950,7 +2866,6 @@ function openModal(type) {
 }
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
-  clearAttach();
 }
 async function submitEntry() {
   const detail = document.getElementById('mDetail').value.trim();
@@ -2966,21 +2881,7 @@ async function submitEntry() {
   // build date string from chosen date/time
   const chosenDate = dateVal ? new Date(dateVal + 'T' + (timeVal||'00:00')) : new Date();
   const dateStr = chosenDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,', ');
-
-  // Upload attachment if present
-  let attachmentUrl = null;
-  let attachmentName = null;
-  if (_attachFile) {
-    document.getElementById('mSubmit').textContent = '⏳ Uploading...';
-    document.getElementById('mSubmit').disabled = true;
-    attachmentUrl = await uploadAttachment(_attachFile);
-    attachmentName = _attachFile.name;
-    document.getElementById('mSubmit').textContent = 'Xaqiiji';
-    document.getElementById('mSubmit').disabled = false;
-  }
-
   const newTx = { date:dateStr, dateObj:chosenDate, detail, book:book.name, type:currentType, amount, balance:book.balance };
-  if (attachmentUrl) { newTx.attachmentUrl = attachmentUrl; newTx.attachmentName = attachmentName; }
   allTx.unshift(newTx);
   // Save to Firebase
   await fbSaveTx(newTx);
@@ -3712,10 +3613,8 @@ async function saveBudgets() {
 }
 
 function printBudget() {
-  // Use filtered books if filter is active, else all books
-  const printBooks = (_budFilteredBooks && _budFilteredBooks.length > 0) ? _budFilteredBooks : books;
   let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
-  const booksRows = printBooks.map(b => {
+  const booksRows = books.map(b => {
     const allocIn  = budgets['in_'+b.id]  ?? 0;
     const allocOut = budgets['out_'+b.id] ?? 0;
     const bIn      = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
@@ -3782,7 +3681,6 @@ function printBudget() {
   <div class="header">
     <h1>🎯 Miisaaniyada Iskuulka</h1>
     <p>XISAABIYE – مدرسة الحكمة · Garowe, Puntland</p>
-    ${printBooks.length < books.length ? '<p style="margin-top:4px;color:#4f8aff;font-weight:700">Iskuulada la doortay: ' + printBooks.map(b=>b.name).join(', ') + '</p>' : ''}
     <p style="margin-top:4px">La daabacay: ${new Date().toLocaleDateString('en-GB',{dateStyle:'full'})}</p>
   </div>
   <table>
