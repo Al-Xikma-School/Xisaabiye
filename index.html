@@ -58,83 +58,82 @@
   // The FIRST snapshot fires immediately and is used to init the app.
   // Subsequent snapshots fire whenever another user changes data.
 
-  let _initCount = 0;          // counts how many collections have fired their first snapshot
-  const INIT_COLLECTIONS = 3;  // books, transactions, teamMembers
+  // ── School-aware Firebase path helper ──
+  // Called once the user enters their school code at login
+  window._setupSchoolListeners = function(schoolCode) {
+    const basePath = `schools/${schoolCode}`;
+    let _initCount = 0;
+    const INIT_COLLECTIONS = 3;
 
-  function _maybeInit() {
-    _initCount++;
-    if (_initCount >= INIT_COLLECTIONS) {
-      // All three collections have loaded — start the app
-      window._firebaseReady = true;
-      document.dispatchEvent(new Event('firebaseReady'));
-    }
-  }
-
-  // ── Books listener ──
-  onSnapshot(collection(db, 'books'), (snap) => {
-    const incoming = [];
-    snap.forEach(d => incoming.push({ _docId: d.id, ...d.data() }));
-    incoming.sort((a,b) => (a.id||0) - (b.id||0));
-    window._books = incoming;
-
-    // After first init: update live if app is running
-    if (window._appInitDone) {
-      books = incoming;
-      renderSidebarBooks();
-      renderBooksGrid();
-      updateStats();
-      _showLiveBadge('📚 Buugaagta waa la cusboonaysiiyay');
-    } else {
-      _maybeInit();
-    }
-  }, (e) => { console.error('books listener', e); _maybeInit(); });
-
-  // ── Transactions listener ──
-  onSnapshot(query(collection(db, 'transactions'), orderBy('dateObj','desc')), (snap) => {
-    const incoming = [];
-    snap.forEach(d => {
-      const data = d.data();
-      if (data.dateObj && data.dateObj.toDate) data.dateObj = data.dateObj.toDate();
-      else if (data.dateObj) data.dateObj = new Date(data.dateObj);
-      incoming.push({ _docId: d.id, ...data });
-    });
-    window._transactions = incoming;
-
-    if (window._appInitDone) {
-      allTx = incoming;
-      renderTable(allTx, 'txTable', 'txCount');
-      applyFilters();
-      updateStats();
-      _showLiveBadge('💸 Macaamiilka waa la cusboonaysiiyay');
-    } else {
-      _maybeInit();
-    }
-  }, (e) => { console.error('tx listener', e); _maybeInit(); });
-
-  // ── Team members listener ──
-  onSnapshot(collection(db, 'teamMembers'), (snap) => {
-    const incoming = [];
-    snap.forEach(d => incoming.push({ _docId: d.id, ...d.data() }));
-    window._teamMembers = incoming;
-
-    if (window._appInitDone) {
-      teamMembers = incoming;
-      _showLiveBadge('👥 Xubinta waa la cusboonaysiiyay');
-    } else {
-      _maybeInit();
-    }
-  }, (e) => { console.error('members listener', e); _maybeInit(); });
-
-  // ── Budgets listener ──
-  onSnapshot(doc(db, 'settings', 'budgets'), (snap) => {
-    if (snap.exists()) {
-      const parsed = JSON.parse(snap.data().data || '{}');
-      window._budgets = parsed;
-      if (window._appInitDone) {
-        Object.assign(budgets, parsed);
+    function _maybeInit() {
+      _initCount++;
+      if (_initCount >= INIT_COLLECTIONS) {
+        window._firebaseReady = true;
+        document.dispatchEvent(new Event('firebaseReady'));
       }
     }
-  }, () => {});
+
+    // ── Books listener ──
+    onSnapshot(collection(db, `${basePath}/books`), (snap) => {
+      const incoming = [];
+      snap.forEach(d => incoming.push({ _docId: d.id, ...d.data() }));
+      incoming.sort((a,b) => (a.id||0) - (b.id||0));
+      window._books = incoming;
+      if (window._appInitDone) {
+        books = incoming;
+        renderSidebarBooks();
+        renderBooksGrid();
+        updateStats();
+        _showLiveBadge('📚 Buugaagta waa la cusboonaysiiyay');
+      } else { _maybeInit(); }
+    }, (e) => { console.error('books listener', e); _maybeInit(); });
+
+    // ── Transactions listener ──
+    onSnapshot(query(collection(db, `${basePath}/transactions`), orderBy('dateObj','desc')), (snap) => {
+      const incoming = [];
+      snap.forEach(d => {
+        const data = d.data();
+        if (data.dateObj && data.dateObj.toDate) data.dateObj = data.dateObj.toDate();
+        else if (data.dateObj) data.dateObj = new Date(data.dateObj);
+        incoming.push({ _docId: d.id, ...data });
+      });
+      window._transactions = incoming;
+      if (window._appInitDone) {
+        allTx = incoming;
+        renderTable(allTx, 'txTable', 'txCount');
+        applyFilters();
+        updateStats();
+        _showLiveBadge('💸 Macaamiilka waa la cusboonaysiiyay');
+      } else { _maybeInit(); }
+    }, (e) => { console.error('tx listener', e); _maybeInit(); });
+
+    // ── Team members listener ──
+    onSnapshot(collection(db, `${basePath}/teamMembers`), (snap) => {
+      const incoming = [];
+      snap.forEach(d => incoming.push({ _docId: d.id, ...d.data() }));
+      window._teamMembers = incoming;
+      if (window._appInitDone) {
+        teamMembers = incoming;
+        _showLiveBadge('👥 Xubinta waa la cusboonaysiiyay');
+      } else { _maybeInit(); }
+    }, (e) => { console.error('members listener', e); _maybeInit(); });
+
+    // Store basePath for all write operations
+    window._schoolBasePath = basePath;
+  }; // end _setupSchoolListeners
+
+  // ── Budgets listener (school-aware, set up after login) ──
+  window._setupBudgetsListener = function(schoolCode) {
+    onSnapshot(doc(db, `schools/${schoolCode}/settings`, 'budgets'), (snap) => {
+      if (snap.exists()) {
+        const parsed = JSON.parse(snap.data().data || '{}');
+        window._budgets = parsed;
+        if (window._appInitDone) {
+          Object.assign(budgets, parsed);
+        }
+      }
+    }, () => {});
+  };
 
   // ── Live update badge helper (defined in module scope, mirrored globally) ──
   window._showLiveBadge = function(msg) {
@@ -1119,12 +1118,14 @@ window.addEventListener('load', () => {
         <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMWExZjNhIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6IzBkMTEyOCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmx1ZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0ZjhhZmYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDBlMDllIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZ2xvdyI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjIuNSIgcmVzdWx0PSJjb2xvcmVkQmx1ciIvPgogICAgICA8ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImNvbG9yZWRCbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiByeD0iNDQiIGZpbGw9InVybCgjYmcpIi8+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI4NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC41Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxMDAsMTAgMTAzLDIwIDExMywyMCAxMDUsMjYgMTA4LDM3IDEwMCwzMSA5MiwzNyA5NSwyNiA4NywyMCA5NywyMCIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNjUsNDUgMTY3LDUxIDE3Myw1MSAxNjgsNTUgMTcwLDYxIDE2NSw1NyAxNjAsNjEgMTYyLDU1IDE1Nyw1MSAxNjMsNTEiIGZpbGw9IiNGRkQ3MDAiIGZpbHRlcj0idXJsKCNnbG93KSIgb3BhY2l0eT0iMC45Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxODUsMTAwIDE4NywxMDYgMTkzLDEwNiAxODgsMTEwIDE5MCwxMTYgMTg1LDExMiAxODAsMTE2IDE4MiwxMTAgMTc3LDEwNiAxODMsMTA2IiBmaWxsPSIjRkZENzAwIiBmaWx0ZXI9InVybCgjZ2xvdykiIG9wYWNpdHk9IjAuOCIvPgogIDxwb2x5Z29uIHBvaW50cz0iMTY1LDE1NSAxNjcsMTYxIDE3MywxNjEgMTY4LDE2NSAxNzAsMTcxIDE2NSwxNjcgMTYwLDE3MSAxNjIsMTY1IDE1NywxNjEgMTYzLDE2MSIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjkiLz4KICA8cG9seWdvbiBwb2ludHM9IjEwMCwxNzggMTAzLDE4OCAxMTMsMTg4IDEwNSwxOTQgMTA4LDIwMCAxMDAsMTk2IDkyLDIwMCA5NSwxOTQgODcsMTg4IDk3LDE4OCIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjg1Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIzNSwxNTUgMzcsMTYxIDQzLDE2MSAzOCwxNjUgNDAsMTcxIDM1LDE2NyAzMCwxNzEgMzIsMTY1IDI3LDE2MSAzMywxNjEiIGZpbGw9IiNGRkQ3MDAiIGZpbHRlcj0idXJsKCNnbG93KSIgb3BhY2l0eT0iMC45Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNSwxMDAgMTcsMTA2IDIzLDEwNiAxOCwxMTAgMjAsMTE2IDE1LDExMiAxMCwxMTYgMTIsMTEwIDcsMTA2IDEzLDEwNiIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjgiLz4KICA8cG9seWdvbiBwb2ludHM9IjM1LDQ1IDM3LDUxIDQzLDUxIDM4LDU1IDQwLDYxIDM1LDU3IDMwLDYxIDMyLDU1IDI3LDUxIDMzLDUxIiBmaWxsPSIjRkZENzAwIiBmaWx0ZXI9InVybCgjZ2xvdykiIG9wYWNpdHk9IjAuOSIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsIFRhaG9tYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI1MiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9InVybCgjYmx1ZSkiIGZpbHRlcj0idXJsKCNnbG93KSI+JiN4NjQ1OyYjeDYyRDsmI3g2Mjc7JiN4NjMzOyYjeDYyODs8L3RleHQ+CiAgPGxpbmUgeDE9IjU1IiB5MT0iMTMyIiB4Mj0iMTQ1IiB5Mj0iMTMyIiBzdHJva2U9InVybCgjYmx1ZSkiIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjUiLz4KPC9zdmc+" style="width:44px;height:44px;border-radius:11px;display:block"></div>
       <div>
         <div class="login-logo-text">XISAABIYE</div>
-        <div class="login-logo-sub">مدرسة الحكمة</div>
+        <div class="login-logo-sub" id="loginSchoolName">نظام إدارة المدارس</div>
       </div>
     </div>
     <div class="login-title">Soo Gal 👋</div>
-    <div class="login-sub">Geli username iyo password-kaaga</div>
-    <div class="login-error" id="loginError">⚠️ Username ama password-ka waa khalad!</div>
+    <div class="login-sub">Geli koodka iskuulka, username iyo password-kaaga</div>
+    <div class="login-error" id="loginError">⚠️ Koodka, username ama password-ka waa khalad!</div>
+    <label class="login-label">Koodka Iskuulka</label>
+    <input class="login-input" id="loginSchoolCode" type="number" placeholder="e.g. 1011" autocomplete="off" style="letter-spacing:3px;font-weight:800;font-size:18px">
     <label class="login-label">Username</label>
     <input class="login-input" id="loginUsername" type="text" placeholder="username..." autocomplete="username">
     <label class="login-label">Password</label>
@@ -2047,9 +2048,10 @@ function _docToPlain(obj) {
 async function fbSaveBook(book) {
   try {
     const { doc, setDoc, collection } = fbLib();
+    const base = window._schoolBasePath;
     const ref = book._docId
-      ? doc(db(), 'books', book._docId)
-      : doc(collection(db(), 'books'));
+      ? doc(db(), `${base}/books`, book._docId)
+      : doc(collection(db(), `${base}/books`));
     if (!book._docId) book._docId = ref.id;
     await setDoc(ref, _docToPlain(book));
   } catch(e){ console.error('fbSaveBook', e); }
@@ -2059,16 +2061,18 @@ async function fbDeleteBook(book) {
   try {
     if (!book._docId) return;
     const { doc, deleteDoc } = fbLib();
-    await deleteDoc(doc(db(), 'books', book._docId));
+    const base = window._schoolBasePath;
+    await deleteDoc(doc(db(), `${base}/books`, book._docId));
   } catch(e){ console.error('fbDeleteBook', e); }
 }
 
 async function fbSaveTx(tx) {
   try {
     const { doc, setDoc, collection } = fbLib();
+    const base = window._schoolBasePath;
     const ref = tx._docId
-      ? doc(db(), 'transactions', tx._docId)
-      : doc(collection(db(), 'transactions'));
+      ? doc(db(), `${base}/transactions`, tx._docId)
+      : doc(collection(db(), `${base}/transactions`));
     if (!tx._docId) tx._docId = ref.id;
     await setDoc(ref, _docToPlain(tx));
   } catch(e){ console.error('fbSaveTx', e); }
@@ -2078,16 +2082,18 @@ async function fbDeleteTx(tx) {
   try {
     if (!tx._docId) return;
     const { doc, deleteDoc } = fbLib();
-    await deleteDoc(doc(db(), 'transactions', tx._docId));
+    const base = window._schoolBasePath;
+    await deleteDoc(doc(db(), `${base}/transactions`, tx._docId));
   } catch(e){ console.error('fbDeleteTx', e); }
 }
 
 async function fbSaveMember(member) {
   try {
     const { doc, setDoc, collection } = fbLib();
+    const base = window._schoolBasePath;
     const ref = member._docId
-      ? doc(db(), 'teamMembers', member._docId)
-      : doc(collection(db(), 'teamMembers'));
+      ? doc(db(), `${base}/teamMembers`, member._docId)
+      : doc(collection(db(), `${base}/teamMembers`));
     if (!member._docId) member._docId = ref.id;
     await setDoc(ref, _docToPlain(member));
   } catch(e){ console.error('fbSaveMember', e); }
@@ -2097,7 +2103,8 @@ async function fbDeleteMember(member) {
   try {
     if (!member._docId) return;
     const { doc, deleteDoc } = fbLib();
-    await deleteDoc(doc(db(), 'teamMembers', member._docId));
+    const base = window._schoolBasePath;
+    await deleteDoc(doc(db(), `${base}/teamMembers`, member._docId));
   } catch(e){ console.error('fbDeleteMember', e); }
 }
 
@@ -2112,14 +2119,9 @@ async function seedFirestore() {
 document.addEventListener('firebaseReady', async function() {
   const loadingEl = document.getElementById('fbLoading');
 
-  if (window._books && window._books.length > 0) {
-    books       = window._books;
-    allTx       = window._transactions || [];
-    teamMembers = window._teamMembers && window._teamMembers.length > 0 ? window._teamMembers : DEFAULT_MEMBERS;
-  } else {
-    // First time: seed Firestore with default data
-    await seedFirestore();
-  }
+  books       = window._books       || [];
+  allTx       = window._transactions || [];
+  teamMembers = window._teamMembers  || [];
 
   // Restore dateObj for transactions loaded from Firestore
   allTx.forEach(t => {
@@ -2179,26 +2181,63 @@ function applyRoleRestrictions() {
 }
 
 function doLogin() {
+  const code = document.getElementById('loginSchoolCode').value.trim();
   const u = document.getElementById('loginUsername').value.trim().toLowerCase();
   const p = document.getElementById('loginPassword').value;
-  const member = teamMembers.find(m => m.username === u && m.password === p);
-  if (!member) {
-    document.getElementById('loginError').style.display = 'block';
-    return;
-  }
-  currentUser = member;
-  document.getElementById('loginScreen').style.display = 'none';
-  // Update topbar user pill
-  document.querySelector('.user-avatar').textContent = member.name[0];
-  document.querySelector('.user-name').textContent = member.name.split(' ')[0] + ' ' + (member.name.split(' ')[1]||'');
-  applyRoleRestrictions();
-  renderSidebarBooks();
-  renderBooksGrid();
-  updateStats();
+  const errEl = document.getElementById('loginError');
+
+  if (!code) { errEl.textContent = '⚠️ Geli koodka iskuulka!'; errEl.style.display = 'block'; return; }
+  if (!u || !p) { errEl.textContent = '⚠️ Geli username iyo password!'; errEl.style.display = 'block'; return; }
+
+  const btn = document.querySelector('.login-btn');
+  btn.disabled = true; btn.textContent = '⏳ La xaqiijinayaa...';
+  errEl.style.display = 'none';
+
+  // Check school code exists in Firebase, then load members
+  const { collection: col, getDocs } = window._fbLib;
+  const db = window._db;
+
+  getDocs(col(db, `schools/${code}/teamMembers`)).then(snap => {
+    if (snap.empty) {
+      errEl.textContent = '⚠️ Koodka iskuulka waa khalad ama ma jiro!';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = '🔐 Soo Gal';
+      return;
+    }
+    const members = [];
+    snap.forEach(d => members.push({ _docId: d.id, ...d.data() }));
+    const member = members.find(m => m.username === u && m.password === p);
+    if (!member) {
+      errEl.textContent = '⚠️ Username ama password-ka waa khalad!';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = '🔐 Soo Gal';
+      return;
+    }
+    // Valid login — setup listeners for this school
+    window._currentSchoolCode = code;
+    window._setupSchoolListeners(code);
+    window._setupBudgetsListener(code);
+
+    currentUser = member;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.querySelector('.user-avatar').textContent = member.name[0];
+    document.querySelector('.user-name').textContent = member.name.split(' ')[0] + ' ' + (member.name.split(' ')[1]||'');
+    btn.disabled = false; btn.textContent = '🔐 Soo Gal';
+    applyRoleRestrictions();
+  }).catch(e => {
+    errEl.textContent = '❌ Khalad: ' + e.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = '🔐 Soo Gal';
+  });
 }
 
 function doLogout() {
   currentUser = null;
+  window._currentSchoolCode = null;
+  window._appInitDone = false;
+  window._firebaseReady = false;
+  books = []; allTx = []; teamMembers = [];
+  document.getElementById('loginSchoolCode').value = '';
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
   document.getElementById('loginError').style.display = 'none';
@@ -2207,7 +2246,7 @@ function doLogout() {
 
 // Allow Enter key to submit login
 document.addEventListener('DOMContentLoaded', () => {
-  ['loginUsername','loginPassword'].forEach(id => {
+  ['loginSchoolCode','loginUsername','loginPassword'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();
     });
@@ -2555,7 +2594,7 @@ async function confirmDeleteTx() {
   if (!tx._docId) {
     try {
       const { collection, getDocs } = fbLib();
-      const snap = await getDocs(collection(db(), 'transactions'));
+      const snap = await getDocs(collection(db(), `${window._schoolBasePath}/transactions`));
       snap.forEach(d => {
         const data = d.data();
         if (data.detail === tx.detail && data.amount === tx.amount && data.date === tx.date) {
@@ -3892,7 +3931,7 @@ async function saveBudgets() {
   // Save budgets to Firebase
   try {
     const { doc, setDoc } = fbLib();
-    await setDoc(doc(db(), 'settings', 'budgets'), { data: JSON.stringify(budgets) });
+    await setDoc(doc(db(), `${window._schoolBasePath}/settings`, 'budgets'), { data: JSON.stringify(budgets) });
   } catch(e){ console.error('saveBudgets firebase error', e); }
   renderBudgetPage();
   showToast('✅ Miisaaniyada waa la keydiyay!');
