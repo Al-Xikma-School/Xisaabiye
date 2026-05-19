@@ -2297,7 +2297,7 @@ function renderTable(data, tbodyId, countId) {
       <button class="td-delete" onclick="deleteTx(${realIdx})" title="Tirtir">🗑</button>`;
     return `
     <tr>
-      <td><div class="td-date">${tx.date}</div></td>
+      <td><div class="td-date">${tx.date}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${tx.dateObj ? (() => { const d = tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); })() : ''}</div></td>
       <td><div class="td-detail">${tx.detail}${editedBadge}</div><div class="td-sub">Adiga</div></td>
       <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span></td>
       <td><span class="td-badge cash">Cash</span></td>
