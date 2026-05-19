@@ -975,6 +975,61 @@ window.addEventListener('load', () => {
   }, 2500);
 });
 </script>
+
+<style>
+/* ── OFFLINE BANNER ── */
+#offlineBanner {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: #fff8e1;
+  border-bottom: 2px solid #e65100;
+  padding: 8px 16px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #bf360c;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+#offlineBanner.show { display: flex; }
+#offlineBanner .ob-icon { font-size: 18px; flex-shrink: 0; }
+#offlineBanner .ob-text { flex: 1; line-height: 1.4; }
+#offlineBanner .ob-text small { display: block; font-weight: 400; color: #e65100; font-size: 11px; }
+#offlineBanner .ob-count {
+  background: #e65100; color: #fff;
+  border-radius: 20px; padding: 2px 8px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+/* Push content down when banner is visible */
+body.offline-mode .app-header,
+body.offline-mode #loginScreen { margin-top: 46px; }
+
+/* ── AUTO-LOCK OVERLAY ── */
+#autoLockOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(10,12,26,0.97);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+}
+#autoLockOverlay.show { display: flex; }
+#autoLockOverlay .al-icon { font-size: 56px; }
+#autoLockOverlay .al-title { color: #f0f2ff; font-size: 20px; font-weight: 800; }
+#autoLockOverlay .al-sub { color: #8892b0; font-size: 13px; margin-bottom: 8px; }
+#autoLockOverlay .al-btn {
+  background: linear-gradient(135deg, #4f8aff, #00e09e);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 14px 40px; font-size: 16px; font-weight: 700;
+  cursor: pointer; letter-spacing: 0.5px;
+}
+#autoLockOverlay .al-btn:hover { opacity: 0.9; }
+</style>
 </head>
 <body>
 <!-- PWA Install Banner -->
@@ -1115,6 +1170,24 @@ window.addEventListener('load', () => {
     @keyframes slideUpBanner { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
     @keyframes slideDownBanner { from{transform:translateY(0);opacity:1} to{transform:translateY(100%);opacity:0} }
   </style>
+</div>
+
+<!-- Offline Banner -->
+<div id="offlineBanner">
+  <span class="ob-icon">📵</span>
+  <span class="ob-text">
+    La xidayaa Internet — Xogta waa la kaydiyay
+    <small id="offlinePendingMsg">Waxay u diraysaa Firebase markuu internet soo laabto</small>
+  </span>
+  <span class="ob-count" id="offlinePendingCount" style="display:none"></span>
+</div>
+
+<!-- Auto-Lock Overlay -->
+<div id="autoLockOverlay">
+  <div class="al-icon">🔒</div>
+  <div class="al-title">Xisaabiye Waa La Qifaalay</div>
+  <div class="al-sub">Appku si toos ah ayuu u qifaalay markuu dib u furnaday</div>
+  <button class="al-btn" onclick="unlockApp()">🔐 Fur App-ka</button>
 </div>
 
 <div id="loginScreen">
@@ -1270,8 +1343,6 @@ window.addEventListener('load', () => {
               <th>Taariikhda</th>
               <th>Faahfaahinta</th>
               <th>Buug</th>
-              <th>Nooc</th>
-              <th>Bill</th>
               <th>Xaddiga</th>
               <th>Haraaga</th>
               <th></th>
@@ -1420,8 +1491,6 @@ window.addEventListener('load', () => {
               <th>Taariikhda</th>
               <th>Faahfaahinta</th>
               <th>Buug</th>
-              <th>Nooc</th>
-              <th>Bill</th>
               <th>Xaddiga</th>
               <th>Haraaga</th>
               <th></th>
@@ -1763,20 +1832,7 @@ window.addEventListener('load', () => {
           </div>
         </div>
 
-        <div class="settings-card" style="border-color:rgba(255,77,109,0.2)">
-          <div class="settings-card-header">
-            <div class="settings-icon" style="background:rgba(255,77,109,0.12)">⚠️</div>
-            <div>
-              <div class="settings-card-title" style="color:var(--accent-red)">Goobta Khatariga</div>
-              <div class="settings-card-sub">Falalka aan dib loo celin karin</div>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
-            <button class="btn btn-red" style="justify-content:center" onclick="confirmClear()">🗑 Tirtir Dhammaan Macaamiilada</button>
-            <p style="font-size:11px;color:var(--text-muted);text-align:center">Tani waxay tirtiraysa dhammaan transactions-ka.</p>
-          </div>
-        </div>
-      </div>
+
     </div>
 
   </div>
@@ -1817,6 +1873,42 @@ window.addEventListener('load', () => {
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeNewBookModal()">Jooji</button>
       <button class="btn-submit green" onclick="createBook()">✓ Abuur</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT BOOK MODAL -->
+<div class="modal-overlay" id="editBookModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Wax ka beddel Buugga</div>
+    <div class="modal-sub">Magaca, midabka, ama emoji ka beddel</div>
+    <input type="hidden" id="ebId">
+    <div class="form-group">
+      <label class="form-label">Magaca Buugga</label>
+      <input class="form-input" id="ebName" type="text" placeholder="Magaca buugga">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Midabka</label>
+        <input class="form-input" id="ebColor" type="color" style="height:44px;padding:4px 8px;cursor:pointer">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Emoji</label>
+        <select class="form-input" id="ebEmoji">
+          <option value="🏫">🏫 Dugsi</option>
+          <option value="📗">📗 Buug Cagaaran</option>
+          <option value="📘">📘 Buug Buluug</option>
+          <option value="📙">📙 Buug Oranji</option>
+          <option value="💼">💼 Shaqo</option>
+          <option value="👤">👤 Qof</option>
+          <option value="🏦">🏦 Bank</option>
+          <option value="📦">📦 Badeeco</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditBookModal()">Jooji</button>
+      <button class="btn-submit green" onclick="saveEditBook()">✓ Keydi</button>
     </div>
   </div>
 </div>
@@ -1984,6 +2076,43 @@ window.addEventListener('load', () => {
     </div>
   </div>
 </div>
+
+
+
+<!-- DELETE BOOK PASSWORD MODAL -->
+<div class="modal-overlay" id="deleteBookModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title" style="color:#ff4d6d">🗑️ Tirtir Buugga</div>
+    <div class="modal-sub">Buugga <span id="deleteBookName" style="color:#ff4d6d;font-weight:600"></span> iyo dhammaan transactions-kiisa waa la tirtiri doonaa.</div>
+    <div class="form-group" style="margin-top:12px">
+      <label class="form-label">🔒 Password</label>
+      <input class="form-input" id="deleteBookPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+      <div id="deleteBookError" style="color:#ff4d6d;font-size:12px;margin-top:6px;display:none">⚠️ Password-ka waa khalad!</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('deleteBookModal').classList.remove('open')">Jooji</button>
+      <button class="btn-submit" style="background:linear-gradient(135deg,#ff4d6d,#c9184a)" onclick="confirmDeleteBook()">🗑️ Tirtir</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE ALL PASSWORD MODAL -->
+<div class="modal-overlay" id="clearAllModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title" style="color:#ff4d6d">🗑️ Tirtir Dhammaan Macaamiilada</div>
+    <div class="modal-sub">Si aad u xaqiijiso, fadlan gali password-kaaga sirta ah</div>
+    <div class="form-group">
+      <label class="form-label">🔒 Password</label>
+      <input class="form-input" id="clearAllPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+      <div id="clearAllError" style="color:#ff4d6d;font-size:12px;margin-top:6px;display:none">⚠️ Password-ka waa khalad!</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('clearAllModal').classList.remove('open');document.getElementById('clearAllPassword').value='';document.getElementById('clearAllError').style.display='none'">Jooji</button>
+      <button class="btn-submit" style="background:linear-gradient(135deg,#ff4d6d,#c9184a)" onclick="confirmClearWithPassword()">🗑️ Tirtir Dhammaan</button>
+    </div>
+  </div>
+</div>
+
 <!-- DELETE PASSWORD MODAL -->
 <div class="modal-overlay" id="deleteTxModal">
   <div class="modal" style="max-width:360px">
@@ -2306,8 +2435,6 @@ function renderTable(data, tbodyId, countId) {
       <td><div class="td-date">${tx.date}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${tx.dateObj ? (() => { const d = tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); })() : ''}</div></td>
       <td><div class="td-detail">${tx.detail}${editedBadge}</div><div class="td-sub">Adiga</div></td>
       <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span></td>
-      <td><span class="td-badge cash">Cash</span></td>
-      <td>${tx.attachmentUrl ? `<a href="${tx.attachmentUrl}" target="_blank" title="${tx.attachmentName||'Attachment'}" style="display:inline-flex;align-items:center;gap:4px;background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.25);border-radius:8px;padding:3px 9px;font-size:11px;font-weight:700;color:var(--accent-blue);text-decoration:none">📎 1 Attachment</a>` : `<span style="color:var(--text-muted);font-size:12px">–</span>`}</td>
       <td><div class="td-amount ${tx.type}">${tx.type==='out'?'-':'+'}$${fmtFull(tx.amount).replace('$','')}</div></td>
       <td><div class="td-balance">$${fmtFull(tx.balance).replace('$','')}</div></td>
       <td style="white-space:nowrap">${actionBtns}</td>
@@ -2819,6 +2946,41 @@ function clearFilters() {
 }
 
 // ── NEW BOOK ──
+function openEditBookModal(id) {
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  document.getElementById('ebId').value = id;
+  document.getElementById('ebName').value = b.name;
+  document.getElementById('ebColor').value = b.color;
+  document.getElementById('ebEmoji').value = b.emoji;
+  document.getElementById('editBookModal').classList.add('open');
+}
+function closeEditBookModal() {
+  document.getElementById('editBookModal').classList.remove('open');
+}
+async function saveEditBook() {
+  const id = Number(document.getElementById('ebId').value);
+  const name = document.getElementById('ebName').value.trim();
+  const color = document.getElementById('ebColor').value;
+  const emoji = document.getElementById('ebEmoji').value;
+  if (!name) { showToast('⚠️ Magaca buugga geli!'); return; }
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  const oldName = b.name;
+  b.name = name; b.color = color; b.emoji = emoji;
+  // update transactions that reference old book name
+  allTx.forEach(t => { if (t.book === oldName) t.book = name; });
+  try {
+    const { doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js');
+    await updateDoc(doc(db, `${basePath}/books/${id}`), { name, color, emoji });
+  } catch(e) { console.warn('fbUpdateBook', e); }
+  closeEditBookModal();
+  renderSidebarBooks(); renderBooksGrid(); renderSettingsBooks(); updateStats();
+  renderTable(allTx, 'txTable', 'txCount');
+  renderTable(allTx, 'txTable2', 'txCount2');
+  showToast(`✅ "${name}" waa la cusboonaysiiyay`);
+}
+
 function openNewBookModal() {
   if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
   document.getElementById('nbName').value='';
@@ -2877,18 +3039,40 @@ function renderSettingsBooks() {
       <div class="sbi-dot" style="background:${b.color}"></div>
       <div class="sbi-name">${b.emoji} ${b.name}</div>
       <div class="sbi-bal ${b.balance>=0?'':'neg'}">${fmtFull(b.balance)}</div>
+      <button class="sbi-edit" onclick="openEditBookModal(${b.id})" title="Wax ka beddel" style="background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.25);color:#4f8aff;cursor:pointer;font-size:11px;font-weight:700;padding:4px 10px;border-radius:7px;margin-right:4px">✏️</button>
       <button class="sbi-del" onclick="deleteBook(${b.id})" title="Tirtir">🗑</button>
     </div>
   `).join('');
 }
 
-async function deleteBook(id) {
+let _pendingDeleteBookId = null;
+
+function deleteBook(id) {
   if(books.length<=1) { showToast('⚠️ Ugu yaraan 1 buug waa loo baahan yahay!'); return; }
   const b = books.find(x=>x.id===id);
-  if(!confirm(`"${b.name}" ma tirtiraysaa?`)) return;
+  if(!b) return;
+  _pendingDeleteBookId = id;
+  document.getElementById('deleteBookName').textContent = `"${b.emoji} ${b.name}"`;
+  document.getElementById('deleteBookPassword').value = '';
+  document.getElementById('deleteBookError').style.display = 'none';
+  document.getElementById('deleteBookModal').classList.add('open');
+}
+
+async function confirmDeleteBook() {
+  const pw = document.getElementById('deleteBookPassword').value.trim();
+  if (!pw) { document.getElementById('deleteBookError').style.display = 'block'; return; }
+  const member = teamMembers.find(m => m.username === currentUser.username);
+  if (!member || member.password !== pw) {
+    document.getElementById('deleteBookError').style.display = 'block';
+    return;
+  }
+  document.getElementById('deleteBookModal').classList.remove('open');
+  const id = _pendingDeleteBookId;
+  _pendingDeleteBookId = null;
+  const b = books.find(x=>x.id===id);
+  if(!b) return;
   const idx = books.findIndex(x=>x.id===id);
   books.splice(idx,1);
-  // delete related transactions from Firebase
   const relatedTx = allTx.filter(t=>t.book===b.name);
   for (const t of relatedTx) await fbDeleteTx(t);
   allTx = allTx.filter(t=>t.book!==b.name);
@@ -3087,8 +3271,21 @@ function saveSettings() {
   showToast('✅ Settings waa la keydsaday!');
 }
 
-async function confirmClear() {
-  if(!confirm('Dhammaan macaamiilada ma tirtiraysan? Tani ma dib loo celin karto.')) return;
+function confirmClear() {
+  document.getElementById('clearAllPassword').value = '';
+  document.getElementById('clearAllError').style.display = 'none';
+  document.getElementById('clearAllModal').classList.add('open');
+}
+
+async function confirmClearWithPassword() {
+  const pw = document.getElementById('clearAllPassword').value.trim();
+  if (!pw) { document.getElementById('clearAllError').style.display = 'block'; return; }
+  const member = teamMembers.find(m => m.username === currentUser.username);
+  if (!member || member.password !== pw) {
+    document.getElementById('clearAllError').style.display = 'block';
+    return;
+  }
+  document.getElementById('clearAllModal').classList.remove('open');
   for (const t of allTx) await fbDeleteTx(t);
   allTx = [];
   renderTable([], 'txTable', 'txCount');
@@ -3453,6 +3650,9 @@ document.getElementById('modalOverlay').addEventListener('click', function(e){
 });
 document.getElementById('newBookModal').addEventListener('click', function(e){
   if(e.target===this) closeNewBookModal();
+});
+document.getElementById('editBookModal').addEventListener('click', function(e){
+  if(e.target===this) closeEditBookModal();
 });
 document.getElementById('addMemberModal').addEventListener('click', function(e){
   if(e.target===this) closeAddMemberModal();
@@ -4143,6 +4343,98 @@ document.addEventListener('appReady', function() {
   window._appReady = true;
   syncMobileNav('dashboard');
 });
+
+// ══════════════════════════════════════════════
+//  FEATURE 1: AUTO-LOCK WHEN APP GOES TO BACKGROUND
+// ══════════════════════════════════════════════
+(function() {
+  let _isLocked = false;
+
+  function lockApp() {
+    // Only lock if user is logged in
+    if (!window.currentUser) return;
+    _isLocked = true;
+    document.getElementById('autoLockOverlay').classList.add('show');
+  }
+
+  window.unlockApp = function() {
+    _isLocked = false;
+    document.getElementById('autoLockOverlay').classList.remove('show');
+    // Show the login screen to re-authenticate
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('autoLockOverlay').classList.remove('show');
+    // Actually force re-login for security
+    doLogout();
+  };
+
+  // Listen for page visibility change (app goes to background / screen off)
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      // App went to background
+      lockApp();
+    }
+  });
+
+  // Also listen for page blur (switching apps on mobile)
+  window.addEventListener('pagehide', function() {
+    lockApp();
+  });
+})();
+
+
+// ══════════════════════════════════════════════
+//  FEATURE 2: OFFLINE BANNER + PENDING COUNT
+// ══════════════════════════════════════════════
+(function() {
+  // Track pending (offline-saved) entries
+  window._offlinePendingCount = 0;
+
+  function updateOfflineBanner() {
+    const banner = document.getElementById('offlineBanner');
+    const countEl = document.getElementById('offlinePendingCount');
+    const msgEl = document.getElementById('offlinePendingMsg');
+
+    if (!navigator.onLine) {
+      banner.classList.add('show');
+      document.body.classList.add('offline-mode');
+      if (window._offlinePendingCount > 0) {
+        countEl.style.display = 'inline';
+        countEl.textContent = window._offlinePendingCount + ' entry pending';
+        msgEl.textContent = 'Waxay u diraysaa Firebase markuu internet soo laabto';
+      } else {
+        countEl.style.display = 'none';
+        msgEl.textContent = 'Xog cusub waxay u diraysaa Firebase markuu internet soo laabto';
+      }
+    } else {
+      banner.classList.remove('show');
+      document.body.classList.remove('offline-mode');
+      // Reset pending count once back online (Firebase auto-syncs)
+      if (window._offlinePendingCount > 0) {
+        window._offlinePendingCount = 0;
+      }
+    }
+  }
+
+  window.addEventListener('online', updateOfflineBanner);
+  window.addEventListener('offline', updateOfflineBanner);
+
+  // Initial check
+  updateOfflineBanner();
+
+  // Hook into submitEntry to count pending offline entries
+  // We patch submitEntry to track if user saves while offline
+  const _origSubmit = window.submitEntry;
+  if (typeof _origSubmit === 'function') {
+    window.submitEntry = async function() {
+      const wasOffline = !navigator.onLine;
+      await _origSubmit.call(this);
+      if (wasOffline) {
+        window._offlinePendingCount++;
+        updateOfflineBanner();
+      }
+    };
+  }
+})();
 </script>
 
 <!-- Sidebar overlay for mobile -->
