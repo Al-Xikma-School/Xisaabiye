@@ -1091,6 +1091,14 @@ body.offline-mode #loginScreen { margin-top: 46px; }
   cursor: pointer; letter-spacing: 0.5px;
 }
 #autoLockOverlay .al-btn:hover { opacity: 0.9; }
+@keyframes alShake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-8px); }
+  40%      { transform: translateX(8px); }
+  60%      { transform: translateX(-5px); }
+  80%      { transform: translateX(5px); }
+}
+#autoLockOverlay.shake { animation: alShake 0.4s ease; }
 
 /* ── IDLE TIMEOUT WARNING OVERLAY ── */
 #idleWarningOverlay {
@@ -1290,8 +1298,19 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 <div id="autoLockOverlay">
   <div class="al-icon">🔒</div>
   <div class="al-title">Xisaabiye Waa La Qifaalay</div>
-  <div class="al-sub">Appku si toos ah ayuu u qifaalay markuu dib u furnaday</div>
+  <div class="al-sub" id="alUserSub">Geli password-kaaga si aad dib ugu gasho</div>
+  <div style="width:100%;max-width:300px;margin-bottom:8px">
+    <input id="alPasswordInput" type="password"
+      placeholder="••••••••"
+      autocomplete="current-password"
+      style="width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid rgba(79,138,255,0.4);
+             background:rgba(255,255,255,0.07);color:#f0f2ff;font-size:15px;outline:none;
+             text-align:center;letter-spacing:4px;box-sizing:border-box"
+      onkeydown="if(event.key==='Enter') unlockApp()">
+    <div id="alError" style="color:#ff4d6d;font-size:12px;margin-top:6px;text-align:center;display:none">⚠️ Password-ka waa khalad!</div>
+  </div>
   <button class="al-btn" onclick="unlockApp()">🔐 Fur App-ka</button>
+  <button onclick="doLogout()" style="background:none;border:none;color:#4a5270;font-size:12px;cursor:pointer;margin-top:4px">↩ Kala bax oo account kale u gal</button>
 </div>
 
 <!-- IDLE TIMEOUT WARNING OVERLAY -->
@@ -1376,6 +1395,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     <div class="topbar-spacer"></div>
     <button class="btn btn-green" onclick="openModal('in')">＋ Cash In</button>
     <button class="btn btn-red" onclick="openModal('out')">－ Cash Out</button>
+    <button class="btn" style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(79,138,255,0.2));color:#a78bfa;border:1px solid rgba(124,58,237,0.35);font-weight:700" onclick="openTransferModal()" title="Wareejin lacag ka buug ugu buug">🔄 Transfer</button>
     <div class="user-pill">
       <div class="user-avatar">F</div>
       <div class="user-name">Farxaan C.</div>
@@ -2578,6 +2598,7 @@ function renderTable(data, tbodyId, countId) {
     const realIdx = allTx.indexOf(tx);
     const editedBadge = tx._edited ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px">(Edited)</span>` : '';
     const actionBtns = isViewer ? '' : `
+      <button class="td-transfer-btn" onclick="openTransferTx(${realIdx})" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);cursor:pointer;color:#a78bfa;font-size:12px;font-weight:700;padding:4px 9px;border-radius:7px;opacity:0;transition:all 0.2s;margin-right:3px;" title="U wareejin buug kale">🔄 Transfer</button>
       <button class="td-edit-btn" onclick="openEditTxModal(${realIdx})" style="background:none;border:none;cursor:pointer;color:var(--accent-blue);font-size:13px;padding:4px 6px;border-radius:6px;opacity:0;transition:all 0.2s;margin-right:2px;" title="Wax ka beddel">✏️</button>
       <button class="td-delete" onclick="deleteTx(${realIdx})" title="Tirtir">🗑</button>`;
     return `
@@ -2592,8 +2613,8 @@ function renderTable(data, tbodyId, countId) {
   }).join('');
   // hover reveal edit/delete buttons
   tbody.querySelectorAll('tr').forEach(row => {
-    row.addEventListener('mouseenter', () => row.querySelectorAll('.td-delete,.td-edit-btn').forEach(b=>b.style.opacity='1'));
-    row.addEventListener('mouseleave', () => row.querySelectorAll('.td-delete,.td-edit-btn').forEach(b=>b.style.opacity='0'));
+    row.addEventListener('mouseenter', () => row.querySelectorAll('.td-delete,.td-edit-btn,.td-transfer-btn').forEach(b=>b.style.opacity='1'));
+    row.addEventListener('mouseleave', () => row.querySelectorAll('.td-delete,.td-edit-btn,.td-transfer-btn').forEach(b=>b.style.opacity='0'));
   });
 }
 
@@ -3545,6 +3566,221 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
   clearAttach();
 }
+
+// ── TRANSFER ──
+let _transferTxIdx = -1; // -1 = manual mode, >=0 = tx transfer mode
+
+// Called from row 🔄 button — transfer a specific transaction to another book
+function openTransferTx(idx) {
+  if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
+  const tx = allTx[idx];
+  if (!tx) return;
+  if (books.length < 2) { showToast('⚠️ Ugu yaraan 2 buug ayaa loo baahan yahay!'); return; }
+
+  _transferTxIdx = idx;
+
+  // Show tx info card
+  const typeColor = tx.type === 'in' ? 'var(--accent-green)' : 'var(--accent-red)';
+  const sign = tx.type === 'in' ? '+' : '-';
+  document.getElementById('trTxCard').style.display = 'block';
+  document.getElementById('trTxCardContent').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-weight:700;font-size:14px;color:var(--text-primary)">${tx.detail}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${tx.date} · ${tx.book}</div>
+      </div>
+      <div style="font-size:18px;font-weight:900;color:${typeColor}">${sign}${fmtFull(tx.amount)}</div>
+    </div>`;
+
+  // Hide From (it's the tx's own book) and Amount (fixed)
+  document.getElementById('trFromGroup').style.display = 'none';
+  document.getElementById('trAmountGroup').style.display = 'none';
+  document.getElementById('trModalSub').textContent = 'Dooro buugga aad u wareejinayso transaction-kan';
+
+  // Populate To book (exclude the tx's current book)
+  const toSel = document.getElementById('trToBook');
+  toSel.innerHTML = books
+    .filter(b => b.name !== tx.book)
+    .map(b => `<option value="${b.id}">${b.emoji} ${b.name} — ${fmtFull(b.balance)}</option>`)
+    .join('');
+
+  document.getElementById('trDetail').value = '';
+  document.getElementById('trPreview').style.display = 'none';
+  _updateTxTransferPreview();
+
+  // Wire To select to preview update
+  toSel.onchange = _updateTxTransferPreview;
+
+  document.getElementById('transferModal').classList.add('open');
+}
+
+function _updateTxTransferPreview() {
+  if (_transferTxIdx < 0) return;
+  const tx = allTx[_transferTxIdx];
+  if (!tx) return;
+  const toId = parseInt(document.getElementById('trToBook').value);
+  const toBook = books.find(b => b.id === toId);
+  const fromBook = books.find(b => b.name === tx.book);
+  if (!toBook || !fromBook) return;
+
+  const newFrom = fromBook.balance - (tx.type === 'out' ? -tx.amount : tx.amount);
+  // Actually: moving the tx means removing its effect from fromBook and applying to toBook
+  // fromBook loses the tx amount (reverse the tx), toBook gains it
+  const fromDelta = tx.type === 'in' ? -tx.amount : tx.amount;  // undo from fromBook
+  const toDelta   = tx.type === 'in' ?  tx.amount : -tx.amount; // apply to toBook
+
+  const prev = document.getElementById('trPreview');
+  const prevTx = document.getElementById('trPreviewText');
+  prevTx.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:110px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">${fromBook.emoji} ${fromBook.name}</div>
+        <div style="color:var(--accent-red);font-weight:700">${fmtFull(fromBook.balance)} → ${fmtFull(fromBook.balance + fromDelta)}</div>
+      </div>
+      <div style="font-size:20px;color:var(--accent-blue)">→</div>
+      <div style="flex:1;min-width:110px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">${toBook.emoji} ${toBook.name}</div>
+        <div style="color:var(--accent-green);font-weight:700">${fmtFull(toBook.balance)} → ${fmtFull(toBook.balance + toDelta)}</div>
+      </div>
+    </div>`;
+  prev.style.display = 'block';
+}
+
+// Called from topbar 🔄 Transfer button — manual transfer between books
+function openTransferModal() {
+  if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
+  if (books.length < 2) { showToast('⚠️ Ugu yaraan 2 buug ayaa loo baahan yahay!'); return; }
+
+  _transferTxIdx = -1;
+
+  document.getElementById('trTxCard').style.display = 'none';
+  document.getElementById('trFromGroup').style.display = 'block';
+  document.getElementById('trAmountGroup').style.display = 'block';
+  document.getElementById('trModalSub').textContent = 'Lacag ka wareejin buug uga wareejin buug kale';
+
+  const fromSel = document.getElementById('trFromBook');
+  const toSel   = document.getElementById('trToBook');
+  fromSel.innerHTML = books.map(b => `<option value="${b.id}">${b.emoji} ${b.name} — ${fmtFull(b.balance)}</option>`).join('');
+  toSel.innerHTML   = books.map(b => `<option value="${b.id}">${b.emoji} ${b.name} — ${fmtFull(b.balance)}</option>`).join('');
+  fromSel.selectedIndex = 0;
+  toSel.selectedIndex   = 1;
+  toSel.onchange = updateTransferPreview;
+
+  document.getElementById('trAmount').value = '';
+  document.getElementById('trDetail').value = '';
+  document.getElementById('trPreview').style.display = 'none';
+
+  document.getElementById('transferModal').classList.add('open');
+}
+
+function closeTransferModal() {
+  document.getElementById('transferModal').classList.remove('open');
+  _transferTxIdx = -1;
+}
+
+function updateTransferPreview() {
+  const fromId = parseInt(document.getElementById('trFromBook').value);
+  const toId   = parseInt(document.getElementById('trToBook').value);
+  const amount = parseFloat(document.getElementById('trAmount').value);
+  const prev   = document.getElementById('trPreview');
+  if (!amount || amount <= 0 || fromId === toId) { prev.style.display = 'none'; return; }
+  const fromBook = books.find(b => b.id === fromId);
+  const toBook   = books.find(b => b.id === toId);
+  if (!fromBook || !toBook) { prev.style.display = 'none'; return; }
+  document.getElementById('trPreviewText').innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:110px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">${fromBook.emoji} ${fromBook.name}</div>
+        <div style="color:var(--accent-red);font-weight:700">${fmtFull(fromBook.balance)} → ${fmtFull(fromBook.balance - amount)}</div>
+      </div>
+      <div style="font-size:20px;color:var(--accent-blue)">→</div>
+      <div style="flex:1;min-width:110px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">${toBook.emoji} ${toBook.name}</div>
+        <div style="color:var(--accent-green);font-weight:700">${fmtFull(toBook.balance)} → ${fmtFull(toBook.balance + amount)}</div>
+      </div>
+    </div>`;
+  prev.style.display = 'block';
+}
+
+async function submitTransfer() {
+  // ── TX TRANSFER MODE ──
+  if (_transferTxIdx >= 0) {
+    const tx = allTx[_transferTxIdx];
+    if (!tx) return;
+    const toId = parseInt(document.getElementById('trToBook').value);
+    const toBook   = books.find(b => b.id === toId);
+    const fromBook = books.find(b => b.name === tx.book);
+    if (!toBook || !fromBook) return;
+
+    const detail = document.getElementById('trDetail').value.trim();
+
+    // Undo tx effect on fromBook, apply on toBook
+    if (tx.type === 'in')  { fromBook.balance -= tx.amount; toBook.balance += tx.amount; }
+    else                   { fromBook.balance += tx.amount; toBook.balance -= tx.amount; }
+    fromBook.updated = toBook.updated = 'Hadda';
+
+    // Update the transaction itself — change its book
+    const oldBook = tx.book;
+    tx.book = toBook.name;
+    if (detail) tx.detail = detail;
+    tx.balance = toBook.balance;
+
+    await fbSaveTx(tx);
+    await fbSaveBook(fromBook);
+    await fbSaveBook(toBook);
+
+    renderSidebarBooks();
+    renderBooksGrid();
+    renderTable(allTx, 'txTable', 'txCount');
+    applyFilters();
+    updateStats();
+    closeTransferModal();
+    showToast(`✅ Transaction waxaa laga wareejiyay ${oldBook} → ${toBook.name}`);
+    window._notifSuppressUntil = Date.now() + 3000;
+    return;
+  }
+
+  // ── MANUAL TRANSFER MODE ──
+  const fromId  = parseInt(document.getElementById('trFromBook').value);
+  const toId    = parseInt(document.getElementById('trToBook').value);
+  const amount  = parseFloat(document.getElementById('trAmount').value);
+  const detail  = document.getElementById('trDetail').value.trim() || 'Transfer';
+
+  if (fromId === toId)        { showToast('⚠️ Buugga From iyo To waa inay kala duwan yihiin!'); return; }
+  if (!amount || amount <= 0) { showToast('⚠️ Geli xaddi sahih ah!'); return; }
+
+  const fromBook = books.find(b => b.id === fromId);
+  const toBook   = books.find(b => b.id === toId);
+  if (!fromBook || !toBook) return;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}).replace(/ /g,', ');
+
+  fromBook.balance -= amount;
+  toBook.balance   += amount;
+  fromBook.updated = toBook.updated = 'Hadda';
+
+  const txOut = { date:dateStr, dateObj:now, detail:`🔄 Transfer → ${toBook.name}: ${detail}`,   book:fromBook.name, type:'out', amount, balance:fromBook.balance };
+  const txIn  = { date:dateStr, dateObj:now, detail:`🔄 Transfer ← ${fromBook.name}: ${detail}`, book:toBook.name,   type:'in',  amount, balance:toBook.balance  };
+
+  allTx.unshift(txIn);
+  allTx.unshift(txOut);
+
+  await fbSaveTx(txOut);
+  await fbSaveTx(txIn);
+  await fbSaveBook(fromBook);
+  await fbSaveBook(toBook);
+
+  renderSidebarBooks();
+  renderBooksGrid();
+  renderTable(allTx, 'txTable', 'txCount');
+  applyFilters();
+  updateStats();
+  closeTransferModal();
+  showToast(`✅ ${fmtFull(amount)} waxaa laga wareejiyay ${fromBook.name} → ${toBook.name}`);
+  window._notifSuppressUntil = Date.now() + 3000;
+}
+
 async function submitEntry() {
   const detail = document.getElementById('mDetail').value.trim();
   const amount = parseFloat(document.getElementById('mAmount').value);
@@ -3810,17 +4046,22 @@ document.addEventListener('wheel', function(e) {
 }, { passive: true });
 
 // ── CLOSE MODAL ON OUTSIDE CLICK ──
-document.getElementById('modalOverlay').addEventListener('click', function(e){
-  if(e.target===this) closeModal();
-});
-document.getElementById('newBookModal').addEventListener('click', function(e){
-  if(e.target===this) closeNewBookModal();
-});
-document.getElementById('editBookModal').addEventListener('click', function(e){
-  if(e.target===this) closeEditBookModal();
-});
-document.getElementById('addMemberModal').addEventListener('click', function(e){
-  if(e.target===this) closeAddMemberModal();
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('modalOverlay').addEventListener('click', function(e){
+    if(e.target===this) closeModal();
+  });
+  document.getElementById('newBookModal').addEventListener('click', function(e){
+    if(e.target===this) closeNewBookModal();
+  });
+  document.getElementById('editBookModal').addEventListener('click', function(e){
+    if(e.target===this) closeEditBookModal();
+  });
+  document.getElementById('addMemberModal').addEventListener('click', function(e){
+    if(e.target===this) closeAddMemberModal();
+  });
+  document.getElementById('transferModal').addEventListener('click', function(e){
+    if(e.target===this) closeTransferModal();
+  });
 });
 // Close books dropdown when clicking outside it
 document.addEventListener('click', function(e){
@@ -4581,39 +4822,75 @@ document.addEventListener('appReady', function() {
 
 // ══════════════════════════════════════════════
 //  FEATURE 1: AUTO-LOCK WHEN APP GOES TO BACKGROUND
+//  Lock = show password overlay WITHOUT logging out.
+//  Unlock = verify password → remove overlay.
 // ══════════════════════════════════════════════
 (function() {
   let _isLocked = false;
 
   function lockApp() {
-    // Only lock if user is logged in
-    if (!window.currentUser) return;
+    if (!window.currentUser) return;     // nothing to lock
+    if (_isLocked) return;               // already locked
     _isLocked = true;
+
+    // Update subtitle with user's name
+    const sub = document.getElementById('alUserSub');
+    if (sub && window.currentUser) {
+      sub.textContent = 'Ku soo dhawoow ' + window.currentUser.name.split(' ')[0] + ' – geli password-kaaga';
+    }
+
+    // Clear password field and hide error
+    const inp = document.getElementById('alPasswordInput');
+    const err = document.getElementById('alError');
+    if (inp) inp.value = '';
+    if (err) err.style.display = 'none';
+
     document.getElementById('autoLockOverlay').classList.add('show');
+
+    // Auto-focus password input after a short delay
+    setTimeout(() => { if (inp) inp.focus(); }, 300);
   }
 
   window.unlockApp = function() {
+    const inp = document.getElementById('alPasswordInput');
+    const err = document.getElementById('alError');
+    const pw  = inp ? inp.value : '';
+
+    // Find the current user's record in teamMembers to verify password
+    const member = teamMembers.find(m => m.username === window.currentUser.username);
+
+    if (!member || member.password !== pw) {
+      if (err) { err.style.display = 'block'; }
+      if (inp) { inp.value = ''; inp.focus(); }
+      // Shake animation
+      const overlay = document.getElementById('autoLockOverlay');
+      overlay.classList.remove('shake');
+      void overlay.offsetWidth; // reflow to restart animation
+      overlay.classList.add('shake');
+      setTimeout(() => overlay.classList.remove('shake'), 450);
+      return;
+    }
+
+    // Correct password — unlock
     _isLocked = false;
+    if (err) err.style.display = 'none';
     document.getElementById('autoLockOverlay').classList.remove('show');
-    // Show the login screen to re-authenticate
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('autoLockOverlay').classList.remove('show');
-    // Actually force re-login for security
-    doLogout();
+    // Restart idle timer
+    if (window.resetIdleTimer) window.resetIdleTimer();
   };
 
-  // Listen for page visibility change (app goes to background / screen off)
+  // Listen for page visibility change (user switches apps / tabs)
   document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-      // App went to background
-      lockApp();
-    }
+    if (document.hidden) lockApp();
   });
 
-  // Also listen for page blur (switching apps on mobile)
+  // Also catches mobile "home button" / app switcher
   window.addEventListener('pagehide', function() {
     lockApp();
   });
+
+  // Expose lockApp globally so idle timeout can use it
+  window.lockApp = lockApp;
 })();
 
 
@@ -4942,7 +5219,59 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
-<!-- NOTIFICATION POPUP -->
+<!-- TRANSFER MODAL -->
+<div class="modal-overlay" id="transferModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">🔄 Transfer – Wareejin Transaction</div>
+    <div class="modal-sub" id="trModalSub">U wareejin transaction buug kale</div>
+
+    <!-- Transaction info card (shown in tx-transfer mode) -->
+    <div id="trTxCard" style="display:none;background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:16px;border:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Transaction la wareejinayo</div>
+      <div id="trTxCardContent"></div>
+    </div>
+
+    <div class="form-group" id="trFromGroup">
+      <label class="form-label">📤 Buugga La Wareejinayo (From)</label>
+      <select class="form-input" id="trFromBook" onchange="updateTransferPreview()"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">📥 Buugga La Gaynayo (To)</label>
+      <select class="form-input" id="trToBook" onchange="updateTransferPreview()"></select>
+    </div>
+    <div class="form-group" id="trAmountGroup">
+      <label class="form-label">💵 Xaddiga ($)</label>
+      <input class="form-input" id="trAmount" type="number" placeholder="0.00" min="0.01" step="0.01" oninput="updateTransferPreview()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">📝 Faahfaahinta (Ikhtiyaari)</label>
+      <input class="form-input" id="trDetail" type="text" placeholder="Sababta wareejinta...">
+    </div>
+    <div id="trPreview" style="display:none;background:var(--surface2);border-radius:10px;padding:12px;margin:4px 0 8px;border:1px solid var(--border);font-size:13px">
+      <div style="color:var(--text-muted);font-size:11px;margin-bottom:6px;text-transform:uppercase;font-weight:700">Preview</div>
+      <div id="trPreviewText" style="color:var(--text-primary)"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTransferModal()">Jooji</button>
+      <button class="btn-submit" style="background:linear-gradient(135deg,#7c3aed,#4f8aff)" onclick="submitTransfer()">🔄 Wareejin</button>
+    </div>
+  </div>
+</div>
+
+<!-- FINGERPRINT SETUP MODAL -->
+<div class="modal-overlay" id="fingerprintModal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🔐</div>
+    <div class="modal-title">Fingerprint / Face ID</div>
+    <div class="modal-sub" id="fpModalSub">Ku daro fingerprint si aad si dhakhso leh ugu soo gali karto</div>
+    <div id="fpStatus" style="margin:16px 0;min-height:40px;font-size:14px;color:var(--text-secondary)"></div>
+    <div class="modal-actions" style="flex-direction:column;gap:8px">
+      <button class="btn-submit green" id="fpSetupBtn" onclick="setupFingerprint()">👆 Diwaan Gali Fingerprint</button>
+      <button class="btn-cancel" onclick="closeFingerprintModal()">Dambe</button>
+    </div>
+  </div>
+</div>
+
 <div id="notifPopup" class="notif-popup">
   <div class="notif-popup-header">
     <div class="notif-popup-title">🔔 Macaamiil Cusub</div>
@@ -4972,6 +5301,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="mobile-fab-group">
   <button class="fab-btn fab-in" onclick="openModal('in')" title="Cash In">＋</button>
   <button class="fab-btn fab-out" onclick="openModal('out')" title="Cash Out">－</button>
+  <button class="fab-btn" onclick="openTransferModal()" title="Transfer" style="background:linear-gradient(135deg,#7c3aed,#4f8aff);font-size:18px">🔄</button>
 </div>
 
 <!-- Mobile Bottom Navigation -->
