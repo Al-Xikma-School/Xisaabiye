@@ -1091,6 +1091,48 @@ body.offline-mode #loginScreen { margin-top: 46px; }
   cursor: pointer; letter-spacing: 0.5px;
 }
 #autoLockOverlay .al-btn:hover { opacity: 0.9; }
+
+/* ── IDLE TIMEOUT WARNING OVERLAY ── */
+#idleWarningOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(10,12,26,0.96);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 14px;
+  backdrop-filter: blur(6px);
+}
+#idleWarningOverlay.show { display: flex; }
+#idleWarningOverlay .iw-icon { font-size: 60px; animation: idlePulse 1s infinite; }
+@keyframes idlePulse {
+  0%,100% { transform: scale(1); opacity:1; }
+  50%      { transform: scale(1.1); opacity:0.7; }
+}
+#idleWarningOverlay .iw-title {
+  color: #f0f2ff; font-size: 22px; font-weight: 800; text-align:center;
+}
+#idleWarningOverlay .iw-sub {
+  color: #8892b0; font-size: 13px; text-align:center; max-width:300px;
+}
+#idleWarningOverlay .iw-countdown {
+  font-size: 48px; font-weight: 900;
+  background: linear-gradient(135deg,#ff4d6d,#ff8c42);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+#idleWarningOverlay .iw-btn {
+  background: linear-gradient(135deg,#4f8aff,#00e09e);
+  color:#fff; border:none; border-radius:12px;
+  padding:14px 44px; font-size:16px; font-weight:700;
+  cursor:pointer; letter-spacing:0.5px; margin-top:4px;
+}
+#idleWarningOverlay .iw-btn:hover { opacity:0.9; }
+#idleWarningOverlay .iw-logout {
+  color:#8892b0; font-size:12px; cursor:pointer; text-decoration:underline;
+}
 </style>
 </head>
 <body>
@@ -1252,6 +1294,16 @@ body.offline-mode #loginScreen { margin-top: 46px; }
   <button class="al-btn" onclick="unlockApp()">🔐 Fur App-ka</button>
 </div>
 
+<!-- IDLE TIMEOUT WARNING OVERLAY -->
+<div id="idleWarningOverlay">
+  <div class="iw-icon">⏱️</div>
+  <div class="iw-title">Ma waxaad halkan joogtaa?</div>
+  <div class="iw-sub">Waxaad la shaqayn joogsatay muddo yar. Haddaadan jawaab bixin, sistamku si toos ah ayuu u xirnayaa.</div>
+  <div class="iw-countdown" id="idleCountdown">30</div>
+  <button class="iw-btn" onclick="resetIdleTimer()">✅ Haa, Weli Joogaa</button>
+  <span class="iw-logout" onclick="doLogout()">Kala bax hadda</span>
+</div>
+
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">
@@ -1266,7 +1318,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     <div class="login-sub">Geli koodka iskuulka, username iyo password-kaaga</div>
     <div class="login-error" id="loginError">⚠️ Koodka, username ama password-ka waa khalad!</div>
     <label class="login-label">Koodka Iskuulka</label>
-    <input class="login-input" id="loginSchoolCode" type="number" placeholder="e.g. 1018" autocomplete="off" style="letter-spacing:3px;font-weight:800;font-size:18px">
+    <input class="login-input" id="loginSchoolCode" type="number" placeholder="e.g. 1011" autocomplete="off" style="letter-spacing:3px;font-weight:800;font-size:18px">
     <label class="login-label">Username</label>
     <input class="login-input" id="loginUsername" type="text" placeholder="username..." autocomplete="username">
     <label class="login-label">Password</label>
@@ -1319,7 +1371,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
     <div>
       <div class="topbar-title" id="pageTitle">Dashboard</div>
-      <div class="topbar-sub"> Al-Hikma School · Garowe, Puntland</div>
+      <div class="topbar-sub">Jaamacad Al-Hikma · Garowe, Puntland</div>
     </div>
     <div class="topbar-spacer"></div>
     <button class="btn btn-green" onclick="openModal('in')">＋ Cash In</button>
@@ -1340,13 +1392,13 @@ body.offline-mode #loginScreen { margin-top: 46px; }
       <div class="stat-cards">
         <div class="stat-card green">
           <div class="stat-icon green">💰</div>
-          <div class="stat-label">Wadarta Dakhliga</div>
+          <div class="stat-label">Wadarta Cash In</div>
           <div class="stat-value green" id="totalIn">0</div>
           <div class="stat-change">Bishaan</div>
         </div>
         <div class="stat-card red">
           <div class="stat-icon red">📤</div>
-          <div class="stat-label">Wadarta Kharashka </div>
+          <div class="stat-label">Wadarta Cash Out</div>
           <div class="stat-value red" id="totalOut">0</div>
           <div class="stat-change">Bishaan</div>
         </div>
@@ -1369,7 +1421,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
         <div class="chart-card">
           <div class="chart-header">
             <div>
-              <div class="chart-title">Lacagta Bil kasta</div>
+              <div class="chart-title">Lacagta Bishaan kasta</div>
               <div class="chart-sub">Cash In vs Cash Out – 2026</div>            </div>
             <div class="chart-legend">
               <div class="legend-item"><div class="legend-dot" style="background:var(--accent-green)"></div> Cash In</div>
@@ -1392,7 +1444,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
       <!-- Recent Transactions -->
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">Dhaqdhaqaaqii Ugu Dambeeyey</div>
+          <div class="table-title">Macaamiilada Ugu Dambeeyey</div>
           <div class="table-count" id="txCount">0 entries</div>
           <div class="search-box">
             <span style="color:var(--text-muted)">🔍</span>
@@ -1621,14 +1673,14 @@ body.offline-mode #loginScreen { margin-top: 46px; }
       <!-- Per-school report table -->
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">📋 Warbixinta Iskuul kasta</div>
+          <div class="table-title">📋 Koobaadka Iskuul kasta</div>
           <div class="table-count" id="rptBookCount">–</div>
         </div>
         <table>
           <thead>
             <tr>
               <th>Iskuulka</th>
-              <th style="text-align:right">Dakhliga Soo Galay</th>
+              <th style="text-align:right">Dakhliga Soo Gashay</th>
               <th style="text-align:right">U Dhiman Dakhli</th>
               <th style="text-align:right">Kharashka la Bixiyay</th>
               <th style="text-align:right">U Dhiman Kharash</th>
@@ -1696,6 +1748,42 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 
       <!-- Budget Filter Bar -->
       <div class="filter-bar" id="budgetFilterBar">
+        <div class="filter-group" style="position:relative">
+          <span class="filter-label">⏱ Mudada</span>
+          <div class="multiselect-wrapper" id="budDurationWrapper">
+            <button class="filter-select multiselect-btn" id="budDurationBtn" onclick="toggleBudDurationDropdown(event)" style="cursor:pointer;min-width:140px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span id="budDurationLabel">Waqti Kasta</span>
+              <span style="font-size:10px;color:var(--text-muted)">▾</span>
+            </button>
+            <div class="multiselect-dropdown" id="budDurationDropdown" style="display:none;min-width:200px">
+              <label class="ms-option dur-option" onclick="setBudDuration('all',this)">
+                <span class="dur-radio" id="bud-dur-all">◉</span> Waqti Kasta
+              </label>
+              <label class="ms-option dur-option" onclick="setBudDuration('today',this)">
+                <span class="dur-radio" id="bud-dur-today">○</span> Maanta
+              </label>
+              <label class="ms-option dur-option" onclick="setBudDuration('week',this)">
+                <span class="dur-radio" id="bud-dur-week">○</span> Usbuucan
+              </label>
+              <label class="ms-option dur-option" onclick="setBudDuration('month',this)">
+                <span class="dur-radio" id="bud-dur-month">○</span> Bishaan
+              </label>
+              <label class="ms-option dur-option" onclick="setBudDuration('custom',this)">
+                <span class="dur-radio" id="bud-dur-custom">○</span> Taariikhda...
+              </label>
+              <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+              <label class="ms-option" style="color:var(--accent-blue)">
+                <input type="checkbox" id="budIncludeOpeningBal" onchange="applyBudgetFilter()" style="accent-color:var(--accent-blue);width:14px;height:14px;cursor:pointer">
+                Include opening balance
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="filter-group" id="budCustomDateGroup" style="display:none">
+          <input type="date" class="filter-select" id="budFilterDateFrom" onchange="applyBudgetFilter()" style="width:140px">
+          <span style="color:var(--text-muted);font-size:12px">→</span>
+          <input type="date" class="filter-select" id="budFilterDateTo" onchange="applyBudgetFilter()" style="width:140px">
+        </div>
         <div class="filter-group">
           <span class="filter-label">📚 Iskuulka</span>
           <div class="multiselect-wrapper" id="budMultiselectWrapper">
@@ -1775,7 +1863,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
             <tr>
               <th>Iskuulka</th>
               <th style="text-align:right">Dakhli Miisaaniyad</th>
-              <th style="text-align:right">Dakhli Soo Galay</th>
+              <th style="text-align:right">Dakhli Soo Gashay</th>
               <th style="text-align:right">U Dhiman Dakhli</th>
               <th style="text-align:right">Kharash Miisaaniyad</th>
               <th style="text-align:right">Kharash la Bixiyay</th>
@@ -2145,7 +2233,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 <div class="modal-overlay" id="deleteBookModal">
   <div class="modal" style="max-width:360px">
     <div class="modal-title" style="color:#ff4d6d">🗑️ Tirtir Buugga</div>
-    <div class="modal-sub">Buugga <span id="deleteBookName" style="color:#ff4d6d;font-weight:600"></span> iyo dhammaan transactions-kiisa waa la tirtiri doonaa ee iska hubi.</div>
+    <div class="modal-sub">Buugga <span id="deleteBookName" style="color:#ff4d6d;font-weight:600"></span> iyo dhammaan transactions-kiisa waa la tirtiri doonaa.</div>
     <div class="form-group" style="margin-top:12px">
       <label class="form-label">🔒 Password</label>
       <input class="form-input" id="deleteBookPassword" type="password" placeholder="••••••••" autocomplete="current-password">
@@ -4111,6 +4199,37 @@ function applyBudgetFilter() {
   const statVal  = document.getElementById('budFilterStatus')?.value || 'all';
   const search   = (document.getElementById('budFilterSearch')?.value || '').toLowerCase();
 
+  // ── duration filter for transactions ──
+  const now = new Date();
+  let durFrom = null, durTo = null;
+  if (budCurrentDuration === 'today') {
+    durFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    durTo   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  } else if (budCurrentDuration === 'week') {
+    const day = now.getDay();
+    durFrom = new Date(now); durFrom.setDate(now.getDate() - day); durFrom.setHours(0,0,0,0);
+    durTo   = new Date(now); durTo.setDate(now.getDate() + (6-day)); durTo.setHours(23,59,59,999);
+  } else if (budCurrentDuration === 'month') {
+    durFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+    durTo   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59, 999);
+  } else if (budCurrentDuration === 'custom') {
+    const fromVal = document.getElementById('budFilterDateFrom')?.value;
+    const toVal   = document.getElementById('budFilterDateTo')?.value;
+    if (fromVal) { durFrom = new Date(fromVal); durFrom.setHours(0,0,0,0); }
+    if (toVal)   { durTo   = new Date(toVal);   durTo.setHours(23,59,59,999); }
+  }
+
+  const includeOpening = document.getElementById('budIncludeOpeningBal')?.checked || false;
+
+  const filteredTx = allTx.filter(t => {
+    if (!includeOpening && t.isOpening) return false;
+    if (!t.dateObj) return true;
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj);
+    if (durFrom && d < durFrom) return false;
+    if (durTo   && d > durTo)   return false;
+    return true;
+  });
+
   _budFilteredBooks = books.filter(b => {
     // multiselect book filter
     if (!_budSelectedBooks.has('__all__') && !_budSelectedBooks.has(String(b.id))) return false;
@@ -4120,8 +4239,8 @@ function applyBudgetFilter() {
     if (statVal !== 'all') {
       const allocOut = budgets['out_'+b.id] ?? 0;
       const allocIn  = budgets['in_'+b.id]  ?? 0;
-      const bOut = allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
-      const bIn  = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
+      const bOut = filteredTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
+      const bIn  = filteredTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
       if (statVal === 'over'    && !(allocOut > 0 && bOut > allocOut)) return false;
       if (statVal === 'ok'      && !(allocOut > 0 && bOut <= allocOut)) return false;
       if (statVal === 'surplus' && !(allocIn  > 0 && bIn  >= allocIn))  return false;
@@ -4144,6 +4263,16 @@ function clearBudgetFilter() {
   if (typeSel) typeSel.value = 'all';
   if (statSel) statSel.value = 'all';
   if (srch)    srch.value   = '';
+  // reset duration
+  setBudDuration('all', null);
+  const fromEl = document.getElementById('budFilterDateFrom');
+  const toEl   = document.getElementById('budFilterDateTo');
+  if (fromEl) fromEl.value = '';
+  if (toEl)   toEl.value   = '';
+  const customGroup = document.getElementById('budCustomDateGroup');
+  if (customGroup) customGroup.style.display = 'none';
+  const openingCb = document.getElementById('budIncludeOpeningBal');
+  if (openingCb) openingCb.checked = false;
   // reset multiselect
   _budSelectedBooks = new Set(['__all__']);
   const allCb = document.getElementById('budMsAll')?.querySelector('input');
@@ -4152,6 +4281,35 @@ function clearBudgetFilter() {
   _updateBudMultiselectLabel();
   _budFilteredBooks = null;
   renderBudgetPage();
+}
+
+// ── BUDGET DURATION FILTER ──
+let budCurrentDuration = 'all';
+
+function toggleBudDurationDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('budDurationDropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('budDurationWrapper');
+  if(wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('budDurationDropdown');
+    if(dd) dd.style.display = 'none';
+  }
+});
+
+function setBudDuration(val, labelEl) {
+  budCurrentDuration = val;
+  document.getElementById('budDurationLabel').textContent = durLabels[val] || val;
+  ['all','today','week','month','custom'].forEach(k => {
+    const el = document.getElementById('bud-dur-'+k);
+    if(el) el.textContent = k === val ? '◉' : '○';
+    if(el) el.style.color = k === val ? 'var(--accent-blue)' : 'var(--text-muted)';
+  });
+  const customGroup = document.getElementById('budCustomDateGroup');
+  if(customGroup) customGroup.style.display = val === 'custom' ? 'flex' : 'none';
+  applyBudgetFilter();
 }
 
 // Debounce helper so budget inputs update after user pauses typing (no focus jump)
@@ -4460,7 +4618,88 @@ document.addEventListener('appReady', function() {
 
 
 // ══════════════════════════════════════════════
-//  FEATURE 3: REAL-TIME NOTIFICATIONS (sound + popup)
+//  FEATURE: IDLE TIMEOUT AUTO-LOGOUT (3 minutes)
+// ══════════════════════════════════════════════
+(function() {
+  const IDLE_TIMEOUT_MS  = 3 * 60 * 1000; // 3 daqiiqo
+  const WARNING_SECS     = 30;             // 30 ilbiriqsi digniinta
+
+  let idleTimer      = null;
+  let countdownTimer = null;
+  let countdownVal   = WARNING_SECS;
+  let isWarning      = false;
+
+  function showWarning() {
+    if (!window.currentUser) return;
+    isWarning = true;
+    countdownVal = WARNING_SECS;
+    document.getElementById('idleCountdown').textContent = countdownVal;
+    document.getElementById('idleWarningOverlay').classList.add('show');
+
+    countdownTimer = setInterval(function() {
+      countdownVal--;
+      const el = document.getElementById('idleCountdown');
+      if (el) el.textContent = countdownVal;
+      if (countdownVal <= 0) {
+        clearInterval(countdownTimer);
+        document.getElementById('idleWarningOverlay').classList.remove('show');
+        isWarning = false;
+        doLogout();
+      }
+    }, 1000);
+  }
+
+  function hideWarning() {
+    isWarning = false;
+    clearInterval(countdownTimer);
+    document.getElementById('idleWarningOverlay').classList.remove('show');
+  }
+
+  function startIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function() {
+      if (window.currentUser) showWarning();
+    }, IDLE_TIMEOUT_MS);
+  }
+
+  window.resetIdleTimer = function() {
+    hideWarning();
+    startIdleTimer();
+  };
+
+  // Track any user activity
+  const EVENTS = ['mousemove','mousedown','keydown','touchstart','scroll','click','wheel'];
+  EVENTS.forEach(function(evt) {
+    document.addEventListener(evt, function() {
+      if (!window.currentUser) return;
+      if (isWarning) return; // don't reset while warning is showing
+      startIdleTimer();
+    }, { passive: true });
+  });
+
+  // Start timer on login — hook into doLogin success
+  const _origLogin = window.doLogin;
+  // We patch via MutationObserver watching loginScreen hide
+  const loginScreenObserver = new MutationObserver(function() {
+    const ls = document.getElementById('loginScreen');
+    if (ls && ls.style.display === 'none') {
+      startIdleTimer();
+    }
+  });
+  document.addEventListener('DOMContentLoaded', function() {
+    const ls = document.getElementById('loginScreen');
+    if (ls) loginScreenObserver.observe(ls, { attributes: true, attributeFilter: ['style'] });
+  });
+
+  // Stop timer on logout
+  const _origLogout = window.doLogout;
+  window.doLogout = function() {
+    clearTimeout(idleTimer);
+    clearInterval(countdownTimer);
+    hideWarning();
+    _origLogout.call(this);
+  };
+})();
 //  Fires when ANOTHER user adds a transaction
 // ══════════════════════════════════════════════
 (function() {
