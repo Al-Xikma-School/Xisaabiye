@@ -1266,7 +1266,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     <div class="login-sub">Geli koodka iskuulka, username iyo password-kaaga</div>
     <div class="login-error" id="loginError">⚠️ Koodka, username ama password-ka waa khalad!</div>
     <label class="login-label">Koodka Iskuulka</label>
-    <input class="login-input" id="loginSchoolCode" type="number" placeholder="e.g. 1011" autocomplete="off" style="letter-spacing:3px;font-weight:800;font-size:18px">
+    <input class="login-input" id="loginSchoolCode" type="number" placeholder="e.g. 1018" autocomplete="off" style="letter-spacing:3px;font-weight:800;font-size:18px">
     <label class="login-label">Username</label>
     <input class="login-input" id="loginUsername" type="text" placeholder="username..." autocomplete="username">
     <label class="login-label">Password</label>
@@ -1340,13 +1340,13 @@ body.offline-mode #loginScreen { margin-top: 46px; }
       <div class="stat-cards">
         <div class="stat-card green">
           <div class="stat-icon green">💰</div>
-          <div class="stat-label">Wadarta Cash In</div>
+          <div class="stat-label">Wadarta Dakhliga</div>
           <div class="stat-value green" id="totalIn">0</div>
           <div class="stat-change">Bishaan</div>
         </div>
         <div class="stat-card red">
           <div class="stat-icon red">📤</div>
-          <div class="stat-label">Wadarta Cash Out</div>
+          <div class="stat-label">Wadarta Kharashka </div>
           <div class="stat-value red" id="totalOut">0</div>
           <div class="stat-change">Bishaan</div>
         </div>
@@ -1369,7 +1369,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
         <div class="chart-card">
           <div class="chart-header">
             <div>
-              <div class="chart-title">Lacagta Bishaan kasta</div>
+              <div class="chart-title">Lacagta Bil kasta</div>
               <div class="chart-sub">Cash In vs Cash Out – 2026</div>            </div>
             <div class="chart-legend">
               <div class="legend-item"><div class="legend-dot" style="background:var(--accent-green)"></div> Cash In</div>
@@ -1392,7 +1392,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
       <!-- Recent Transactions -->
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">Macaamiilada Ugu Dambeeyey</div>
+          <div class="table-title">Dhaqdhaqaaqii Ugu Dambeeyey</div>
           <div class="table-count" id="txCount">0 entries</div>
           <div class="search-box">
             <span style="color:var(--text-muted)">🔍</span>
@@ -1621,14 +1621,14 @@ body.offline-mode #loginScreen { margin-top: 46px; }
       <!-- Per-school report table -->
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">📋 Koobaadka Iskuul kasta</div>
+          <div class="table-title">📋 Warbixinta Iskuul kasta</div>
           <div class="table-count" id="rptBookCount">–</div>
         </div>
         <table>
           <thead>
             <tr>
               <th>Iskuulka</th>
-              <th style="text-align:right">Dakhliga Soo Gashay</th>
+              <th style="text-align:right">Dakhliga Soo Galay</th>
               <th style="text-align:right">U Dhiman Dakhli</th>
               <th style="text-align:right">Kharashka la Bixiyay</th>
               <th style="text-align:right">U Dhiman Kharash</th>
@@ -1775,7 +1775,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
             <tr>
               <th>Iskuulka</th>
               <th style="text-align:right">Dakhli Miisaaniyad</th>
-              <th style="text-align:right">Dakhli Soo Gashay</th>
+              <th style="text-align:right">Dakhli Soo Galay</th>
               <th style="text-align:right">U Dhiman Dakhli</th>
               <th style="text-align:right">Kharash Miisaaniyad</th>
               <th style="text-align:right">Kharash la Bixiyay</th>
@@ -2145,7 +2145,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 <div class="modal-overlay" id="deleteBookModal">
   <div class="modal" style="max-width:360px">
     <div class="modal-title" style="color:#ff4d6d">🗑️ Tirtir Buugga</div>
-    <div class="modal-sub">Buugga <span id="deleteBookName" style="color:#ff4d6d;font-weight:600"></span> iyo dhammaan transactions-kiisa waa la tirtiri doonaa.</div>
+    <div class="modal-sub">Buugga <span id="deleteBookName" style="color:#ff4d6d;font-weight:600"></span> iyo dhammaan transactions-kiisa waa la tirtiri doonaa ee iska hubi.</div>
     <div class="form-group" style="margin-top:12px">
       <label class="form-label">🔒 Password</label>
       <input class="form-input" id="deleteBookPassword" type="password" placeholder="••••••••" autocomplete="current-password">
