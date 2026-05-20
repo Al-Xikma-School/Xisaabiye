@@ -1395,7 +1395,6 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     <div class="topbar-spacer"></div>
     <button class="btn btn-green" onclick="openModal('in')">＋ Cash In</button>
     <button class="btn btn-red" onclick="openModal('out')">－ Cash Out</button>
-    <button class="btn" style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(79,138,255,0.2));color:#a78bfa;border:1px solid rgba(124,58,237,0.35);font-weight:700" onclick="openTransferModal()" title="Wareejin lacag ka buug ugu buug">🔄 Transfer</button>
     <div class="user-pill">
       <div class="user-avatar">F</div>
       <div class="user-name">Farxaan C.</div>
@@ -4880,13 +4879,29 @@ document.addEventListener('appReady', function() {
   };
 
   // Listen for page visibility change (user switches apps / tabs)
+  // Waxaan sugaynaa 30 ilbiriqsi kahor xidhitaanka - haddii aad si dhakhso ah u soo noqoto, ma xidhmi
+  let _lockDelayTimer = null;
+  const LOCK_DELAY_MS = 30 * 1000; // 30 ilbiriqsi
+
   document.addEventListener('visibilitychange', function() {
-    if (document.hidden) lockApp();
+    if (document.hidden) {
+      // Bilow timer-ka laakiin ha xidhin si toos ah
+      _lockDelayTimer = setTimeout(function() {
+        lockApp();
+      }, LOCK_DELAY_MS);
+    } else {
+      // Haddii aad soo noqotay kahor wakhtigii, jooji timer-ka
+      if (_lockDelayTimer) {
+        clearTimeout(_lockDelayTimer);
+        _lockDelayTimer = null;
+      }
+    }
   });
 
   // Also catches mobile "home button" / app switcher
   window.addEventListener('pagehide', function() {
-    lockApp();
+    // pagehide waxay dhacaysaa marka app-ka si buuxda la xidho ama la bedelo
+    // Ma xidhi si toos ah - visibilitychange timer ayaa qabanaya
   });
 
   // Expose lockApp globally so idle timeout can use it
