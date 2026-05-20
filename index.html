@@ -690,6 +690,68 @@
   }
   .toast.show { transform: translateY(0); opacity: 1; }
 
+  /* ── NOTIFICATION POPUP ── */
+  .notif-popup {
+    position: fixed; top: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--accent-blue);
+    border-left: 4px solid var(--accent-blue);
+    border-radius: 14px;
+    padding: 14px 18px;
+    min-width: 280px; max-width: 360px;
+    z-index: 9998;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transform: translateX(400px); opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34,1.3,0.64,1);
+    pointer-events: none;
+  }
+  .notif-popup.in { border-left-color: var(--accent-green); }
+  .notif-popup.out { border-left-color: var(--accent-red); }
+  .notif-popup.show { transform: translateX(0); opacity: 1; pointer-events: all; }
+  .notif-popup-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .notif-popup-title { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .notif-popup-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 0; line-height: 1; }
+  .notif-popup-close:hover { color: var(--text-primary); }
+  .notif-popup-name { font-size: 15px; font-weight: 800; color: var(--text-primary); margin-bottom: 3px; }
+  .notif-popup-amount { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+  .notif-popup-amount.in { color: var(--accent-green); }
+  .notif-popup-amount.out { color: var(--accent-red); }
+  .notif-popup-meta { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+  .notif-sound-btn { display: none; }
+
+  /* ── ENTRY HISTORY ── */
+  .entry-history-section {
+    margin-top: 16px;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+  }
+  .entry-history-title {
+    font-size: 11px; font-weight: 800; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .history-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .history-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent-blue); flex-shrink: 0; margin-top: 4px;
+  }
+  .history-dot.original { background: var(--text-muted); }
+  .history-label { font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 3px; }
+  .history-fields { display: flex; flex-direction: column; gap: 2px; }
+  .history-field { font-size: 12px; color: var(--text-primary); }
+  .history-field span { color: var(--text-muted); }
+  .history-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
   /* budget */
   .budget-input {
     background: var(--surface2);
@@ -2433,7 +2495,7 @@ function renderTable(data, tbodyId, countId) {
     return `
     <tr>
       <td><div class="td-date">${tx.date}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${tx.dateObj ? (() => { const d = tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); })() : ''}</div></td>
-      <td><div class="td-detail">${tx.detail}${editedBadge}</div><div class="td-sub">Adiga</div></td>
+      <td style="cursor:pointer" onclick="openEntryDetailsModal(${realIdx})" title="Faahfaahinta fiiri"><div class="td-detail">${tx.detail}${editedBadge}</div><div class="td-sub">Adiga</div></td>
       <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span></td>
       <td><div class="td-amount ${tx.type}">${tx.type==='out'?'-':'+'}$${fmtFull(tx.amount).replace('$','')}</div></td>
       <td><div class="td-balance">$${fmtFull(tx.balance).replace('$','')}</div></td>
@@ -2639,6 +2701,19 @@ async function submitEditTx() {
   const timeVal = document.getElementById('etTime').value;
   if (!detail || isNaN(amount) || amount <= 0) { showToast('⚠️ Buuxi dhammaan xogta!'); return; }
 
+  // Save history BEFORE overwriting tx fields
+  if (!tx._history) tx._history = [];
+  tx._history.push({
+    detail:  tx.detail,
+    amount:  tx.amount,
+    type:    tx.type,
+    book:    tx.book,
+    date:    tx.date,
+    dateObj: tx.dateObj instanceof Date ? tx.dateObj.toISOString() : (tx.dateObj || null),
+    balance: tx.balance,
+    editedAt: new Date().toISOString()
+  });
+
   // Reverse old effect on old book
   const oldBook = books.find(b => b.name === tx.book);
   if (oldBook) {
@@ -2682,6 +2757,7 @@ async function submitEditTx() {
   applyFilters();
   updateStats();
   showToast('✅ Macaamiilka waa la cusboonaysiiyay!');
+  window._notifSuppressUntil = Date.now() + 3000;
 }
 
 // ── DELETE TRANSACTION ──
@@ -3421,6 +3497,7 @@ async function submitEntry() {
   updateStats();
   closeModal();
   showToast(`✅ Lacagta waa la diiwaan geliyay!`);
+  window._notifSuppressUntil = Date.now() + 3000;
 }
 
 
@@ -4383,8 +4460,197 @@ document.addEventListener('appReady', function() {
 
 
 // ══════════════════════════════════════════════
-//  FEATURE 2: OFFLINE BANNER + PENDING COUNT
+//  FEATURE 3: REAL-TIME NOTIFICATIONS (sound + popup)
+//  Fires when ANOTHER user adds a transaction
 // ══════════════════════════════════════════════
+(function() {
+  let _notifTimer = null;
+  let _knownTxIds = null; // null = not yet initialized
+
+  // Create a notification sound using Web Audio API
+  function _playNotifSound(type) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      // Cash In = rising tone (good news), Cash Out = falling tone
+      osc.frequency.setValueAtTime(type === 'in' ? 660 : 880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(type === 'in' ? 990 : 550, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    } catch(e) { /* silent fail */ }
+  }
+
+  function closeNotifPopup() {
+    const el = document.getElementById('notifPopup');
+    if (el) el.classList.remove('show');
+    clearTimeout(_notifTimer);
+  }
+  window.closeNotifPopup = closeNotifPopup;
+
+  function showNotification(tx) {
+    const el = document.getElementById('notifPopup');
+    if (!el || !window._appInitDone) return;
+
+    const sign = tx.type === 'in' ? '+' : '-';
+    const amountStr = sign + '$' + new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}).format(tx.amount);
+    const typeLabel = tx.type === 'in' ? '💚 Cash In' : '🔴 Cash Out';
+    const timeStr = tx.dateObj
+      ? (tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj))
+          .toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true})
+      : '';
+
+    document.getElementById('notifDetail').textContent = tx.detail || '–';
+    const amEl = document.getElementById('notifAmount');
+    amEl.textContent = amountStr;
+    amEl.className = 'notif-popup-amount ' + tx.type;
+    document.getElementById('notifMeta').textContent = `${typeLabel} · ${tx.book}${timeStr ? ' · ' + timeStr : ''}`;
+
+    el.className = 'notif-popup ' + tx.type + ' show';
+    _playNotifSound(tx.type);
+
+    clearTimeout(_notifTimer);
+    _notifTimer = setTimeout(() => el.classList.remove('show'), 6000);
+  }
+
+  // Seed known IDs when app is ready (initial load - no notifications)
+  document.addEventListener('appReady', function() {
+    _knownTxIds = new Set(allTx.map(t => t._docId).filter(Boolean));
+  });
+
+  // Intercept allTx changes from onSnapshot (transactions listener fires every change)
+  let _txWatchInterval = null;
+
+  document.addEventListener('appReady', function() {
+    // Poll allTx every 500ms for new IDs (efficient since it's just a Set lookup)
+    _txWatchInterval = setInterval(function() {
+      if (_knownTxIds === null || !window._appInitDone) return;
+
+      allTx.forEach(tx => {
+        if (!tx._docId) return;
+        if (!_knownTxIds.has(tx._docId)) {
+          _knownTxIds.add(tx._docId);
+          // Only show notification if NOT suppressed (i.e. not added by current user)
+          if (Date.now() > (window._notifSuppressUntil || 0)) {
+            showNotification(tx);
+          }
+        }
+      });
+
+      // Sync knownIds (handle deletions)
+      const liveIds = new Set(allTx.map(t => t._docId).filter(Boolean));
+      _knownTxIds = liveIds;
+    }, 600);
+  });
+})();
+
+// ══════════════════════════════════════════════
+//  FEATURE 4: ENTRY DETAILS with Edit History
+// ══════════════════════════════════════════════
+function openEntryDetailsModal(txIdx) {
+  const tx = allTx[txIdx];
+  if (!tx) return;
+
+  const sign = tx.type === 'in' ? '+' : '-';
+  const amountStr = sign + '$' + new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}).format(tx.amount);
+  const typeColor = tx.type === 'in' ? 'var(--accent-green)' : 'var(--accent-red)';
+  const timeStr = tx.dateObj
+    ? (tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj))
+        .toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})
+    : tx.date;
+
+  document.getElementById('edModalSub').textContent = tx.detail + (tx._edited ? ' · (Edited)' : '');
+
+  // Current state
+  let html = `
+    <div style="background:var(--surface2);border-radius:12px;padding:16px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px">Xaaladda Hadda</div>
+        <div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${tx.type==='in'?'rgba(0,224,158,0.12)':'rgba(255,77,109,0.12)'};color:${typeColor};font-weight:700">${tx.type === 'in' ? 'Cash In' : 'Cash Out'}</div>
+      </div>
+      <div style="font-size:26px;font-weight:900;color:${typeColor};letter-spacing:-1px;margin-bottom:12px">${amountStr}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:3px">Faahfaahinta</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${tx.detail}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:3px">Buugga</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${tx.book}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:3px">Taariikhda</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${timeStr}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:3px">Haraaga</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary)">$${new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}).format(tx.balance)}</div>
+        </div>
+      </div>
+      ${tx.attachmentUrl ? `<div style="margin-top:12px"><a href="${tx.attachmentUrl}" target="_blank" style="color:var(--accent-blue);font-size:12px;font-weight:600;text-decoration:none">📎 ${tx.attachmentName || 'Attachment'}</a></div>` : ''}
+    </div>`;
+
+  // Edit History section
+  const history = tx._history || [];
+  if (tx._edited && history.length > 0) {
+    html += `<div class="entry-history-section">
+      <div class="entry-history-title">🕘 Taariikhda Beddelka</div>`;
+
+    history.forEach((h, i) => {
+      const hTime = h.editedAt ? new Date(h.editedAt).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true}) : '–';
+      const hSign = h.type === 'in' ? '+' : '-';
+      const hAmount = hSign + '$' + new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}).format(h.amount);
+      html += `
+        <div class="history-item">
+          <div class="history-dot ${i === 0 ? 'original' : ''}"></div>
+          <div style="flex:1">
+            <div class="history-label">${i === 0 ? '📌 Asalka' : '✏️ Beddelka ' + i}</div>
+            <div class="history-fields">
+              <div class="history-field"><span>Faahfaahin:</span> ${h.detail}</div>
+              <div class="history-field"><span>Xaddi:</span> ${hAmount} (${h.type === 'in' ? 'Cash In' : 'Cash Out'})</div>
+              <div class="history-field"><span>Buug:</span> ${h.book}</div>
+            </div>
+            <div class="history-time">${hTime}</div>
+          </div>
+        </div>`;
+    });
+
+    html += `</div>`;
+  } else if (tx._edited) {
+    // Edited but no history stored (legacy)
+    html += `<div class="entry-history-section">
+      <div class="entry-history-title">🕘 Taariikhda Beddelka</div>
+      <div style="font-size:12px;color:var(--text-muted);padding:8px 0">Macaamiilkaan waa la beddeshay. Xogta asalka ma haysano (hore u beddeshay).</div>
+    </div>`;
+  } else {
+    html += `<div class="entry-history-section">
+      <div class="entry-history-title">🕘 Taariikhda Beddelka</div>
+      <div style="font-size:12px;color:var(--text-muted);padding:8px 0">Macaamiilkaan weligiis lama beddelin. Wuu salim yahay.</div>
+    </div>`;
+  }
+
+  document.getElementById('edContent').innerHTML = html;
+  document.getElementById('entryDetailsModal').classList.add('open');
+}
+
+function closeEntryDetailsModal() {
+  document.getElementById('entryDetailsModal').classList.remove('open');
+}
+
+// Close entry details modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+  const edModal = document.getElementById('entryDetailsModal');
+  if (edModal) {
+    edModal.addEventListener('click', function(e) {
+      if (e.target === this) closeEntryDetailsModal();
+    });
+  }
+});
 (function() {
   // Track pending (offline-saved) entries
   window._offlinePendingCount = 0;
@@ -4436,6 +4702,29 @@ document.addEventListener('appReady', function() {
   }
 })();
 </script>
+
+<!-- NOTIFICATION POPUP -->
+<div id="notifPopup" class="notif-popup">
+  <div class="notif-popup-header">
+    <div class="notif-popup-title">🔔 Macaamiil Cusub</div>
+    <button class="notif-popup-close" onclick="closeNotifPopup()">✕</button>
+  </div>
+  <div class="notif-popup-name" id="notifDetail">–</div>
+  <div class="notif-popup-amount" id="notifAmount">–</div>
+  <div class="notif-popup-meta" id="notifMeta">–</div>
+</div>
+
+<!-- ENTRY DETAILS MODAL -->
+<div class="modal-overlay" id="entryDetailsModal">
+  <div class="modal" style="max-width:480px;max-height:85vh;overflow-y:auto">
+    <div class="modal-title">📋 Faahfaahinta Macaamiilka</div>
+    <div class="modal-sub" id="edModalSub">Macluumaadka dhameystiran</div>
+    <div id="edContent" style="margin-top:4px"></div>
+    <div class="modal-actions" style="margin-top:20px">
+      <button class="btn-cancel" onclick="closeEntryDetailsModal()">Xidh</button>
+    </div>
+  </div>
+</div>
 
 <!-- Sidebar overlay for mobile -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
