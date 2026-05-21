@@ -993,7 +993,6 @@ if ('serviceWorker' in navigator) {
 let deferredPrompt = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
   e.preventDefault();
   deferredPrompt = e;
   // Show banner after short delay
@@ -1021,8 +1020,6 @@ function installApp() {
 }
 
 function dismissInstall() {
-    // Haddii APK (standalone) lagu rakibay banner ha muuqan
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
   const banner = document.getElementById('installBanner');
   if (banner) {
     banner.style.animation = 'slideDownBanner 0.3s ease forwards';
@@ -1147,26 +1144,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 </style>
 </head>
 <body>
-<!-- PWA Install Banner -->
-<div id="installBanner" style="
-  display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
-  background:linear-gradient(135deg,#151828,#1c2035);
-  border-top:1px solid rgba(79,138,255,0.3);
-  padding:14px 18px;align-items:center;gap:14px;
-  box-shadow:0 -8px 32px rgba(0,0,0,0.5);">
-  <img src="data:image/png;base64,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" style="width:48px;height:48px;border-radius:12px;flex-shrink:0">
-  <div style="flex:1;min-width:0">
-    <div style="font-size:14px;font-weight:800;color:#f0f2ff">Rakib XISAABIYE</div>
-    <div style="font-size:11px;color:#8892b0;margin-top:2px">Ku dar telefoonkaaga si sahlan</div>
-  </div>
-  <button onclick="installApp()" style="
-    background:linear-gradient(135deg,#4f8aff,#7c3aed);
-    border:none;color:#fff;font-size:12px;font-weight:800;
-    padding:9px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;
-    font-family:inherit">📲 Rakib</button>
-  <button onclick="dismissInstall()" style="
-    background:none;border:none;color:#4a5270;cursor:pointer;font-size:18px;padding:4px">✕</button>
-</div>
+
 
 <!-- ══════════ LOGIN SCREEN ══════════ -->
 <style>
