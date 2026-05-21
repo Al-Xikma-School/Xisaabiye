@@ -3748,30 +3748,49 @@ function clearAttach() {
 }
 async function uploadAttachment(file) {
   try {
-    // First try: store as base64 in Firestore (works without CORS, for files < 900KB)
-    if (file.size < 900 * 1024) {
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result); // returns data:image/...;base64,...
-        reader.onerror = () => reject(new Error('FileReader failed'));
-        reader.readAsDataURL(file);
-      });
+    // Always use base64 (stored in Firestore) — avoids Firebase Storage CORS issues
+    // Compress image first if it's large
+    if (file.type.startsWith('image/') && file.size > 300 * 1024) {
+      return await _compressAndBase64(file);
     }
-    // Fallback: Firebase Storage for larger files
-    const storage  = window._storage;
-    const sRef     = window._storageRef;
-    const upload   = window._uploadBytes;
-    const getURL   = window._getDownloadURL;
-    if (!storage || !sRef || !upload || !getURL) throw new Error('Storage not ready');
-    const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    const ref = sRef(storage, 'attachments/' + fileName);
-    await upload(ref, file);
-    return await getURL(ref);
+    // PDF or small image — direct base64
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      const timer = setTimeout(() => reject(new Error('timeout')), 15000);
+      reader.onload = e => { clearTimeout(timer); resolve(e.target.result); };
+      reader.onerror = () => { clearTimeout(timer); reject(new Error('FileReader failed')); };
+      reader.readAsDataURL(file);
+    });
   } catch(e) {
     console.error('upload error', e);
     showToast('⚠️ Sawirka kuma keydsan karo — isku day mar labaad');
     return null;
   }
+}
+
+function _compressAndBase64(file) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), 20000);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      // Scale down so longest side <= 1200px
+      const MAX = 1200;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      clearTimeout(timer);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.onerror = () => { clearTimeout(timer); URL.revokeObjectURL(url); reject(new Error('img load failed')); };
+    img.src = url;
+  });
 }
 
 // ── MODAL ──
