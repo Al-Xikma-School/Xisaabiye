@@ -978,6 +978,66 @@
     .stat-value { font-size: 17px; }
     .content { padding: 10px 8px; }
   }
+
+/* ── OFFLINE SCREEN ── */
+#offlineScreen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(160deg, #0d1b2a 0%, #1a3a08 100%);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 40px;
+}
+#offlineScreen.show { display: flex; }
+.offline-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: offlinePulse 2s ease-in-out infinite;
+}
+@keyframes offlinePulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.1); opacity: 0.7; }
+}
+.offline-title {
+    color: #f9a825;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+.offline-msg {
+    color: rgba(255,255,255,0.8);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.7;
+    margin-bottom: 30px;
+}
+.offline-dot-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 10px 20px;
+}
+.offline-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #ef5350;
+    animation: offlinePulse 1s ease-in-out infinite;
+}
+.offline-dot-text {
+    color: #ef5350;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
 </style>
 <script>
 // ── Service Worker Registration ──
@@ -1144,6 +1204,22 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 </style>
 </head>
 <body>
+
+<!-- OFFLINE SCREEN -->
+<div id="offlineScreen">
+    <div class="offline-icon">📡</div>
+    <div class="offline-title">Internetka Waa Ka Go'ay!</div>
+    <div class="offline-msg">
+        Nidaamkan internet ayuu u baahan yahay.<br>
+        Fadlan hubi xiriirkaaga internetka<br>
+        oo dib u tijaabi.
+    </div>
+    <div class="offline-dot-wrap">
+        <div class="offline-dot"></div>
+        <div class="offline-dot-text">XIRIIRKA WAA KA GO'AY</div>
+    </div>
+</div>
+
 
 
 <!-- ══════════ LOGIN SCREEN ══════════ -->
@@ -1357,6 +1433,9 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     </div>
     <div class="nav-item" onclick="showPage('settings')">
       <span class="icon">⚙️</span> Settings
+    </div>
+    <div class="nav-item" onclick="showPage('recycle')">
+      <span class="icon">♻️</span> Recycle Bin
     </div>
   </div>
 
@@ -1988,6 +2067,40 @@ body.offline-mode #loginScreen { margin-top: 46px; }
   </div>
 </div>
 
+<!-- RECYCLE BIN PAGE -->
+<div class="page" id="page-recycle">
+  <div>
+    <div class="section-title">♻️ Recycle Bin</div>
+    <div class="section-sub">Transactions la tirtiray – dib u soo celi ama si joogto ah u tiri</div>
+  </div>
+  <div style="margin-top:16px">
+    <div id="recycleBinEmpty" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted)">
+      <div style="font-size:48px;margin-bottom:12px">🗑️</div>
+      <div style="font-size:14px;font-weight:600">Recycle Bin waa madhan yahay</div>
+      <div style="font-size:12px;margin-top:6px">Transactions tirtirtay ayaa halkan ka muuqan doona</div>
+    </div>
+    <div id="recycleBinEmpty2" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted)">
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse" id="recycleTableWrapper">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:8px 12px;font-size:12px;color:var(--text-muted);font-weight:600">TAARIIKHDA</th>
+            <th style="text-align:left;padding:8px 12px;font-size:12px;color:var(--text-muted);font-weight:600">FAAHFAAHINTA</th>
+            <th style="text-align:left;padding:8px 12px;font-size:12px;color:var(--text-muted);font-weight:600">BUUG</th>
+            <th style="text-align:left;padding:8px 12px;font-size:12px;color:var(--text-muted);font-weight:600">XADDIGA</th>
+            <th style="text-align:right;padding:8px 12px;font-size:12px;color:var(--text-muted);font-weight:600">FICILKA</th>
+          </tr>
+        </thead>
+        <tbody id="recycleTable"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end" id="recycleClearAllBtn">
+      <button onclick="openClearRecycleBin()" style="background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.3);color:#ff4d6d;font-size:12px;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer">🗑️ Dhammaan Tirtir</button>
+    </div>
+  </div>
+</div>
+
 <!-- NEW BOOK MODAL -->
 <div class="modal-overlay" id="newBookModal">
   <div class="modal">
@@ -2161,7 +2274,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
       <div id="attachArea" style="
         border:2px dashed var(--border);border-radius:10px;padding:14px 16px;
         display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s;
-        background:var(--surface2);" onclick="if(!_attachFile)document.getElementById('mAttachInput').click()"
+        background:var(--surface2);" onclick="document.getElementById('mAttachInput').click()"
         ondragover="event.preventDefault();this.style.borderColor='var(--accent-blue)'"
         ondragleave="this.style.borderColor='var(--border)'"
         ondrop="handleAttachDrop(event)">
@@ -2266,8 +2379,8 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 <!-- DELETE PASSWORD MODAL -->
 <div class="modal-overlay" id="deleteTxModal">
   <div class="modal" style="max-width:360px">
-    <div class="modal-title" style="color:#ff4d6d">🗑️ Tirtir Transaction</div>
-    <div class="modal-sub">Si aad u xaqiijiso, fadlan gali password-kaaga sirta ah</div>
+    <div class="modal-title" style="color:#ff4d6d">♻️ Transaction Recycle Bin u Guur</div>
+    <div class="modal-sub">Transaction-ka Recycle Bin ayuu u guurayaa — dib ayaad u soo celin kartaa. Si aad u xaqiijiso, gali password-kaaga.</div>
     <div class="form-group">
       <label class="form-label">🔒 Password</label>
       <input class="form-input" id="deleteTxPassword" type="password" placeholder="••••••••" autocomplete="current-password">
@@ -2275,7 +2388,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeDeleteTxModal()">Jooji</button>
-      <button class="btn-submit" style="background:linear-gradient(135deg,#ff4d6d,#c9184a)" onclick="confirmDeleteTx()">🗑️ Tirtir</button>
+      <button class="btn-submit" style="background:linear-gradient(135deg,#ff4d6d,#c9184a)" onclick="confirmDeleteTx()">♻️ Recycle Bin</button>
     </div>
   </div>
 </div>
@@ -2370,6 +2483,130 @@ async function fbDeleteTx(tx) {
     const base = window._schoolBasePath;
     await deleteDoc(doc(db(), `${base}/transactions`, tx._docId));
   } catch(e){ console.error('fbDeleteTx', e); }
+}
+
+// ── RECYCLE BIN FIREBASE ──
+async function fbSaveRecycledTx(tx) {
+  try {
+    const { doc, setDoc, collection } = fbLib();
+    const base = window._schoolBasePath;
+    const plain = {...tx};
+    if (plain.dateObj instanceof Date) plain.dateObj = plain.dateObj.toISOString();
+    const ref = plain._docId
+      ? doc(collection(db(), `${base}/recycled_transactions`))
+      : doc(collection(db(), `${base}/recycled_transactions`));
+    plain._origDocId = plain._docId || null;
+    delete plain._docId;
+    await setDoc(ref, plain);
+    tx._recycleDocId = ref.id;
+  } catch(e){ console.error('fbSaveRecycledTx', e); }
+}
+
+async function fbDeleteRecycledTx(recycleDocId) {
+  try {
+    const { doc, deleteDoc } = fbLib();
+    const base = window._schoolBasePath;
+    await deleteDoc(doc(db(), `${base}/recycled_transactions`, recycleDocId));
+  } catch(e){ console.error('fbDeleteRecycledTx', e); }
+}
+
+async function fbGetRecycledTxs() {
+  try {
+    const { collection, getDocs } = fbLib();
+    const base = window._schoolBasePath;
+    const snap = await getDocs(collection(db(), `${base}/recycled_transactions`));
+    const list = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.dateObj && typeof data.dateObj === 'string') data.dateObj = new Date(data.dateObj);
+      list.push({ ...data, _recycleDocId: d.id });
+    });
+    return list;
+  } catch(e){ console.error('fbGetRecycledTxs', e); return []; }
+}
+
+// ── RECYCLE BIN RENDER ──
+let _recyclePendingDocId = null;
+
+async function renderRecycleBin() {
+  const tbody = document.getElementById('recycleTable');
+  const emptyEl = document.getElementById('recycleBinEmpty');
+  const wrapEl = document.getElementById('recycleTableWrapper');
+  const clearBtn = document.getElementById('recycleClearAllBtn');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px">⏳ Loading...</td></tr>';
+  const list = await fbGetRecycledTxs();
+  if (!list.length) {
+    emptyEl.style.display = 'block';
+    wrapEl.style.display = 'none';
+    clearBtn.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  wrapEl.style.display = '';
+  clearBtn.style.display = '';
+  list.sort((a,b) => new Date(b._deletedAt||0) - new Date(a._deletedAt||0));
+  tbody.innerHTML = list.map(tx => {
+    const delDate = tx._deletedAt ? new Date(tx._deletedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const amountClass = tx.type === 'in' ? 'color:#22c77a' : 'color:#ff5c6a';
+    const sign = tx.type === 'in' ? '+' : '-';
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-muted)">${tx.date||'—'}<br><span style="font-size:10px">${delDate} la tirtiray</span></td>
+      <td style="padding:10px 12px;font-size:13px;color:var(--text-secondary);max-width:140px;word-break:break-word">${tx.detail||'—'}</td>
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-muted)">${tx.book||'—'}</td>
+      <td style="padding:10px 12px;font-size:13px;font-weight:700;${amountClass}">${sign}$${tx.amount||0}</td>
+      <td style="padding:10px 12px;text-align:right;white-space:nowrap">
+        <button onclick="restoreRecycledTx('${tx._recycleDocId}')" title="Dib u soo celi" style="background:rgba(34,199,122,0.12);border:1px solid rgba(34,199,122,0.3);color:#22c77a;font-size:12px;font-weight:700;padding:4px 10px;border-radius:7px;cursor:pointer;margin-right:4px">↩️ Soo celi</button>
+        <button onclick="permanentDeleteRecycled('${tx._recycleDocId}')" title="Si joogto ah u tiri" style="background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.3);color:#ff4d6d;font-size:12px;font-weight:700;padding:4px 10px;border-radius:7px;cursor:pointer">🗑️ Tirtir</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function restoreRecycledTx(recycleDocId) {
+  const list = await fbGetRecycledTxs();
+  const tx = list.find(t => t._recycleDocId === recycleDocId);
+  if (!tx) { showToast('⚠️ Transaction lama helin!'); return; }
+  // Restore to transactions
+  const restored = { ...tx };
+  delete restored._recycleDocId;
+  delete restored._deletedAt;
+  delete restored._deletedBy;
+  const origId = restored._origDocId;
+  delete restored._origDocId;
+  if (origId) restored._docId = origId;
+  // Restore balance
+  const book = books.find(b => b.name === restored.book);
+  if (book) {
+    if (restored.type === 'in') book.balance += restored.amount;
+    else book.balance -= restored.amount;
+    await fbSaveBook(book);
+  }
+  await fbSaveTx(restored);
+  allTx.push(restored);
+  await fbDeleteRecycledTx(recycleDocId);
+  renderSidebarBooks();
+  renderBooksGrid();
+  renderTable(allTx, 'txTable', 'txCount');
+  updateStats();
+  renderRecycleBin();
+  showToast('✅ Transaction dib ayuu ugu soo noqday!');
+}
+
+async function permanentDeleteRecycled(recycleDocId) {
+  await fbDeleteRecycledTx(recycleDocId);
+  renderRecycleBin();
+  showToast('🗑️ Si joogto ah ayaa loo tirtiray');
+}
+
+async function openClearRecycleBin() {
+  const list = await fbGetRecycledTxs();
+  if (!list.length) { showToast('♻️ Recycle Bin waa madhan yahay'); return; }
+  if (!confirm(`Miyaad hubtaa inaad si joogto ah u tirto dhammaan ${list.length} transaction-ka?`)) return;
+  for (const tx of list) {
+    await fbDeleteRecycledTx(tx._recycleDocId);
+  }
+  renderRecycleBin();
+  showToast('🗑️ Dhammaan Recycle Bin waa la nadiifiyay');
 }
 
 async function fbSaveMember(member) {
@@ -2577,6 +2814,7 @@ function renderTable(data, tbodyId, countId) {
   tbody.innerHTML = data.map((tx, i) => {
     const realIdx = allTx.indexOf(tx);
     const editedBadge = tx._edited ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px">(Edited)</span>` : '';
+    const attachBadge = tx.attachmentUrl ? `<div style="display:inline-flex;align-items:center;gap:3px;margin-top:3px;background:rgba(79,138,255,0.10);border:1px solid rgba(79,138,255,0.25);border-radius:5px;padding:2px 6px;font-size:10px;font-weight:600;color:var(--accent-blue);cursor:pointer" onclick="event.stopPropagation();openImageModal('${tx.attachmentUrl.replace(/'/g,"\\'")}','${(tx.attachmentName||'Attachment').replace(/'/g,"\\'")}',${tx.attachmentUrl.startsWith('data:application/pdf')?'true':'false'})" title="Sawirka fur">📎 1 Attachment</div>` : '';
     const actionBtns = isViewer ? '' : `
       <button class="td-transfer-btn" onclick="openTransferTx(${realIdx})" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);cursor:pointer;color:#a78bfa;font-size:12px;font-weight:700;padding:4px 9px;border-radius:7px;opacity:0;transition:all 0.2s;margin-right:3px;" title="U wareejin buug kale">🔄 Transfer</button>
       <button class="td-edit-btn" onclick="openEditTxModal(${realIdx})" style="background:none;border:none;cursor:pointer;color:var(--accent-blue);font-size:13px;padding:4px 6px;border-radius:6px;opacity:0;transition:all 0.2s;margin-right:2px;" title="Wax ka beddel">✏️</button>
@@ -2585,7 +2823,7 @@ function renderTable(data, tbodyId, countId) {
     <tr>
       <td><div class="td-date">${tx.date}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${tx.dateObj ? (() => { const d = tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); })() : ''}</div></td>
       <td style="cursor:pointer" onclick="openEntryDetailsModal(${realIdx})" title="Faahfaahinta fiiri"><div class="td-detail">${tx.detail}${editedBadge}</div><div class="td-sub">Adiga</div></td>
-      <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span></td>
+      <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span>${attachBadge ? `<div>${attachBadge}</div>` : ''}</td>
       <td><div class="td-amount ${tx.type}">${tx.type==='out'?'-':'+'}$${fmtFull(tx.amount).replace('$','')}</div></td>
       <td><div class="td-balance">$${fmtFull(tx.balance).replace('$','')}</div></td>
       <td style="white-space:nowrap">${actionBtns}</td>
@@ -2739,7 +2977,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const titles = { dashboard:'Dashboard', cashbooks:'Cashbooks', transactions:'Transactions', reports:'Warbixinnada', budget:'Miisaaniyada Iskuulka', settings:'Settings' };
+  const titles = { dashboard:'Dashboard', cashbooks:'Cashbooks', transactions:'Transactions', reports:'Warbixinnada', budget:'Miisaaniyada Iskuulka', settings:'Settings', recycle:'♻️ Recycle Bin' };
   document.getElementById('pageTitle').textContent = titles[id]||id;
   document.querySelectorAll('.nav-item').forEach(n=>{
     if(n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
@@ -2747,6 +2985,7 @@ function showPage(id) {
   if(id==='settings') { renderMembersList(); renderSettingsBooks(); }
   if(id==='transactions') { populateBookFilter(); applyFilters(); }
   if(id==='budget') { populateBudgetFilter(); renderBudgetPage(); }
+  if(id==='recycle') { renderRecycleBin(); }
 }
 
 // ── EDIT TRANSACTION ──
@@ -2870,7 +3109,6 @@ function closeDeleteTxModal() {
 async function confirmDeleteTx() {
   const pw = document.getElementById('deleteTxPassword').value.trim();
   if (!pw) { document.getElementById('deleteTxError').style.display = 'block'; return; }
-  // Check password against current user
   const member = teamMembers.find(m => m.username === currentUser.username);
   if (!member || member.password !== pw) {
     document.getElementById('deleteTxError').style.display = 'block';
@@ -2881,14 +3119,14 @@ async function confirmDeleteTx() {
   _pendingDeleteIdx = null;
   if(idx < 0 || idx >= allTx.length) return;
   const tx = allTx[idx];
-  // reverse balance effect on book
+  // Reverse balance effect on book
   const book = books.find(b=>b.name===tx.book);
   if(book) {
     if(tx.type==='in') book.balance -= tx.amount;
     else book.balance += tx.amount;
     await fbSaveBook(book);
   }
-  // Haddii _docId la'aanta Firebase-ka ka raadi
+  // Find _docId if missing
   if (!tx._docId) {
     try {
       const { collection, getDocs } = fbLib();
@@ -2901,6 +3139,9 @@ async function confirmDeleteTx() {
       });
     } catch(e) { console.error('deleteTx lookup', e); }
   }
+  // Move to recycle bin
+  const recycledTx = { ...tx, _deletedAt: new Date().toISOString(), _deletedBy: currentUser.username };
+  await fbSaveRecycledTx(recycledTx);
   await fbDeleteTx(tx);
   allTx.splice(idx, 1);
   renderSidebarBooks();
@@ -2908,7 +3149,7 @@ async function confirmDeleteTx() {
   renderTable(allTx, 'txTable', 'txCount');
   applyFilters();
   updateStats();
-  showToast('🗑 Transaction waa la tirtiray');
+  showToast('♻️ Transaction Recycle Bin ayuu u guuray');
 }
 
 // ── DURATION DROPDOWN ──
@@ -3507,16 +3748,28 @@ function clearAttach() {
 }
 async function uploadAttachment(file) {
   try {
+    // First try: store as base64 in Firestore (works without CORS, for files < 900KB)
+    if (file.size < 900 * 1024) {
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result); // returns data:image/...;base64,...
+        reader.onerror = () => reject(new Error('FileReader failed'));
+        reader.readAsDataURL(file);
+      });
+    }
+    // Fallback: Firebase Storage for larger files
     const storage  = window._storage;
     const sRef     = window._storageRef;
     const upload   = window._uploadBytes;
     const getURL   = window._getDownloadURL;
+    if (!storage || !sRef || !upload || !getURL) throw new Error('Storage not ready');
     const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
     const ref = sRef(storage, 'attachments/' + fileName);
     await upload(ref, file);
     return await getURL(ref);
   } catch(e) {
     console.error('upload error', e);
+    showToast('⚠️ Sawirka kuma keydsan karo — isku day mar labaad');
     return null;
   }
 }
@@ -3780,12 +4033,19 @@ async function submitEntry() {
   let attachmentUrl = null;
   let attachmentName = null;
   if (_attachFile) {
-    document.getElementById('mSubmit').textContent = '⏳ Uploading...';
-    document.getElementById('mSubmit').disabled = true;
+    const submitBtn = document.getElementById('mSubmit');
+    submitBtn.textContent = '⏳ Sawirka la keydiyaa...';
+    submitBtn.disabled = true;
     attachmentUrl = await uploadAttachment(_attachFile);
     attachmentName = _attachFile.name;
-    document.getElementById('mSubmit').textContent = 'Xaqiiji';
-    document.getElementById('mSubmit').disabled = false;
+    submitBtn.textContent = 'Xaqiiji';
+    submitBtn.disabled = false;
+    if (!attachmentUrl) {
+      // Upload failed — ask user whether to continue without attachment
+      const cont = confirm('⚠️ Sawirka kuma keydsan karin.\n\nMa rabaa inaad xogta keydiso sawirka la\'aanteed?');
+      if (!cont) return;
+      attachmentName = null;
+    }
   }
 
   const newTx = { date:dateStr, dateObj:chosenDate, detail, book:book.name, type:currentType, amount, balance:book.balance };
@@ -5104,7 +5364,7 @@ function openEntryDetailsModal(txIdx) {
           <div style="font-size:13px;font-weight:600;color:var(--text-primary)">$${new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}).format(tx.balance)}</div>
         </div>
       </div>
-      ${tx.attachmentUrl ? `<div style="margin-top:12px"><a href="${tx.attachmentUrl}" target="_blank" style="color:var(--accent-blue);font-size:12px;font-weight:600;text-decoration:none">📎 ${tx.attachmentName || 'Attachment'}</a></div>` : ''}
+      ${tx.attachmentUrl ? `<div style="margin-top:12px"><span onclick="openImageModal('${tx.attachmentUrl.replace(/'/g,"\\'")}','${(tx.attachmentName||'Attachment').replace(/'/g,"\\'")}',${tx.attachmentUrl.startsWith('data:application/pdf')?'true':'false'})" style="color:var(--accent-blue);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline">📎 ${tx.attachmentName || 'Attachment'} — Fur</span></div>` : ''}
     </div>`;
 
   // Edit History section
@@ -5152,6 +5412,23 @@ function openEntryDetailsModal(txIdx) {
 
 function closeEntryDetailsModal() {
   document.getElementById('entryDetailsModal').classList.remove('open');
+}
+
+// ── IMAGE VIEWER ──
+function openImageModal(url, name, isPdf) {
+  const content = document.getElementById('imageViewContent');
+  const nameEl  = document.getElementById('imageViewName');
+  if (isPdf) {
+    content.innerHTML = `<iframe src="${url}" style="width:85vw;height:75vh;border:none;border-radius:8px"></iframe>`;
+  } else {
+    content.innerHTML = `<img src="${url}" style="max-width:88vw;max-height:78vh;object-fit:contain;display:block;border-radius:8px">`;
+  }
+  nameEl.textContent = name || '';
+  document.getElementById('imageViewModal').classList.add('open');
+}
+function closeImageModal() {
+  document.getElementById('imageViewModal').classList.remove('open');
+  document.getElementById('imageViewContent').innerHTML = '';
 }
 
 // Close entry details modal when clicking outside
@@ -5213,6 +5490,22 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 })();
+
+// ── OFFLINE DETECTION ──
+function checkOnline() {
+    const screen = document.getElementById('offlineScreen');
+    if (!screen) return;
+    if (!navigator.onLine) {
+        screen.classList.add('show');
+    } else {
+        screen.classList.remove('show');
+    }
+}
+
+window.addEventListener('online',  checkOnline);
+window.addEventListener('offline', checkOnline);
+window.addEventListener('load',    checkOnline);
+
 </script>
 
 <!-- TRANSFER MODAL -->
@@ -5279,6 +5572,15 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- ENTRY DETAILS MODAL -->
+<!-- IMAGE VIEWER MODAL -->
+<div class="modal-overlay" id="imageViewModal" onclick="if(event.target===this)closeImageModal()" style="z-index:10000">
+  <div style="position:relative;max-width:92vw;max-height:90vh;display:flex;flex-direction:column;align-items:center">
+    <button onclick="closeImageModal()" style="position:absolute;top:-14px;right:-14px;width:32px;height:32px;border-radius:50%;background:#ff4d6d;border:none;color:#fff;font-size:18px;cursor:pointer;z-index:10001;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button>
+    <div id="imageViewContent" style="max-width:88vw;max-height:80vh;border-radius:12px;overflow:hidden;background:#000"></div>
+    <div id="imageViewName" style="margin-top:10px;font-size:12px;color:#ccc;font-weight:600"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="entryDetailsModal">
   <div class="modal" style="max-width:480px;max-height:85vh;overflow-y:auto">
     <div class="modal-title">📋 Faahfaahinta Macaamiilka</div>
@@ -5297,7 +5599,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="mobile-fab-group">
   <button class="fab-btn fab-in" onclick="openModal('in')" title="Cash In">＋</button>
   <button class="fab-btn fab-out" onclick="openModal('out')" title="Cash Out">－</button>
-  <button class="fab-btn" onclick="openTransferModal()" title="Transfer" style="background:linear-gradient(135deg,#7c3aed,#4f8aff);font-size:18px">🔄</button>
 </div>
 
 <!-- Mobile Bottom Navigation -->
@@ -5320,6 +5621,9 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="mnav-item" data-page="settings" onclick="showPage('settings')">
       <span class="micon">⚙️</span>Settings
+    </div>
+    <div class="mnav-item" data-page="recycle" onclick="showPage('recycle')">
+      <span class="micon">♻️</span>Recycle
     </div>
   </div>
 </nav>
