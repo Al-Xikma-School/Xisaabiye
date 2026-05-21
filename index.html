@@ -993,6 +993,7 @@ if ('serviceWorker' in navigator) {
 let deferredPrompt = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
   e.preventDefault();
   deferredPrompt = e;
   // Show banner after short delay
@@ -1020,6 +1021,8 @@ function installApp() {
 }
 
 function dismissInstall() {
+    // Haddii APK (standalone) lagu rakibay banner ha muuqan
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
   const banner = document.getElementById('installBanner');
   if (banner) {
     banner.style.animation = 'slideDownBanner 0.3s ease forwards';
