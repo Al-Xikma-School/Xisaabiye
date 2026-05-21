@@ -4032,20 +4032,25 @@ async function submitEntry() {
   // Upload attachment if present
   let attachmentUrl = null;
   let attachmentName = null;
+  const submitBtn = document.getElementById('mSubmit');
+
   if (_attachFile) {
-    const submitBtn = document.getElementById('mSubmit');
     submitBtn.textContent = '⏳ Sawirka la keydiyaa...';
     submitBtn.disabled = true;
     attachmentUrl = await uploadAttachment(_attachFile);
     attachmentName = _attachFile.name;
-    submitBtn.textContent = 'Xaqiiji';
-    submitBtn.disabled = false;
     if (!attachmentUrl) {
-      // Upload failed — ask user whether to continue without attachment
+      submitBtn.textContent = 'Xaqiiji';
+      submitBtn.disabled = false;
       const cont = confirm('⚠️ Sawirka kuma keydsan karin.\n\nMa rabaa inaad xogta keydiso sawirka la\'aanteed?');
       if (!cont) return;
       attachmentName = null;
+    } else {
+      submitBtn.textContent = '⏳ Xogta la keydiyaa...';
     }
+  } else {
+    submitBtn.textContent = '⏳ La keydiyaa...';
+    submitBtn.disabled = true;
   }
 
   const newTx = { date:dateStr, dateObj:chosenDate, detail, book:book.name, type:currentType, amount, balance:book.balance };
@@ -4054,6 +4059,8 @@ async function submitEntry() {
   // Save to Firebase
   await fbSaveTx(newTx);
   await fbSaveBook(book);
+  submitBtn.textContent = 'Xaqiiji';
+  submitBtn.disabled = false;
   renderSidebarBooks();
   renderBooksGrid();
   renderTable(allTx, 'txTable', 'txCount');
