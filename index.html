@@ -1437,6 +1437,9 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     <div class="nav-item" onclick="showPage('recycle')">
       <span class="icon">♻️</span> Recycle Bin
     </div>
+    <div class="nav-item" onclick="showPage('mushaharka')">
+      <span class="icon">💼</span> Mushaharka
+    </div>
   </div>
 
   <div class="sidebar-label" style="padding: 0 20px; margin-top:8px;">Buugaagta</div>
@@ -2101,7 +2104,578 @@ body.offline-mode #loginScreen { margin-top: 46px; }
   </div>
 </div>
 
-<!-- NEW BOOK MODAL -->
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MUSHAHARKA PAGE                                     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page" id="page-mushaharka">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <div class="section-title">💼 Xisaabta Mushaharka Shaqaalaha</div>
+      <div class="section-sub" id="mshrMonthLabel">Xulo bishii mushaharka</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <select class="form-input" id="mshrMonthFilter" style="width:auto;min-width:170px;font-size:13px" onchange="mshrApplyMonth()">
+        <option value="">— Dooro Bisha —</option>
+      </select>
+      <button class="btn btn-green" onclick="mshrOpenAddModal()" style="font-size:13px;padding:8px 16px">➕ Shaqaale Cusub</button>
+      <button onclick="mshrPrint()" style="background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.3);color:var(--accent-blue);font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer">🖨️ Daabac</button>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="stat-cards" style="margin-top:4px">
+    <div class="stat-card green">
+      <div class="stat-icon green">👥</div>
+      <div class="stat-label">Tirada Shaqaalaha</div>
+      <div class="stat-value green" id="mshrCountVal">0</div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,rgba(255,201,71,0.08),rgba(255,201,71,0.02));border:1px solid rgba(255,201,71,0.15)">
+      <div class="stat-icon" style="background:rgba(255,201,71,0.15)">💰</div>
+      <div class="stat-label">Wadarta Mushaharka</div>
+      <div class="stat-value" style="color:var(--accent-gold)" id="mshrTotalVal">$0</div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,rgba(79,138,255,0.08),rgba(79,138,255,0.02));border:1px solid rgba(79,138,255,0.15)">
+      <div class="stat-icon" style="background:rgba(79,138,255,0.15)">📦</div>
+      <div class="stat-label">Kharashka Kale</div>
+      <div class="stat-value" style="color:var(--accent-blue)" id="mshrKharashVal">$0</div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,rgba(255,77,109,0.08),rgba(255,77,109,0.02));border:1px solid rgba(255,77,109,0.15)">
+      <div class="stat-icon" style="background:rgba(255,77,109,0.15)">📊</div>
+      <div class="stat-label">Wadarta Guud</div>
+      <div class="stat-value" style="color:var(--accent-red)" id="mshrGrandTotal">$0</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card" style="margin-top:4px">
+    <div class="table-header">
+      <div class="table-title">📋 Liiska Shaqaalaha</div>
+      <div class="table-count" id="mshrTableCount">0 shaqaale</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:700px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">NO</th>
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">MAGACA SHAQAALAHA</th>
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">NOOCA SHAQADA</th>
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">TALEEFANKA</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">MUSHAHAR</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">KHARASHKA</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">CANSHUUR</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">HARA</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.5px">FICILKA</th>
+          </tr>
+        </thead>
+        <tbody id="mshrTableBody">
+          <tr id="mshrEmptyRow">
+            <td colspan="9" style="text-align:center;padding:50px 20px;color:var(--text-muted);font-size:13px">
+              <div style="font-size:40px;margin-bottom:10px">💼</div>
+              Xulo bishii mushaharku si liiska muuqato
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MUSHAHARKA: ADD/EDIT MODAL ─── -->
+<div class="modal-overlay" id="mshrModal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="max-width:520px;width:100%">
+    <div class="modal-title" id="mshrModalTitle">➕ Shaqaale Cusub Ku Dar</div>
+    <div class="modal-sub">Buuxi macluumaadka shaqaalaha</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Magaca Shaqaalaha <span style="color:var(--accent-red)">*</span></label>
+        <input class="form-input" id="mshrName" type="text" placeholder="Geli magaca buuxa">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nooca Shaqada</label>
+        <select class="form-input" id="mshrType">
+          <option value="macalin">Macalin</option>
+          <option value="maamule">Maamule</option>
+          <option value="xoghaye">Xoghaye</option>
+          <option value="ilaaliye">Ilaaliye</option>
+          <option value="kale">Kale</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Taleefanka</label>
+        <input class="form-input" id="mshrPhone" type="tel" placeholder="07xxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mushaharka ($) <span style="color:var(--accent-red)">*</span></label>
+        <input class="form-input" id="mshrSalary" type="number" min="0" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kharashka Kale ($)</label>
+        <input class="form-input" id="mshrKharash" type="number" min="0" placeholder="0.00" value="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Canshuurta ($)</label>
+        <input class="form-input" id="mshrCanshuur" type="number" min="0" placeholder="0.00" value="0">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Bisha</label>
+        <input class="form-input" id="mshrBisha" type="month">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Xusuus / Faallo</label>
+        <input class="form-input" id="mshrNote" type="text" placeholder="Wax kale oo muhiim ah (ikhtiyaari)">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-green" onclick="mshrSave()" style="flex:1;padding:12px">💾 Keydi</button>
+      <button class="btn" onclick="mshrCloseModal()" style="flex:1;padding:12px;background:rgba(255,77,109,0.12);color:var(--accent-red);border:1px solid rgba(255,77,109,0.3)">❌ Jooji</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── Mushaharka page extra styles ── */
+#page-mushaharka .form-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  transition: border .2s;
+}
+#page-mushaharka .form-input:focus,
+#mshrModal .form-input:focus { border-color: var(--accent-blue); }
+#mshrModal .form-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  transition: border .2s;
+}
+#mshrModal .form-group { display:flex;flex-direction:column;gap:6px; }
+#mshrModal .form-label { font-size:12px;font-weight:600;color:var(--text-secondary); }
+#page-mushaharka table tbody tr:hover { background: rgba(255,255,255,0.03); }
+#page-mushaharka table tbody tr { border-bottom: 1px solid rgba(37,42,64,0.6); transition: background .15s; }
+.mshr-badge {
+  display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;
+}
+.mshr-badge.macalin  { background:rgba(0,224,158,0.12);color:var(--accent-green); }
+.mshr-badge.maamule  { background:rgba(79,138,255,0.12);color:var(--accent-blue); }
+.mshr-badge.xoghaye  { background:rgba(255,201,71,0.12);color:var(--accent-gold); }
+.mshr-badge.ilaaliye { background:rgba(255,77,109,0.12);color:var(--accent-red); }
+.mshr-badge.kale     { background:rgba(140,140,180,0.12);color:var(--text-secondary); }
+</style>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  MUSHAHARKA MODULE
+//
+//  Qaab-dhismeed laba-mid ah (hybrid):
+//  1) Firebase  — marka app-ka online lagu furay (schoolBasePath)
+//     Xogta: schools/{schoolCode}/mushahar/{docId}
+//     Iskuul kasta xogtiisu GAAR u tahay.
+//
+//  2) localStorage — marka file:// locally laga furay (test)
+//     Key: mshr_{schoolKey}  (schoolKey = URL hash ama "local")
+//     Sidaas xigxigashada isku ma darin.
+// ══════════════════════════════════════════════════════════════
+
+(function(){
+
+  // ────────────────────────────────
+  //  STATE
+  // ────────────────────────────────
+  let _rows        = [];    // dhammaan shaqaalaha (dhammaan bishaha)
+  let _activeMonth = '';    // "2026-05"
+  let _editDocId   = null;  // docId marka la wax ka beddelayo
+  let _unsubscribe = null;  // Firebase onSnapshot cleanup
+  let _useFirebase = false; // true marka Firebase diyaar yahay
+
+  // ────────────────────────────────
+  //  HELPERS — Firebase
+  // ────────────────────────────────
+  function _db()   { return window._db; }
+  function _fb()   { return window._fbLib; }
+  function _base() { return window._schoolBasePath; }
+
+  // ────────────────────────────────
+  //  HELPERS — localStorage key (school-scoped)
+  // ────────────────────────────────
+  function _lsKey() {
+    // Use schoolBasePath suffix as school identifier, fallback "local"
+    const base = _base();
+    const school = base ? base.replace(/\//g,'_') : 'local';
+    return `mshr_${school}`;
+  }
+  function _lsLoad() {
+    try { return JSON.parse(localStorage.getItem(_lsKey()) || '[]'); } catch(e){ return []; }
+  }
+  function _lsSave(rows) {
+    try { localStorage.setItem(_lsKey(), JSON.stringify(rows)); } catch(e){}
+  }
+
+  // ────────────────────────────────
+  //  HELPERS — Month
+  // ────────────────────────────────
+  function _monthLabel(m) {
+    if (!m) return '';
+    const [y,mn] = m.split('-');
+    const names = ['Janaayo','Febraayo','Maarso','Abriil','May','Juun',
+                   'Luuliyo','Ogosto','Sebtembar','Oktoobar','Nofembar','Disembar'];
+    return `${names[parseInt(mn,10)-1]} ${y}`;
+  }
+  function _curMonth() {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+  }
+  function _uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  }
+
+  // ────────────────────────────────
+  //  MONTH DROPDOWN
+  // ────────────────────────────────
+  function _populateMonthFilter() {
+    const months = new Set(_rows.map(r=>r.month).filter(Boolean));
+    months.add(_curMonth());
+    const sorted = [...months].sort((a,b)=>b.localeCompare(a));
+    const sel = document.getElementById('mshrMonthFilter');
+    if (!_activeMonth || !months.has(_activeMonth)) _activeMonth = sorted[0] || _curMonth();
+    sel.innerHTML = sorted.map(m=>
+      `<option value="${m}" ${m===_activeMonth?'selected':''}>${_monthLabel(m)}</option>`
+    ).join('');
+  }
+
+  // ────────────────────────────────
+  //  FIREBASE LISTENER (online mode)
+  // ────────────────────────────────
+  function _startFirebaseListener() {
+    if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+    const base = _base();
+    if (!base || !_fb()) return;
+    _useFirebase = true;
+    const { collection, onSnapshot, query, orderBy } = _fb();
+    _unsubscribe = onSnapshot(
+      query(collection(_db(), `${base}/mushahar`), orderBy('name')),
+      (snap) => {
+        _rows = [];
+        snap.forEach(d => _rows.push({ _docId: d.id, ...d.data() }));
+        _populateMonthFilter();
+        _renderTable();
+      },
+      (err) => { console.warn('mushahar Firebase err, falling back to localStorage', err); _useFirebase = false; _initLocalMode(); }
+    );
+  }
+
+  // ────────────────────────────────
+  //  LOCALSTORAGE MODE (offline/file)
+  // ────────────────────────────────
+  function _initLocalMode() {
+    _useFirebase = false;
+    _rows = _lsLoad();
+    _populateMonthFilter();
+    _renderTable();
+  }
+
+  // ────────────────────────────────
+  //  PUBLIC: month filter change
+  // ────────────────────────────────
+  function mshrApplyMonth() {
+    _activeMonth = document.getElementById('mshrMonthFilter').value;
+    document.getElementById('mshrMonthLabel').textContent =
+      _activeMonth ? `Bisha: ${_monthLabel(_activeMonth)}` : 'Xulo bishii mushaharka';
+    _renderTable();
+  }
+  window.mshrApplyMonth = mshrApplyMonth;
+
+  // ────────────────────────────────
+  //  RENDER TABLE
+  // ────────────────────────────────
+  function _renderTable() {
+    const filtered = _activeMonth ? _rows.filter(r=>r.month===_activeMonth) : [];
+    const tbody = document.getElementById('mshrTableBody');
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:50px 20px;color:var(--text-muted);font-size:13px">
+        <div style="font-size:40px;margin-bottom:10px">💼</div>
+        ${_activeMonth ? 'Bishaan ma jiraan shaqaale la qoray' : 'Xulo bishii mushaharku si liiska muuqato'}
+      </td></tr>`;
+      _updateSummary([]);
+      return;
+    }
+    tbody.innerHTML = filtered.map((r,i)=>{
+      const hara = (parseFloat(r.salary)||0) + (parseFloat(r.kharash)||0) - (parseFloat(r.canshuur)||0);
+      const badge = `<span class="mshr-badge ${r.type||'kale'}">${r.type||'kale'}</span>`;
+      const id = r._docId || '';
+      return `<tr>
+        <td style="padding:11px 14px;font-size:13px;color:var(--text-muted);font-weight:600">${i+1}</td>
+        <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--text-primary)">${r.name||'—'}</td>
+        <td style="padding:11px 14px">${badge}</td>
+        <td style="padding:11px 14px;font-size:12px;color:var(--text-secondary)">${r.phone||'—'}</td>
+        <td style="padding:11px 14px;text-align:right;font-size:13px;font-weight:700;color:var(--accent-green)">$${(parseFloat(r.salary)||0).toFixed(2)}</td>
+        <td style="padding:11px 14px;text-align:right;font-size:13px;color:var(--accent-blue)">$${(parseFloat(r.kharash)||0).toFixed(2)}</td>
+        <td style="padding:11px 14px;text-align:right;font-size:13px;color:var(--accent-red)">$${(parseFloat(r.canshuur)||0).toFixed(2)}</td>
+        <td style="padding:11px 14px;text-align:right;font-size:13px;font-weight:700;color:var(--accent-gold)">$${hara.toFixed(2)}</td>
+        <td style="padding:11px 14px;text-align:right">
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <button onclick="mshrEdit('${id}')" style="background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.25);color:var(--accent-blue);font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">✏️</button>
+            <button onclick="mshrDelete('${id}')" style="background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.25);color:var(--accent-red);font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+    _updateSummary(filtered);
+  }
+
+  function _updateSummary(rows) {
+    const total    = rows.reduce((s,r)=>s+(parseFloat(r.salary)||0),0);
+    const kharash  = rows.reduce((s,r)=>s+(parseFloat(r.kharash)||0),0);
+    const canshuur = rows.reduce((s,r)=>s+(parseFloat(r.canshuur)||0),0);
+    const grand    = total + kharash - canshuur;
+    document.getElementById('mshrCountVal').textContent   = rows.length;
+    document.getElementById('mshrTotalVal').textContent   = '$'+total.toFixed(2);
+    document.getElementById('mshrKharashVal').textContent = '$'+kharash.toFixed(2);
+    document.getElementById('mshrGrandTotal').textContent = '$'+grand.toFixed(2);
+    document.getElementById('mshrTableCount').textContent = rows.length+' shaqaale';
+  }
+
+  // ────────────────────────────────
+  //  MODAL — Add
+  // ────────────────────────────────
+  function mshrOpenAddModal() {
+    _editDocId = null;
+    document.getElementById('mshrModalTitle').textContent = '➕ Shaqaale Cusub Ku Dar';
+    document.getElementById('mshrName').value     = '';
+    document.getElementById('mshrType').value     = 'macalin';
+    document.getElementById('mshrPhone').value    = '';
+    document.getElementById('mshrSalary').value   = '';
+    document.getElementById('mshrKharash').value  = '0';
+    document.getElementById('mshrCanshuur').value = '0';
+    document.getElementById('mshrNote').value     = '';
+    document.getElementById('mshrBisha').value    = _activeMonth || _curMonth();
+    document.getElementById('mshrModal').style.display = 'flex';
+  }
+  window.mshrOpenAddModal = mshrOpenAddModal;
+
+  function mshrCloseModal() {
+    document.getElementById('mshrModal').style.display = 'none';
+  }
+  window.mshrCloseModal = mshrCloseModal;
+
+  // ────────────────────────────────
+  //  MODAL — Edit
+  // ────────────────────────────────
+  function mshrEdit(docId) {
+    const r = _rows.find(x=>x._docId===docId);
+    if (!r) return;
+    _editDocId = docId;
+    document.getElementById('mshrModalTitle').textContent = '✏️ Wax ka Beddel Shaqaalaha';
+    document.getElementById('mshrName').value     = r.name||'';
+    document.getElementById('mshrType').value     = r.type||'macalin';
+    document.getElementById('mshrPhone').value    = r.phone||'';
+    document.getElementById('mshrSalary').value   = r.salary||'';
+    document.getElementById('mshrKharash').value  = r.kharash||'0';
+    document.getElementById('mshrCanshuur').value = r.canshuur||'0';
+    document.getElementById('mshrNote').value     = r.note||'';
+    document.getElementById('mshrBisha').value    = r.month||_activeMonth;
+    document.getElementById('mshrModal').style.display = 'flex';
+  }
+  window.mshrEdit = mshrEdit;
+
+  // ────────────────────────────────
+  //  SAVE (Firebase OR localStorage)
+  // ────────────────────────────────
+  async function mshrSave() {
+    const name     = document.getElementById('mshrName').value.trim();
+    const type     = document.getElementById('mshrType').value;
+    const phone    = document.getElementById('mshrPhone').value.trim();
+    const salary   = parseFloat(document.getElementById('mshrSalary').value)||0;
+    const kharash  = parseFloat(document.getElementById('mshrKharash').value)||0;
+    const canshuur = parseFloat(document.getElementById('mshrCanshuur').value)||0;
+    const note     = document.getElementById('mshrNote').value.trim();
+    const month    = document.getElementById('mshrBisha').value;
+
+    if (!name)  { if(window.showToast) showToast('⚠️ Magaca shaqaalaha ku qor!'); return; }
+    if (!month) { if(window.showToast) showToast('⚠️ Bisha dooro!'); return; }
+
+    const rec = { name, type, phone, salary, kharash, canshuur, note, month };
+
+    // ── Firebase mode ──
+    if (_useFirebase && _base() && _fb()) {
+      try {
+        const { collection, doc, setDoc, addDoc } = _fb();
+        const db = _db();
+        if (_editDocId) {
+          await setDoc(doc(db, `${_base()}/mushahar`, _editDocId), rec);
+        } else {
+          await addDoc(collection(db, `${_base()}/mushahar`), rec);
+        }
+        _activeMonth = month;
+        document.getElementById('mshrMonthFilter').value = month;
+        document.getElementById('mshrMonthLabel').textContent = `Bisha: ${_monthLabel(month)}`;
+        mshrCloseModal();
+        if (window.showToast) showToast('✅ Shaqaalaha waa la keydiiyay!');
+        return;
+      } catch(e) {
+        console.warn('Firebase save failed, falling back to localStorage', e);
+        // fall through to localStorage
+      }
+    }
+
+    // ── localStorage mode ──
+    const allRows = _lsLoad();
+    if (_editDocId) {
+      const idx = allRows.findIndex(x=>x._docId===_editDocId);
+      if (idx >= 0) allRows[idx] = { ...rec, _docId: _editDocId };
+      else allRows.push({ ...rec, _docId: _uid() });
+    } else {
+      allRows.push({ ...rec, _docId: _uid() });
+    }
+    _lsSave(allRows);
+    _rows = allRows;
+    _activeMonth = month;
+    _populateMonthFilter();
+    document.getElementById('mshrMonthFilter').value = month;
+    document.getElementById('mshrMonthLabel').textContent = `Bisha: ${_monthLabel(month)}`;
+    _renderTable();
+    mshrCloseModal();
+    if (window.showToast) showToast('✅ Shaqaalaha waa la keydiiyay!');
+  }
+  window.mshrSave = mshrSave;
+
+  // ────────────────────────────────
+  //  DELETE (Firebase OR localStorage)
+  // ────────────────────────────────
+  async function mshrDelete(docId) {
+    if (!confirm('Ma hubtaa inaad tirtirayso shaqaalahan?')) return;
+
+    // ── Firebase mode ──
+    if (_useFirebase && _base() && _fb()) {
+      try {
+        const { doc, deleteDoc } = _fb();
+        await deleteDoc(doc(_db(), `${_base()}/mushahar`, docId));
+        if (window.showToast) showToast('🗑️ La tirtiray');
+        return;
+      } catch(e) { console.warn('Firebase delete failed, using localStorage', e); }
+    }
+
+    // ── localStorage mode ──
+    const allRows = _lsLoad().filter(x=>x._docId!==docId);
+    _lsSave(allRows);
+    _rows = allRows;
+    _renderTable();
+    if (window.showToast) showToast('🗑️ La tirtiray');
+  }
+  window.mshrDelete = mshrDelete;
+
+  // ────────────────────────────────
+  //  PRINT
+  // ────────────────────────────────
+  function mshrPrint() {
+    if (!_activeMonth) { if(window.showToast) showToast('⚠️ Marka hore dooro bisha'); return; }
+    const rows     = _rows.filter(r=>r.month===_activeMonth);
+    const total    = rows.reduce((s,r)=>s+(parseFloat(r.salary)||0),0);
+    const kharash  = rows.reduce((s,r)=>s+(parseFloat(r.kharash)||0),0);
+    const canshuur = rows.reduce((s,r)=>s+(parseFloat(r.canshuur)||0),0);
+    const grand    = total + kharash - canshuur;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Mushaarka ${_monthLabel(_activeMonth)}</title>
+    <style>
+      body{font-family:sans-serif;padding:24px;color:#111}
+      h2{text-align:center;margin-bottom:4px;font-size:18px}
+      p.sub{text-align:center;color:#555;font-size:13px;margin-bottom:20px}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th{background:#f0f4ff;padding:9px 11px;text-align:left;border:1px solid #c8d0e0;font-weight:700;font-size:12px}
+      td{padding:8px 11px;border:1px solid #e4e8f0}
+      tr:nth-child(even){background:#f9faff}
+      tfoot td{font-weight:700;background:#eef2ff}
+      @media print{@page{margin:1.2cm}}
+    </style></head><body>
+    <h2>XISAABTA LACAGTA MUSHAHARKA SHAQAALAHA</h2>
+    <p class="sub">BISHA: ${_monthLabel(_activeMonth)}</p>
+    <table>
+      <thead><tr>
+        <th>NO</th><th>MAGACA</th><th>NOOCA</th><th>TALEEFAN</th>
+        <th style="text-align:right">MUSHAHAR</th>
+        <th style="text-align:right">KHARASH</th>
+        <th style="text-align:right">CANSHUUR</th>
+        <th style="text-align:right">HARA</th>
+      </tr></thead>
+      <tbody>${rows.map((r,i)=>{
+        const hara=(parseFloat(r.salary)||0)+(parseFloat(r.kharash)||0)-(parseFloat(r.canshuur)||0);
+        return `<tr>
+          <td>${i+1}</td><td>${r.name||''}</td><td>${r.type||''}</td><td>${r.phone||''}</td>
+          <td style="text-align:right">$${(parseFloat(r.salary)||0).toFixed(2)}</td>
+          <td style="text-align:right">$${(parseFloat(r.kharash)||0).toFixed(2)}</td>
+          <td style="text-align:right">$${(parseFloat(r.canshuur)||0).toFixed(2)}</td>
+          <td style="text-align:right">$${hara.toFixed(2)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+      <tfoot><tr>
+        <td colspan="4" style="text-align:right;font-size:13px">WADAR:</td>
+        <td style="text-align:right">$${total.toFixed(2)}</td>
+        <td style="text-align:right">$${kharash.toFixed(2)}</td>
+        <td style="text-align:right">$${canshuur.toFixed(2)}</td>
+        <td style="text-align:right">$${grand.toFixed(2)}</td>
+      </tr></tfoot>
+    </table>
+    <script>window.onload=()=>window.print()<\/script>
+    </body></html>`;
+    const w = window.open('','_blank');
+    w.document.write(html);
+    w.document.close();
+  }
+  window.mshrPrint = mshrPrint;
+
+  // ────────────────────────────────
+  //  HOOK: showPage
+  // ────────────────────────────────
+  const _origShowPage = window.showPage;
+  window.showPage = function(id) {
+    _origShowPage(id);
+    if (id !== 'mushaharka') return;
+
+    if (!_activeMonth) _activeMonth = _curMonth();
+    const t = document.getElementById('pageTitle');
+    if (t) t.textContent = '💼 Mushaharka Shaqaalaha';
+
+    if (_base() && _fb() && _db()) {
+      // Online: use Firebase
+      _startFirebaseListener();
+    } else if (_base()) {
+      // schoolBasePath set but Firebase not ready yet — wait briefly
+      let tries = 0;
+      const tid = setInterval(()=>{
+        tries++;
+        if (_fb() && _db()) { clearInterval(tid); _startFirebaseListener(); }
+        else if (tries > 10) { clearInterval(tid); _initLocalMode(); }
+      }, 300);
+    } else {
+      // file:// local mode — localStorage only
+      _initLocalMode();
+    }
+
+    _populateMonthFilter();
+    document.getElementById('mshrMonthFilter').value = _activeMonth;
+    document.getElementById('mshrMonthLabel').textContent = `Bisha: ${_monthLabel(_activeMonth)}`;
+  };
+
+  // ── Close modal on overlay click ──
+  document.getElementById('mshrModal').addEventListener('click', function(e){
+    if (e.target === this) mshrCloseModal();
+  });
+
+})();
+</script>
 <div class="modal-overlay" id="newBookModal">
   <div class="modal">
     <div class="modal-title">📚 Buug Cusub Abuur</div>
@@ -2977,7 +3551,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const titles = { dashboard:'Dashboard', cashbooks:'Cashbooks', transactions:'Transactions', reports:'Warbixinnada', budget:'Miisaaniyada Iskuulka', settings:'Settings', recycle:'♻️ Recycle Bin' };
+  const titles = { dashboard:'Dashboard', cashbooks:'Cashbooks', transactions:'Transactions', reports:'Warbixinnada', budget:'Miisaaniyada Iskuulka', settings:'Settings', recycle:'♻️ Recycle Bin', mushaharka:'💼 Mushaharka Shaqaalaha' };
   document.getElementById('pageTitle').textContent = titles[id]||id;
   document.querySelectorAll('.nav-item').forEach(n=>{
     if(n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
@@ -5650,6 +6224,9 @@ window.addEventListener('load',    checkOnline);
     </div>
     <div class="mnav-item" data-page="recycle" onclick="showPage('recycle')">
       <span class="micon">♻️</span>Recycle
+    </div>
+    <div class="mnav-item" data-page="mushaharka" onclick="showPage('mushaharka')">
+      <span class="micon">💼</span>Mushahar
     </div>
   </div>
 </nav>
