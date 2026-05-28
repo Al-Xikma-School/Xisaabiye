@@ -1612,12 +1612,12 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <span class="filter-label">⏱ Mudada</span>
           <div class="multiselect-wrapper" id="durationWrapper">
             <button class="filter-select multiselect-btn" id="durationBtn" onclick="toggleDurationDropdown(event)" style="cursor:pointer;min-width:140px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px">
-              <span id="durationLabel">Waqti Kasta</span>
+              <span id="durationLabel">Bishaan</span>
               <span style="font-size:10px;color:var(--text-muted)">▾</span>
             </button>
             <div class="multiselect-dropdown" id="durationDropdown" style="display:none;min-width:220px">
               <label class="ms-option dur-option" onclick="setDuration('all',this)">
-                <span class="dur-radio" id="dur-all">◉</span> Waqti Kasta
+                <span class="dur-radio" id="dur-all">○</span> Waqti Kasta
               </label>
               <label class="ms-option dur-option" onclick="setDuration('today',this)">
                 <span class="dur-radio" id="dur-today">○</span> Maanta
@@ -1626,7 +1626,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
                 <span class="dur-radio" id="dur-week">○</span> Usbuucan
               </label>
               <label class="ms-option dur-option" onclick="setDuration('month',this)">
-                <span class="dur-radio" id="dur-month">○</span> Bishaan
+                <span class="dur-radio" id="dur-month">◉</span> Bishaan
               </label>
               <label class="ms-option dur-option" onclick="setDuration('custom',this)">
                 <span class="dur-radio" id="dur-custom">○</span> Taariikhda...
@@ -2544,8 +2544,12 @@ async function renderRecycleBin() {
   emptyEl.style.display = 'none';
   wrapEl.style.display = '';
   clearBtn.style.display = '';
+  const allowedRcNames = visibleBooks().map(b => b.name);
+  const filteredList = (currentUser && currentUser.allowedBooks !== null)
+    ? list.filter(tx => allowedRcNames.includes(tx.book))
+    : list;
   list.sort((a,b) => new Date(b._deletedAt||0) - new Date(a._deletedAt||0));
-  tbody.innerHTML = list.map(tx => {
+  tbody.innerHTML = filteredList.map(tx => {
     const delDate = tx._deletedAt ? new Date(tx._deletedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
     const amountClass = tx.type === 'in' ? 'color:#22c77a' : 'color:#ff5c6a';
     const sign = tx.type === 'in' ? '+' : '-';
@@ -2905,10 +2909,10 @@ function buildCharts() {
   new Chart(dCtx, {
     type: 'doughnut',
     data: {
-      labels: books.map(b=>b.name),
-      datasets:[{ data: books.map(b=>Math.max(b.balance,0)),
-        backgroundColor: books.map(b=>b.color+'cc'),
-        borderColor: books.map(b=>b.color),
+      labels: visibleBooks().map(b=>b.name),
+      datasets:[{ data: visibleBooks().map(b=>Math.max(b.balance,0)),
+        backgroundColor: visibleBooks().map(b=>b.color+'cc'),
+        borderColor: visibleBooks().map(b=>b.color),
         borderWidth:2, hoverOffset:8
       }]
     },
@@ -3153,7 +3157,7 @@ async function confirmDeleteTx() {
 }
 
 // ── DURATION DROPDOWN ──
-let currentDuration = 'all';
+let currentDuration = 'month';
 const durLabels = { all:'Waqti Kasta', today:'Maanta', week:'Usbuucan', month:'Bishaan', custom:'Taariikhda...' };
 
 function toggleDurationDropdown(e) {
@@ -3237,7 +3241,7 @@ function updateMultiselectLabel() {
 function populateBookFilter() {
   const el = document.getElementById('msBookOptions');
   if(!el) return;
-  el.innerHTML = books.map(b=>`
+  el.innerHTML = visibleBooks().map(b=>`
     <label class="ms-option">
       <input type="checkbox" value="${b.name}" onchange="onMsBookChange(this)"
         ${selectedBooks.has(b.name)?'checked':''}>
@@ -3257,7 +3261,11 @@ function applyFilters() {
   const cdg = document.getElementById('customDateGroup');
   if(cdg) cdg.style.display = dur==='custom'?'flex':'none';
 
-  let data = [...allTx];
+  // Viewer: show only transactions from allowed books
+  const allowedBookNames = visibleBooks().map(b => b.name);
+  let data = (currentUser && currentUser.allowedBooks !== null)
+    ? allTx.filter(t => allowedBookNames.includes(t.book))
+    : [...allTx];
   let cutoffDate = null;
 
   // duration filter
@@ -4195,7 +4203,7 @@ function printReport() {
   const richBk   = document.getElementById('richBook')?.textContent || '–';
   const richBkN  = document.getElementById('richBookName')?.textContent || '–';
 
-  const booksRows = books.map(b=>{
+  const booksRows = visibleBooks().map(b=>{
     const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
     const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
     const bNet   = bIn - bOut;
@@ -4360,7 +4368,7 @@ function renderReportBooksTable() {
   if (!tbody) return;
   let totalIn=0, totalOut=0, totalNet=0, totalTx=0;
   let totalAllocIn=0, totalAllocOut=0;
-  const rows = books.map(b => {
+  const rows = visibleBooks().map(b => {
     const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
     const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
     const bNet   = bIn - bOut;
@@ -4421,7 +4429,7 @@ function renderReportBooksTable() {
   </tr>`);
   tbody.innerHTML = rows.join('');
   const cnt = document.getElementById('rptBookCount');
-  if(cnt) cnt.textContent = `${books.length} iskuul`;
+  if(cnt) cnt.textContent = `${visibleBooks().length} iskuul`;
 }
 
 // ── BUDGET ──
@@ -4432,7 +4440,7 @@ function renderBudgetPage() {
   const count  = document.getElementById('budCount');
   if (!tbody) return;
 
-  const displayBooks = _budFilteredBooks !== null ? _budFilteredBooks : books;
+  const displayBooks = _budFilteredBooks !== null ? _budFilteredBooks : visibleBooks();
 
   let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
 
@@ -4569,12 +4577,12 @@ function renderBudgetPage() {
 let budBarChartInst = null, budNetChartInst = null;
 
 function buildBudgetCharts() {
-  const labels  = books.map(b => b.name.length > 10 ? b.name.slice(0,10)+'…' : b.name);
-  const actIn   = books.map(b => allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0));
-  const actOut  = books.map(b => allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0));
-  const allocIn = books.map(b => budgets['in_'+b.id]  ?? 0);
-  const allocOut= books.map(b => budgets['out_'+b.id] ?? 0);
-  const netData = books.map((b,i) => actIn[i] - actOut[i]);
+  const labels  = visibleBooks().map(b => b.name.length > 10 ? b.name.slice(0,10)+'…' : b.name);
+  const actIn   = visibleBooks().map(b => allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0));
+  const actOut  = visibleBooks().map(b => allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0));
+  const allocIn = visibleBooks().map(b => budgets['in_'+b.id]  ?? 0);
+  const allocOut= visibleBooks().map(b => budgets['out_'+b.id] ?? 0);
+  const netData = visibleBooks().map((b,i) => actIn[i] - actOut[i]);
 
   // Bar chart
   const barCtx = document.getElementById('budBarChart');
@@ -4693,7 +4701,7 @@ function _updateBudMultiselectLabel() {
 function populateBudgetFilter() {
   const container = document.getElementById('budMsBookOptions');
   if (!container) return;
-  container.innerHTML = books.map(b => `
+  container.innerHTML = visibleBooks().map(b => `
     <label class="ms-option">
       <input type="checkbox" value="${b.id}" onchange="onBudMultiChange(this)"
         ${_budSelectedBooks.has(String(b.id)) ? 'checked' : ''}>
@@ -4737,7 +4745,7 @@ function applyBudgetFilter() {
     return true;
   });
 
-  _budFilteredBooks = books.filter(b => {
+  _budFilteredBooks = visibleBooks().filter(b => {
     // multiselect book filter
     if (!_budSelectedBooks.has('__all__') && !_budSelectedBooks.has(String(b.id))) return false;
     // search filter
@@ -4756,7 +4764,7 @@ function applyBudgetFilter() {
   });
 
   // if all books selected, treat as no filter
-  if (_budFilteredBooks.length === books.length && _budSelectedBooks.has('__all__')) {
+  if (_budFilteredBooks.length === visibleBooks().length && _budSelectedBooks.has('__all__')) {
     _budFilteredBooks = null;
   }
 
@@ -4887,7 +4895,7 @@ async function saveBudgets() {
 
 function printBudget() {
   // Use filtered books if filter is active, else all books
-  const printBooks = (_budFilteredBooks && _budFilteredBooks.length > 0) ? _budFilteredBooks : books;
+  const printBooks = (_budFilteredBooks && _budFilteredBooks.length > 0) ? _budFilteredBooks : visibleBooks();
   let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
   const booksRows = printBooks.map(b => {
     const allocIn  = budgets['in_'+b.id]  ?? 0;
