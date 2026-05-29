@@ -1300,6 +1300,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     background: linear-gradient(135deg, #fff3e8, #fde8d4 50%, #fff8f0);
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
+    overflow-y: auto;
   }
   .login-box {
     background: #ffffff;
@@ -1310,6 +1311,10 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     max-width: 380px;
     box-shadow: 0 12px 48px rgba(180,80,20,0.15);
     margin: auto;
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
   }
   .login-pw-wrap {
     position: relative;
@@ -1726,7 +1731,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
         <div class="tx-stat-item">
           <div class="tx-stat-icon" style="background:rgba(79,138,255,0.12);color:var(--accent-blue)">○</div>
           <div>
-            <div class="tx-stat-label">Opening Balance</div>
+            <div class="tx-stat-label" id="txOpeningBalLabel">Opening Balance</div>
             <div class="tx-stat-value" id="txOpeningBal">$0</div>
           </div>
         </div>
@@ -1735,7 +1740,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <div class="tx-stat-icon" style="background:rgba(22,163,74,0.12);color:#16a34a">＋</div>
           <div>
             <div class="tx-stat-label">Cash In</div>
-            <div class="tx-stat-value" style="color:var(--accent-green)" id="txTotalIn">$0</div>
+            <div class="tx-stat-value" style="color:#16a34a" id="txTotalIn">$0</div>
           </div>
         </div>
         <div class="tx-stat-divider"></div>
@@ -1752,6 +1757,14 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <div>
             <div class="tx-stat-label">Net Balance</div>
             <div class="tx-stat-value" id="txNetBal">$0</div>
+          </div>
+        </div>
+        <div class="tx-stat-divider"></div>
+        <div class="tx-stat-item" id="txBudgetRemainItem">
+          <div class="tx-stat-icon" id="txBudgetRemainIcon" style="background:rgba(139,92,246,0.12);color:#7c3aed">📊</div>
+          <div>
+            <div class="tx-stat-label" id="txBudgetRemainLabel">U Dhiman Kharashka</div>
+            <div class="tx-stat-value" id="txBudgetRemain">$0</div>
           </div>
         </div>
       </div>
@@ -3068,8 +3081,8 @@ function buildCharts() {
     data: {
       labels: ACAD_MONTHS,
       datasets: [
-        { label:'Cash In',  data:inData,  backgroundColor:'rgba(249,115,22,0.82)', borderRadius:7, borderSkipped:false },
-        { label:'Cash Out', data:outData, backgroundColor:'rgba(232,93,4,0.82)',   borderRadius:7, borderSkipped:false },
+        { label:'Cash In',  data:inData,  backgroundColor:'rgba(22,163,74,0.85)',  borderRadius:7, borderSkipped:false },
+        { label:'Cash Out', data:outData, backgroundColor:'rgba(220,38,38,0.85)',  borderRadius:7, borderSkipped:false },
       ]
     },
     options: {
@@ -3700,16 +3713,57 @@ function updateTxSummary(data, cutoffDate, includeOpening) {
   const netWithOpening = includeOpening && cutoffDate ? openingBal + net : net;
 
   const el = id => document.getElementById(id);
+
+  // ── Opening Balance: always show the true opening balance ──
   const ob = el('txOpeningBal');
+  const obLabel = el('txOpeningBalLabel');
   if(ob) {
     ob.textContent = fmtFull(openingBal);
-    ob.style.color = openingBal >= 0 ? 'var(--text-primary)' : 'var(--accent-red)';
+    ob.style.color = openingBal >= 0 ? 'var(--text-primary)' : '#dc2626';
   }
+  // Label shows "Opening Balance" always (not affected by net balance)
+  if(obLabel) obLabel.textContent = 'Opening Balance';
+
   if(el('txTotalIn'))  el('txTotalIn').textContent  = fmtFull(totalIn);
   if(el('txTotalOut')) el('txTotalOut').textContent  = fmtFull(totalOut);
+
+  // Net Balance: only changes color, not label
   if(el('txNetBal')) {
-    el('txNetBal').textContent = fmtFull(includeOpening && cutoffDate ? netWithOpening : net);
-    el('txNetBal').style.color = (includeOpening && cutoffDate ? netWithOpening : net) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    const displayNet = includeOpening && cutoffDate ? netWithOpening : net;
+    el('txNetBal').textContent = fmtFull(displayNet);
+    el('txNetBal').style.color = displayNet >= 0 ? '#16a34a' : '#dc2626';
+  }
+
+  // ── Budget Remaining (U Dhiman Kharashka) ──
+  // Haddii "Include opening balance" active yahay: ku dar kharashkii hore (openingBal taban = kharash hore)
+  if(el('txBudgetRemain')) {
+    let totalAllocOut = 0;
+    booksToCheck.forEach(bName => {
+      const b = books.find(x=>x.name===bName);
+      if(b) totalAllocOut += budgets['out_'+b.id] ?? 0;
+    });
+    // Kharash guud = kharashka la muujiyay + kharashkii hore (haddii opening active yahay)
+    const prevSpending = (includeOpening && cutoffDate && openingBal < 0) ? Math.abs(openingBal) : 0;
+    const effectiveTotalOut = totalOut + prevSpending;
+    const budgetRemain = totalAllocOut - effectiveTotalOut;
+    const lbl  = el('txBudgetRemainLabel');
+    const icon = el('txBudgetRemainIcon');
+
+    if(budgetRemain >= 0) {
+      el('txBudgetRemain').textContent = fmtFull(budgetRemain);
+      el('txBudgetRemain').style.color = '#7c3aed';
+      if(lbl)  lbl.textContent = 'U Dhiman Kharashka';
+      if(icon) { icon.style.background = 'rgba(139,92,246,0.12)'; icon.style.color = '#7c3aed'; icon.textContent = '📊'; }
+    } else {
+      const over = Math.abs(budgetRemain);
+      el('txBudgetRemain').textContent = '+' + fmtFull(over) + ' dhaaf';
+      el('txBudgetRemain').style.color = '#dc2626';
+      if(lbl)  lbl.textContent = '⚠️ Waxaad dhaaftay kharashkii';
+      if(icon) { icon.style.background = 'rgba(220,38,38,0.12)'; icon.style.color = '#dc2626'; icon.textContent = '🚨'; }
+    }
+    // Save for PDF
+    window._lastBudgetRemain = budgetRemain;
+    window._lastBudgetRemainLabel = lbl ? lbl.textContent : 'U Dhiman Kharashka';
   }
 }
 
@@ -4475,10 +4529,14 @@ function printFilteredTx() {
   const data = lastFilteredData.length ? lastFilteredData : allTx;
 
   // get summary values from screen
-  const openingBal = document.getElementById('txOpeningBal')?.textContent || '–';
-  const totalIn    = document.getElementById('txTotalIn')?.textContent    || '–';
-  const totalOut   = document.getElementById('txTotalOut')?.textContent   || '–';
-  const netBal     = document.getElementById('txNetBal')?.textContent     || '–';
+  const openingBal    = document.getElementById('txOpeningBal')?.textContent    || '–';
+  const totalIn       = document.getElementById('txTotalIn')?.textContent       || '–';
+  const totalOut      = document.getElementById('txTotalOut')?.textContent      || '–';
+  const netBal        = document.getElementById('txNetBal')?.textContent        || '–';
+  const budgetRemain  = document.getElementById('txBudgetRemain')?.textContent  || '–';
+  const budgetLbl     = document.getElementById('txBudgetRemainLabel')?.textContent || 'U Dhiman Kharashka';
+  const budgetOver    = window._lastBudgetRemain !== undefined && window._lastBudgetRemain < 0;
+  const budgetColor   = budgetOver ? '#cc2244' : '#7c3aed';
 
   // describe active filters
   const durLabel  = document.getElementById('durationLabel')?.textContent || 'Waqti Kasta';
@@ -4507,7 +4565,7 @@ function printFilteredTx() {
     .header p{font-size:11px;color:#888}
     .header-right{text-align:right;font-size:11px;color:#666}
     .summary{display:flex;gap:0;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden;margin-bottom:18px}
-    .sum-item{flex:1;padding:12px 16px;border-right:1px solid #e0e0e0}
+    .sum-item{flex:1;padding:10px 12px;border-right:1px solid #e0e0e0;min-width:0}
     .sum-item:last-child{border-right:none}
     .sum-label{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:4px}
     .sum-value{font-size:18px;font-weight:800}
@@ -4543,6 +4601,7 @@ function printFilteredTx() {
     <div class="sum-item"><div class="sum-label">Cash In</div><div class="sum-value" style="color:#00a86b">${totalIn}</div></div>
     <div class="sum-item"><div class="sum-label">Cash Out</div><div class="sum-value" style="color:#cc2244">${totalOut}</div></div>
     <div class="sum-item"><div class="sum-label">Net Balance</div><div class="sum-value" style="color:#4f8aff">${netBal}</div></div>
+    <div class="sum-item" style="background:${budgetOver?'#fff5f5':'#faf5ff'}"><div class="sum-label">${budgetLbl}</div><div class="sum-value" style="color:${budgetColor}">${budgetRemain}</div></div>
   </div>
   <table>
     <thead><tr><th>Taariikhda</th><th>Faahfaahinta</th><th>Buug</th><th>Nooc</th><th>Xaddiga</th><th>Haraaga</th></tr></thead>
