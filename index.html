@@ -133,6 +133,9 @@
           // Refresh dashboard budget charts now that budgets are loaded
           if (typeof buildDashBudgetCharts === 'function') buildDashBudgetCharts();
           if (typeof updateDashSummaryCards === 'function') updateDashSummaryCards();
+          // Refresh reports table and budget page charts
+          if (typeof renderReportBooksTable === 'function') renderReportBooksTable();
+          if (typeof buildBudgetCharts === 'function') buildBudgetCharts();
         }
       }
     }, () => {});
@@ -1301,6 +1304,11 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
     overflow-y: auto;
+    box-sizing: border-box;
+  }
+  @media (max-width: 600px) {
+    #loginScreen { align-items: center; justify-content: center; }
+    .login-box { margin: auto !important; top: auto !important; left: auto !important; transform: none !important; }
   }
   .login-box {
     background: #ffffff;
@@ -3178,8 +3186,8 @@ function buildCharts() {
 
 // ── SCHOOL PROFIT CHARTS (4 schools × academic months) ──
 // Auto-detect schools: books whose name STARTS WITH "dugsi" (case-insensitive)
-const SCHOOL_COLORS    = ['#f97316','#ea580c','#f59e0b','#fb923c','#e85d04','#dc7e2b','#ef4444','#f43f5e'];
-const SCHOOL_GRADIENTS = ['rgba(249,115,22,','rgba(234,88,12,','rgba(245,158,11,','rgba(251,146,60,','rgba(232,93,4,','rgba(220,126,43,','rgba(239,68,68,','rgba(244,63,94,'];
+const SCHOOL_COLORS    = ['#4f8aff','#00e09e','#f59e0b','#ff4d6d','#a78bfa','#38bdf8','#f97316','#34d399'];
+const SCHOOL_GRADIENTS = ['rgba(79,138,255,','rgba(0,224,158,','rgba(245,158,11,','rgba(255,77,109,','rgba(167,139,250,','rgba(56,189,248,','rgba(249,115,22,','rgba(52,211,153,'];
 
 function getSchool4() {
   return visibleBooks()
@@ -3198,28 +3206,36 @@ function buildSchoolProfitCharts() {
   const container = document.getElementById('schoolProfitCards');
   if (!container) return;
 
-  getSchool4().forEach(school => {
-    // Find matching book
-    const book = visibleBooks().find(school.match);
-    const canvasId = 'schoolProfit_' + school.key;
+  const schools = getSchool4();
 
-    // Create card if not exists
-    if (!document.getElementById(canvasId)) {
-      const card = document.createElement('div');
-      card.className = 'chart-card';
-      card.style.cssText = `border-top:3px solid ${school.color};`;
-      card.innerHTML = `
-        <div class="chart-header">
-          <div>
-            <div class="chart-title" style="color:${school.color}">${school.label}</div>
-            <div class="chart-sub">${book ? book.name : 'Buug lama helin'} – Faa'iido/Khasaaro bishaan kasta</div>
-          </div>
-          <div style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${school.color}22;color:${school.color}" id="schoolProfitBadge_${school.key}">–</div>
+  // ── Build one combined horizontal-bar chart spanning full width ──
+  const canvasId = 'schoolProfitCombined';
+  if (!document.getElementById(canvasId)) {
+    container.style.gridTemplateColumns = '1fr'; // full width
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.id = 'schoolProfitCombinedCard';
+    card.style.cssText = 'border-top:3px solid #f97316; grid-column:1/-1;';
+    card.innerHTML = `
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" style="color:#f97316">📊 Faa'iidada Bishaan kasta – Iskuul kasta</div>
+          <div class="chart-sub">Sanad Dugsiyeedka: Aug – May</div>
         </div>
-        <div class="chart-wrap"><canvas id="${canvasId}"></canvas></div>`;
-      container.appendChild(card);
-    }
+      </div>
+      <div id="schoolProfitBadgesRow" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div class="chart-wrap" style="height:340px"><canvas id="${canvasId}"></canvas></div>`;
+    container.appendChild(card);
+  }
 
+  // Badges row – one per school
+  const badgesRow = document.getElementById('schoolProfitBadgesRow');
+  if (badgesRow) badgesRow.innerHTML = '';
+
+  // Build datasets: one dataset per school — VERTICAL grouped bars
+  const datasets = [];
+  schools.forEach(school => {
+    const book = visibleBooks().find(school.match);
     const profitData = ACAD_MONTH_NUMS.map(m => {
       if (!book) return 0;
       const mIn  = allTx.filter(t=>t.book===book.name&&t.type==='in'  && t.dateObj && (t.dateObj instanceof Date?t.dateObj:new Date(t.dateObj)).getMonth()===m).reduce((s,t)=>s+t.amount,0);
@@ -3228,37 +3244,65 @@ function buildSchoolProfitCharts() {
     });
 
     const totalProfit = profitData.reduce((s,v)=>s+v,0);
-    const badge = document.getElementById('schoolProfitBadge_' + school.key);
-    if (badge) {
-      badge.textContent = (totalProfit>=0?'+':'') + '$' + Math.abs(totalProfit).toLocaleString();
-      badge.style.color = totalProfit>=0 ? '#00e09e' : '#ff4d6d';
-      badge.style.background = totalProfit>=0 ? 'rgba(0,224,158,0.12)' : 'rgba(255,77,109,0.12)';
+
+    // Add badge with school's own color
+    if (badgesRow) {
+      const badge = document.createElement('div');
+      badge.style.cssText = `font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${school.color}22;color:${school.color};border:1px solid ${school.color}55`;
+      badge.textContent = school.label + ': ' + (totalProfit>=0?'+':'') + '$' + Math.abs(totalProfit).toLocaleString();
+      badgesRow.appendChild(badge);
     }
 
-    const ctx = document.getElementById(canvasId);
-    if (!ctx) return;
-    if (_schoolProfitChartInsts[school.key]) _schoolProfitChartInsts[school.key].destroy();
-    _schoolProfitChartInsts[school.key] = new Chart(ctx.getContext('2d'), {
-      type:'bar',
-      data:{
-        labels: ACAD_MONTHS,
-        datasets:[{
-          label:'Faa\'iido / Khasaaro',
-          data: profitData,
-          backgroundColor: profitData.map(v=>v>=0?school.gradient+'0.82)':'rgba(232,93,4,0.75)'),
-          borderColor:     profitData.map(v=>v>=0?school.color:'#e85d04'),
-          borderWidth:1.5, borderRadius:6, borderSkipped:false
-        }]
+    datasets.push({
+      label: school.label,
+      data: profitData,
+      backgroundColor: profitData.map(v => v >= 0 ? school.gradient + '0.80)' : 'rgba(255,77,109,0.70)'),
+      borderColor: profitData.map(v => v >= 0 ? school.color : '#ff4d6d'),
+      borderWidth: 1.5,
+      borderRadius: 6,
+      borderSkipped: false,
+      barPercentage: 0.75,       // diilimaha ballaadhkooda
+      categoryPercentage: 0.80   // kala fogaanta kooxaha
+    });
+  });
+
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  // Destroy all old instances
+  schools.forEach(s => { if (_schoolProfitChartInsts[s.key]) { _schoolProfitChartInsts[s.key].destroy(); delete _schoolProfitChartInsts[s.key]; } });
+  if (_schoolProfitChartInsts['_combined']) { _schoolProfitChartInsts['_combined'].destroy(); }
+
+  _schoolProfitChartInsts['_combined'] = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ACAD_MONTHS,
+      datasets: datasets
+    },
+    options: {
+      // indexAxis: 'x' — VERTICAL taag (default)
+      responsive: true, maintainAspectRatio: false, resizeDelay: 0,
+      plugins: {
+        legend: {
+          display: true, position: 'top',
+          labels: { color: '#a87d5a', font: { size: 11, weight: '600' }, boxWidth: 14, padding: 16, usePointStyle: true, pointStyle: 'rect' }
+        },
+        tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + (c.raw>=0?'+':'') + '$' + c.raw.toLocaleString() } }
       },
-      options:{
-        responsive:true, maintainAspectRatio:false, resizeDelay:0,
-        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}} },
-        scales:{
-          x:{ grid:{color:'rgba(240,180,120,0.22)'}, ticks:{font:{size:10},color:'#a87d5a'} },
-          y:{ grid:{color:'rgba(240,180,120,0.22)'}, ticks:{font:{size:10},color:'#8892b0',callback:v=>(v>=0?'+':'')+' $'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':Math.abs(v))} }
+      scales: {
+        x: {
+          grid: { color: 'rgba(240,180,120,0.18)' },
+          ticks: { font: { size: 10 }, color: '#a87d5a' }
+        },
+        y: {
+          grid: { color: 'rgba(240,180,120,0.18)' },
+          ticks: {
+            font: { size: 10 }, color: '#8892b0',
+            callback: v => (v>=0?'+':'')+' $'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':Math.abs(v))
+          }
         }
       }
-    });
+    }
   });
 }
 
@@ -3269,21 +3313,46 @@ function buildDashBudgetCharts() {
   const schools4 = schools4raw.map(s => ({ s, book: visibleBooks().find(b=>b.id===s.bookId) })).filter(x=>x.book);
 
   const labels = schools4.map(x => x.book.name.length > 12 ? x.book.name.slice(0,12)+'…' : x.book.name);
-  const colors = schools4.map(x => x.s.color);
 
-  // Kharash remaining = allocOut - actualOut (per school)
+  // Filter allTx by current month (bille) only
+  const now = new Date();
+  const curMonth = now.getMonth();
+  const curYear  = now.getFullYear();
+  const billeFilter = t => {
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj);
+    return d.getMonth() === curMonth && d.getFullYear() === curYear;
+  };
+
+  // Per-school distinct colors — use the school's own color
+  // Positive remaining → school color (semi-transparent fill, solid border)
+  // Negative (dhaafay) → red tones
+  const schoolColors = [
+    { bg: 'rgba(59,130,246,0.82)',  border: '#3b82f6'  },  // blue
+    { bg: 'rgba(16,185,129,0.82)',  border: '#10b981'  },  // green
+    { bg: 'rgba(139,92,246,0.82)',  border: '#8b5cf6'  },  // purple
+    { bg: 'rgba(236,72,153,0.82)',  border: '#ec4899'  },  // pink
+  ];
+  const negColor = { bg: 'rgba(239,68,68,0.82)', border: '#ef4444' };
+
+  // Kharash remaining = allocOut - actualOut(bille) (per school)
   const allocOut  = schools4.map(x => budgets['out_'+x.book.id] ?? 0);
-  const actualOut = schools4.map(x => allTx.filter(t=>t.book===x.book.name&&t.type==='out').reduce((a,t)=>a+t.amount,0));
+  const actualOut = schools4.map(x => allTx.filter(t=>t.book===x.book.name&&t.type==='out'&&billeFilter(t)).reduce((a,t)=>a+t.amount,0));
   const remOut    = schools4.map((x,i) => allocOut[i] - actualOut[i]);
 
-  // Dakhli remaining = allocIn - actualIn
+  // Dakhli remaining = allocIn - actualIn(bille)
   const allocIn   = schools4.map(x => budgets['in_'+x.book.id] ?? 0);
-  const actualIn  = schools4.map(x => allTx.filter(t=>t.book===x.book.name&&t.type==='in').reduce((a,t)=>a+t.amount,0));
+  const actualIn  = schools4.map(x => allTx.filter(t=>t.book===x.book.name&&t.type==='in'&&billeFilter(t)).reduce((a,t)=>a+t.amount,0));
   const remIn     = schools4.map((x,i) => allocIn[i] - actualIn[i]);
+
+  const makeBarColors = (vals) => vals.map((v,i) => v >= 0 ? (schoolColors[i] || schoolColors[0]).bg : negColor.bg);
+  const makeBorderColors = (vals) => vals.map((v,i) => v >= 0 ? (schoolColors[i] || schoolColors[0]).border : negColor.border);
 
   const commonOpts = {
     responsive:true, maintainAspectRatio:false, resizeDelay:0,
-    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}} },
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>' $'+c.raw.toLocaleString()}}
+    },
     scales:{
       x:{ grid:{color:'rgba(240,180,120,0.22)'}, ticks:{font:{size:11},color:'#a87d5a'} },
       y:{ grid:{color:'rgba(240,180,120,0.22)'}, ticks:{font:{size:11},color:'#8892b0',callback:v=>'$'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v)} }
@@ -3297,12 +3366,17 @@ function buildDashBudgetCharts() {
       type:'bar',
       data:{
         labels,
-        datasets:[
-          { label:'Kharash Haraaga', data:remOut, backgroundColor:remOut.map(v=>v>=0?'rgba(249,115,22,0.82)':'rgba(232,93,4,0.82)'), borderColor:remOut.map(v=>v>=0?'#f97316':'#e85d04'), borderWidth:1.5, borderRadius:8, borderSkipped:false },
-          { label:'Kharash Miisaaniyad', data:allocOut, backgroundColor:'rgba(245,158,11,0.15)', borderColor:'rgba(245,158,11,0.5)', borderWidth:1.5, borderRadius:8, borderSkipped:false }
-        ]
+        datasets:[{
+          label:'Kharash Haraaga (Bille)',
+          data: remOut,
+          backgroundColor: makeBarColors(remOut),
+          borderColor: makeBorderColors(remOut),
+          borderWidth: 2,
+          borderRadius: 8,
+          borderSkipped: false
+        }]
       },
-      options:commonOpts
+      options: commonOpts
     });
   }
 
@@ -3313,12 +3387,17 @@ function buildDashBudgetCharts() {
       type:'bar',
       data:{
         labels,
-        datasets:[
-          { label:'Dakhli Haraaga', data:remIn, backgroundColor:remIn.map(v=>v>=0?'rgba(249,115,22,0.82)':'rgba(232,93,4,0.82)'), borderColor:remIn.map(v=>v>=0?'#f97316':'#e85d04'), borderWidth:1.5, borderRadius:8, borderSkipped:false },
-          { label:'Dakhli Miisaaniyad', data:allocIn, backgroundColor:'rgba(251,146,60,0.15)', borderColor:'rgba(251,146,60,0.5)', borderWidth:1.5, borderRadius:8, borderSkipped:false }
-        ]
+        datasets:[{
+          label:'Dakhli Haraaga (Bille)',
+          data: remIn,
+          backgroundColor: makeBarColors(remIn),
+          borderColor: makeBorderColors(remIn),
+          borderWidth: 2,
+          borderRadius: 8,
+          borderSkipped: false
+        }]
       },
-      options:commonOpts
+      options: commonOpts
     });
   }
 }
@@ -5013,9 +5092,24 @@ function buildBudgetCharts() {
   const allocOut= booksToChart.map(b => budgets['out_'+b.id] ?? 0);
   const netData = booksToChart.map((b,i) => actIn[i] - actOut[i]);
 
+  // Distinct color palette — one per school/book
+  const PALETTE = [
+    { solid:'#3b82f6', soft:'rgba(59,130,246,0.82)',  ghost:'rgba(59,130,246,0.18)'  },  // blue
+    { solid:'#10b981', soft:'rgba(16,185,129,0.82)',  ghost:'rgba(16,185,129,0.18)'  },  // green
+    { solid:'#8b5cf6', soft:'rgba(139,92,246,0.82)',  ghost:'rgba(139,92,246,0.18)'  },  // purple
+    { solid:'#ec4899', soft:'rgba(236,72,153,0.82)',  ghost:'rgba(236,72,153,0.18)'  },  // pink
+    { solid:'#f59e0b', soft:'rgba(245,158,11,0.82)',  ghost:'rgba(245,158,11,0.18)'  },  // amber
+    { solid:'#06b6d4', soft:'rgba(6,182,212,0.82)',   ghost:'rgba(6,182,212,0.18)'   },  // cyan
+    { solid:'#ef4444', soft:'rgba(239,68,68,0.82)',   ghost:'rgba(239,68,68,0.18)'   },  // red
+    { solid:'#84cc16', soft:'rgba(132,204,22,0.82)',  ghost:'rgba(132,204,22,0.18)'  },  // lime
+  ];
+  const NEG = { solid:'#ef4444', soft:'rgba(239,68,68,0.82)' };
+
+  const c = (i) => PALETTE[i % PALETTE.length];
+
   const gridC = 'rgba(240,180,120,0.22)'; const tickC = '#a87d5a';
 
-  // Bar chart
+  // Bar chart — 4 grouped datasets, each iskuul its own color
   const barCtx = document.getElementById('budBarChart');
   if (barCtx) {
     if (budBarChartInst) budBarChartInst.destroy();
@@ -5024,10 +5118,34 @@ function buildBudgetCharts() {
       data: {
         labels,
         datasets: [
-          { label:'Dakhli Soo Gashay',  data:actIn,   backgroundColor:'rgba(249,115,22,0.85)', borderRadius:5 },
-          { label:'Kharash la Bixiyay', data:actOut,  backgroundColor:'rgba(232,93,4,0.85)',   borderRadius:5 },
-          { label:'Dakhli Miisaaniyad', data:allocIn, backgroundColor:'rgba(249,115,22,0.15)', borderRadius:5, borderWidth:2, borderColor:'rgba(249,115,22,0.55)', borderDash:[4,2] },
-          { label:'Kharash Miisaaniyad',data:allocOut,backgroundColor:'rgba(232,93,4,0.15)',   borderRadius:5, borderWidth:2, borderColor:'rgba(232,93,4,0.55)' },
+          {
+            label:'Dakhli Soo Gashay',
+            data: actIn,
+            backgroundColor: booksToChart.map((_,i) => c(i).soft),
+            borderColor:     booksToChart.map((_,i) => c(i).solid),
+            borderWidth: 1.5, borderRadius: 5
+          },
+          {
+            label:'Kharash la Bixiyay',
+            data: actOut,
+            backgroundColor: booksToChart.map((_,i) => c(i).soft.replace('0.82','0.55')),
+            borderColor:     booksToChart.map((_,i) => c(i).solid),
+            borderWidth: 1.5, borderRadius: 5
+          },
+          {
+            label:'Dakhli Miisaaniyad',
+            data: allocIn,
+            backgroundColor: booksToChart.map((_,i) => c(i).ghost),
+            borderColor:     booksToChart.map((_,i) => c(i).solid),
+            borderWidth: 2, borderRadius: 5
+          },
+          {
+            label:'Kharash Miisaaniyad',
+            data: allocOut,
+            backgroundColor: booksToChart.map((_,i) => c(i).ghost),
+            borderColor:     booksToChart.map((_,i) => c(i).solid + '99'),
+            borderWidth: 2, borderRadius: 5
+          },
         ]
       },
       options:{
@@ -5041,7 +5159,7 @@ function buildBudgetCharts() {
     });
   }
 
-  // Net bar chart (profit/loss per school)
+  // Net bar chart — iskuul kasta midkiisa midab, khasaaro = cas
   const netCtx = document.getElementById('budNetChart');
   if (netCtx) {
     if (budNetChartInst) budNetChartInst.destroy();
@@ -5052,8 +5170,8 @@ function buildBudgetCharts() {
         datasets: [{
           label:"Faa'iido / Khasaaro",
           data: netData,
-          backgroundColor: netData.map(v => v >= 0 ? 'rgba(249,115,22,0.82)' : 'rgba(232,93,4,0.82)'),
-          borderColor:     netData.map(v => v >= 0 ? '#f97316' : '#e85d04'),
+          backgroundColor: netData.map((v,i) => v >= 0 ? c(i).soft    : NEG.soft),
+          borderColor:     netData.map((v,i) => v >= 0 ? c(i).solid   : NEG.solid),
           borderWidth: 1.5,
           borderRadius: 5,
         }]
@@ -5619,7 +5737,7 @@ document.addEventListener('appReady', function() {
 //  FEATURE: IDLE TIMEOUT AUTO-LOGOUT (3 minutes)
 // ══════════════════════════════════════════════
 (function() {
-  const IDLE_TIMEOUT_MS  = 3 * 60 * 1000; // 3 daqiiqo
+  const IDLE_TIMEOUT_MS  = 5 * 60 * 1000; // 5 daqiiqo
   const WARNING_SECS     = 30;             // 30 ilbiriqsi digniinta
 
   let idleTimer      = null;
