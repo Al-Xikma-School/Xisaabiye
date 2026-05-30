@@ -954,6 +954,13 @@
     .stat-value { font-size: 20px; }
     .stat-label { font-size: 10px; }
 
+    /* Dashboard summary cards 2x2 on mobile */
+    #dashSummaryCards {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 10px !important;
+    }
+    #dashSummaryCards > div { padding: 14px !important; }
+
     /* Charts: stack on mobile */
     .charts-row {
       grid-template-columns: 1fr;
