@@ -103,6 +103,7 @@
         renderTable(allTx, 'txTable', 'txCount');
         applyFilters();
         updateStats();
+        if (typeof applyBudgetFilter === 'function') applyBudgetFilter();
         _showLiveBadge('💸 Macaamiilka waa la cusboonaysiiyay');
       } else { _maybeInit(); }
     }, (e) => { console.error('tx listener', e); _maybeInit(); });
@@ -135,7 +136,8 @@
           if (typeof updateDashSummaryCards === 'function') updateDashSummaryCards();
           // Refresh reports table and budget page charts
           if (typeof renderReportBooksTable === 'function') renderReportBooksTable();
-          if (typeof buildBudgetCharts === 'function') buildBudgetCharts();
+          if (typeof applyBudgetFilter === 'function') applyBudgetFilter();
+          else if (typeof buildBudgetCharts === 'function') buildBudgetCharts();
         }
       }
     }, () => {});
@@ -1634,7 +1636,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <div class="chart-header">
             <div>
               <div class="chart-title">🍩 Qeybinta Buugaagta</div>
-              <div class="chart-sub">Balance-ka iskuul kasta</div>
+              <div class="chart-sub" id="doughnutChartSub">Balance-ka iskuul kasta</div>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
@@ -1688,7 +1690,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <div style="font-size:22px;margin-bottom:8px">💰</div>
           <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px">Wadarta Dakhliga Miisaaniyad</div>
           <div style="font-size:22px;font-weight:900;color:var(--accent-green)" id="dashTotalAllocIn">$0</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">4 iskuul – bille</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="dashBilleLabelAllocIn">4 iskuul – bille</div>
         </div>
         <div style="background:#fff;border:1px solid rgba(251,146,60,0.18);border-radius:16px;padding:20px;border-top:3px solid #fb923c;box-shadow:0 2px 12px rgba(180,80,20,0.08)">
           <div style="font-size:22px;margin-bottom:8px">📊</div>
@@ -1700,7 +1702,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <div style="font-size:22px;margin-bottom:8px">🎯</div>
           <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px">Wadarta Kharashka Miisaaniyad</div>
           <div style="font-size:22px;font-weight:900;color:var(--accent-gold)" id="dashTotalAllocOut">$0</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">4 iskuul – bille</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px" id="dashBilleLabelAllocOut">4 iskuul – bille</div>
         </div>
         <div style="background:#fff;border:1px solid rgba(232,93,4,0.18);border-radius:16px;padding:20px;border-top:3px solid #ea580c;box-shadow:0 2px 12px rgba(180,80,20,0.08)">
           <div style="font-size:22px;margin-bottom:8px">📤</div>
@@ -1904,27 +1906,63 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
         </div>
       </div>
-      <div class="stat-cards">
-        <div class="stat-card green">
-          <div class="stat-label">Ugu Badan Cash In</div>
-          <div class="stat-value green" id="maxIn">–</div>
-          <div class="stat-change" id="maxInName">–</div>
+      <!-- Hidden elements to keep JS working -->
+      <div style="display:none">
+        <span id="maxIn"></span><span id="maxInName"></span>
+        <span id="maxOut"></span><span id="maxOutName"></span>
+        <span id="richBook"></span><span id="richBookName"></span>
+        <span id="grandTotal"></span>
+      </div>
+
+      <!-- Report Filter Bar -->
+      <div class="filter-bar" id="rptFilterBar" style="margin-bottom:12px">
+        <div class="filter-group" style="position:relative">
+          <span class="filter-label">⏱ Mudada</span>
+          <div class="multiselect-wrapper" id="rptDurationWrapper">
+            <button class="filter-select multiselect-btn" id="rptDurationBtn" onclick="toggleRptDurationDropdown(event)" style="cursor:pointer;min-width:140px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-blue);color:#fff;border-color:var(--accent-blue)">
+              <span id="rptDurationLabel">Bishaan</span>
+              <span style="font-size:10px;opacity:0.8">▾</span>
+            </button>
+            <div class="multiselect-dropdown" id="rptDurationDropdown" style="display:none;min-width:200px">
+              <label class="ms-option dur-option" onclick="setRptDuration('all',this)">
+                <span class="dur-radio" id="rpt-dur-all">○</span> Waqti Kasta
+              </label>
+              <label class="ms-option dur-option" onclick="setRptDuration('today',this)">
+                <span class="dur-radio" id="rpt-dur-today">○</span> Maanta
+              </label>
+              <label class="ms-option dur-option" onclick="setRptDuration('week',this)">
+                <span class="dur-radio" id="rpt-dur-week">○</span> Usbuucan
+              </label>
+              <label class="ms-option dur-option" onclick="setRptDuration('month',this)">
+                <span class="dur-radio" id="rpt-dur-month">◉</span> Bishaan
+              </label>
+              <label class="ms-option dur-option" onclick="setRptDuration('custom',this)">
+                <span class="dur-radio" id="rpt-dur-custom">○</span> Taariikhda...
+              </label>
+            </div>
+          </div>
         </div>
-        <div class="stat-card red">
-          <div class="stat-label">Ugu Badan Cash Out</div>
-          <div class="stat-value red" id="maxOut">–</div>
-          <div class="stat-change" id="maxOutName">–</div>
+        <div class="filter-group" id="rptCustomDateGroup" style="display:none">
+          <input type="date" class="filter-select" id="rptFilterDateFrom" onchange="renderReportBooksTable()" style="width:140px">
+          <span style="color:var(--text-muted);font-size:12px">→</span>
+          <input type="date" class="filter-select" id="rptFilterDateTo" onchange="renderReportBooksTable()" style="width:140px">
         </div>
-        <div class="stat-card blue">
-          <div class="stat-label">Ugu Qani Badan</div>
-          <div class="stat-value blue" id="richBook">–</div>
-          <div class="stat-change" id="richBookName">–</div>
+        <div class="filter-group">
+          <span class="filter-label">📚 Iskuulka</span>
+          <div class="multiselect-wrapper" id="rptBookWrapper">
+            <button class="filter-select multiselect-btn" id="rptBookBtn" onclick="toggleRptBookDropdown(event)" style="cursor:pointer;min-width:160px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span id="rptBookLabel">Dhammaan</span>
+              <span style="opacity:0.5;font-size:10px">▾</span>
+            </button>
+            <div class="multiselect-dropdown" id="rptBookDropdown" style="display:none">
+              <label class="ms-option" id="rptMsAll">
+                <input type="checkbox" value="__all__" checked onchange="onRptBookChange(this)"> Dhammaan
+              </label>
+              <div id="rptMsBookOptions"></div>
+            </div>
+          </div>
         </div>
-        <div class="stat-card gold">
-          <div class="stat-label">Wadarta Lacagta</div>
-          <div class="stat-value gold" id="grandTotal">–</div>
-          <div class="stat-change">Dhammaan buugaagta</div>
-        </div>
+        <button class="filter-clear" onclick="clearRptFilter()" style="margin-left:auto">✕ Nadiifi</button>
       </div>
 
       <!-- Per-school report table -->
@@ -3028,9 +3066,25 @@ function renderTable(data, tbodyId, countId) {
 
 // ── STATS ──
 function updateStats() {
-  const cashIn  = allTx.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
-  const cashOut = allTx.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
-  const net = books.reduce((s,b)=>s+b.balance,0);
+  // Filter transactions by current month and year, and by visible books only
+  const now = new Date();
+  const curMonth = now.getMonth();
+  const curYear  = now.getFullYear();
+  const _visibleNames = visibleBooks().map(b=>b.name);
+  const isThisMonth = t => {
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj || t.date);
+    return d.getMonth() === curMonth && d.getFullYear() === curYear;
+  };
+  const isVisible = t => _visibleNames.includes(t.book);
+  const cashIn  = allTx.filter(t=>t.type==='in'  && isThisMonth(t) && isVisible(t)).reduce((s,t)=>s+t.amount,0);
+  const cashOut = allTx.filter(t=>t.type==='out' && isThisMonth(t) && isVisible(t)).reduce((s,t)=>s+t.amount,0);
+  const net = visibleBooks().reduce((s,b)=>s+b.balance,0);
+  // Update stat-change label to show current month name
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthLabel = monthNames[curMonth] + ' ' + curYear;
+  document.querySelectorAll('#page-dashboard .stat-change').forEach((el,i) => {
+    if (i < 2) el.textContent = monthLabel; // Cash In and Cash Out cards only
+  });
 
   document.getElementById('totalIn').textContent    = fmtFull(cashIn);
   document.getElementById('totalOut').textContent   = fmtFull(cashOut);
@@ -3110,14 +3164,26 @@ function buildCharts() {
     }
   });
 
-  // ── Doughnut: book balances ──
+  // ── Doughnut: book balances this month ──
   const dCtx = document.getElementById('doughnutChart').getContext('2d');
   if (_doughnutChartInst) _doughnutChartInst.destroy();
+  // Calculate per-book net for current month only
+  const _dnow = new Date();
+  const _dcm = _dnow.getMonth(), _dcy = _dnow.getFullYear();
+  const _dFilter = t => {
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj || t.date);
+    return d.getMonth() === _dcm && d.getFullYear() === _dcy;
+  };
+  const _doughnutData = visibleBooks().map(b => {
+    const bIn  = allTx.filter(t=>t.book===b.name&&t.type==='in' &&_dFilter(t)).reduce((s,t)=>s+t.amount,0);
+    const bOut = allTx.filter(t=>t.book===b.name&&t.type==='out'&&_dFilter(t)).reduce((s,t)=>s+t.amount,0);
+    return Math.max(bIn - bOut, 0);
+  });
   _doughnutChartInst = new Chart(dCtx, {
     type: 'doughnut',
     data: {
       labels: visibleBooks().map(b=>b.name),
-      datasets:[{ data: visibleBooks().map(b=>Math.max(b.balance,0)),
+      datasets:[{ data: _doughnutData,
         backgroundColor: visibleBooks().map(b=>b.color+'dd'),
         borderColor: visibleBooks().map(b=>b.color),
         borderWidth:2, hoverOffset:10
@@ -3129,6 +3195,10 @@ function buildCharts() {
       cutout:'65%'
     }
   });
+  // Update subtitle to show current month
+  const _dMNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const _dSub = document.getElementById('doughnutChartSub');
+  if (_dSub) _dSub.textContent = 'Net balance – ' + _dMNames[_dcm] + ' ' + _dcy;
 
   // ── Line chart (reports page) ──
   const lCtx = document.getElementById('lineChart');
@@ -3164,12 +3234,23 @@ function buildCharts() {
     });
   }
 
-  // ── Pie chart (reports page) ──
+  // ── Pie chart (reports page) – current month, per-book distinct colors ──
   const pCtx = document.getElementById('pieChart');
   if (pCtx) {
+    const _piNow = new Date();
+    const _piCm = _piNow.getMonth(), _piCy = _piNow.getFullYear();
+    const _piF = t => {
+      const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj || t.date);
+      return d.getMonth() === _piCm && d.getFullYear() === _piCy;
+    };
+    const PIE_PALETTE = ['#4f8aff','#00e09e','#f59e0b','#ff4d6d','#a78bfa','#38bdf8','#f97316','#34d399','#fb923c','#ec4899','#84cc16','#06b6d4'];
     const pieLabels = visibleBooks().map(b=>b.name);
-    const pieData   = visibleBooks().map(b=>allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0));
-    const pieColors = ['#f97316','#ea580c','#f59e0b','#fb923c','#e85d04','#dc7e2b'];
+    const pieData   = visibleBooks().map(b=>allTx.filter(t=>t.book===b.name&&t.type==='out'&&_piF(t)).reduce((s,t)=>s+t.amount,0));
+    const pieColors = visibleBooks().map((_,i)=>PIE_PALETTE[i % PIE_PALETTE.length]);
+    // Update pie chart subtitle
+    const _piMN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const pieSubEl = document.querySelector('#pieChart')?.closest('.chart-card')?.querySelector('.chart-sub');
+    if (pieSubEl) pieSubEl.textContent = 'Kharashka – ' + _piMN[_piCm] + ' ' + _piCy;
     if (_pieChartInst) _pieChartInst.destroy();
     _pieChartInst = new Chart(pCtx.getContext('2d'), {
       type:'pie',
@@ -3413,10 +3494,18 @@ function buildDashBudgetCharts() {
 function updateDashSummaryCards() {
   const schools4 = getSchool4().map(s => visibleBooks().find(b=>b.id===s.bookId)).filter(Boolean);
 
+  // Filter by current month for summary cards (Bille)
+  const now2 = new Date();
+  const _cm = now2.getMonth(), _cy = now2.getFullYear();
+  const _isBille = t => {
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj || t.date);
+    return d.getMonth() === _cm && d.getFullYear() === _cy;
+  };
+
   const totalAllocIn  = schools4.reduce((s,b)=>s+(budgets['in_'+b.id]??0),0);
-  const totalActualIn = schools4.reduce((s,b)=>s+allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((a,t)=>a+t.amount,0),0);
+  const totalActualIn = schools4.reduce((s,b)=>s+allTx.filter(t=>t.book===b.name&&t.type==='in'&&_isBille(t)).reduce((a,t)=>a+t.amount,0),0);
   const totalAllocOut = schools4.reduce((s,b)=>s+(budgets['out_'+b.id]??0),0);
-  const totalActualOut= schools4.reduce((s,b)=>s+allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((a,t)=>a+t.amount,0),0);
+  const totalActualOut= schools4.reduce((s,b)=>s+allTx.filter(t=>t.book===b.name&&t.type==='out'&&_isBille(t)).reduce((a,t)=>a+t.amount,0),0);
 
   const gapIn  = totalActualIn  - totalAllocIn;
   const gapOut = totalActualOut - totalAllocOut;
@@ -3426,6 +3515,11 @@ function updateDashSummaryCards() {
   if(el('dashTotalActualIn')) el('dashTotalActualIn').textContent = fmtFull(totalActualIn);
   if(el('dashTotalAllocOut')) el('dashTotalAllocOut').textContent = fmtFull(totalAllocOut);
   if(el('dashTotalActualOut'))el('dashTotalActualOut').textContent= fmtFull(totalActualOut);
+  // Update dynamic month labels
+  const _mns = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const _mlabel = _mns[_cm] + ' ' + _cy + ' – bille';
+  if(el('dashBilleLabelAllocIn'))  el('dashBilleLabelAllocIn').textContent  = schools4.length + ' iskuul – ' + _mns[_cm] + ' ' + _cy;
+  if(el('dashBilleLabelAllocOut')) el('dashBilleLabelAllocOut').textContent = schools4.length + ' iskuul – ' + _mns[_cm] + ' ' + _cy;
 
   if(el('dashGapIn')) {
     const pct = totalAllocIn > 0 ? (gapIn/totalAllocIn*100).toFixed(1) : 0;
@@ -3457,6 +3551,7 @@ function showPage(id) {
   if(id==='settings') { renderMembersList(); renderSettingsBooks(); }
   if(id==='transactions') { populateBookFilter(); applyFilters(); }
   if(id==='budget') { populateBudgetFilter(); renderBudgetPage(); }
+  if(id==='reports') { populateRptBookFilter(); }
   if(id==='recycle') { renderRecycleBin(); }
 }
 
@@ -3778,25 +3873,23 @@ function updateTxSummary(data, cutoffDate, includeOpening) {
 
   // Opening balance: transactions before the cutoff date for the filtered books
   let openingBal = 0;
-  const booksToCheck = selectedBooks.has('__all__') ? books.map(b=>b.name) : [...selectedBooks];
+  // Only consider books visible to the current user (allowedBooks restriction)
+  const _visibleBookNames = visibleBooks().map(b=>b.name);
+  const booksToCheck = selectedBooks.has('__all__') ? _visibleBookNames : [...selectedBooks].filter(n=>_visibleBookNames.includes(n));
 
-  if(includeOpening && cutoffDate) {
-    // Sum all tx before cutoff for the selected books
+  if(cutoffDate) {
+    // Opening balance = all tx BEFORE cutoffDate for visible/selected books only
     const prevTx = allTx.filter(t => {
       const d = new Date(t.dateObj||t.date);
       return d < cutoffDate && booksToCheck.includes(t.book);
     });
     prevTx.forEach(t => { openingBal += t.type==='in' ? t.amount : -t.amount; });
   } else {
-    // Default: current book balance minus net of shown transactions
-    booksToCheck.forEach(bName => {
-      const b = books.find(x=>x.name===bName);
-      if(b) openingBal += b.balance;
-    });
-    openingBal = openingBal - net;
+    // No cutoff (Waqti Kasta): opening = 0, show full picture in net
+    openingBal = 0;
   }
 
-  const netWithOpening = includeOpening && cutoffDate ? openingBal + net : net;
+  const netWithOpening = openingBal + net;
 
   const el = id => document.getElementById(id);
 
@@ -3813,11 +3906,10 @@ function updateTxSummary(data, cutoffDate, includeOpening) {
   if(el('txTotalIn'))  el('txTotalIn').textContent  = fmtFull(totalIn);
   if(el('txTotalOut')) el('txTotalOut').textContent  = fmtFull(totalOut);
 
-  // Net Balance: only changes color, not label
+  // Net Balance: shows net of period only (Opening Balance already shown separately)
   if(el('txNetBal')) {
-    const displayNet = includeOpening && cutoffDate ? netWithOpening : net;
-    el('txNetBal').textContent = fmtFull(displayNet);
-    el('txNetBal').style.color = displayNet >= 0 ? '#16a34a' : '#dc2626';
+    el('txNetBal').textContent = fmtFull(net);
+    el('txNetBal').style.color = net >= 0 ? '#16a34a' : '#dc2626';
   }
 
   // ── Budget Remaining (U Dhiman Kharashka) ──
@@ -4707,19 +4799,20 @@ function exportFilteredPDF() {
 
 // ── PRINT REPORT ──
 function printReport() {
-  const totalIn  = document.getElementById('totalIn')?.textContent || '–';
-  const totalOut = document.getElementById('totalOut')?.textContent || '–';
-  const net      = document.getElementById('netBalance')?.textContent || '–';
-  const maxIn    = document.getElementById('maxIn')?.textContent || '–';
-  const maxInN   = document.getElementById('maxInName')?.textContent || '–';
-  const maxOut   = document.getElementById('maxOut')?.textContent || '–';
-  const maxOutN  = document.getElementById('maxOutName')?.textContent || '–';
-  const richBk   = document.getElementById('richBook')?.textContent || '–';
-  const richBkN  = document.getElementById('richBookName')?.textContent || '–';
+  // Current month filter for print
+  const _prNow = new Date();
+  const _prCm = _prNow.getMonth(), _prCy = _prNow.getFullYear();
+  const _prMN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const _prMonthLabel = _prMN[_prCm] + ' ' + _prCy;
+  const _prFilter = t => {
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj || t.date);
+    return d.getMonth() === _prCm && d.getFullYear() === _prCy;
+  };
 
-  const booksRows = visibleBooks().map(b=>{
-    const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
-    const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
+  let totalIn=0, totalOut=0;
+  const booksRows = visibleBooks().map((b,bi)=>{
+    const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in' &&_prFilter(t)).reduce((s,t)=>s+t.amount,0);
+    const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out'&&_prFilter(t)).reduce((s,t)=>s+t.amount,0);
     const bNet   = bIn - bOut;
     const allocIn  = budgets['in_'+b.id]  ?? 0;
     const allocOut = budgets['out_'+b.id] ?? 0;
@@ -4727,6 +4820,9 @@ function printReport() {
     const gapOut   = bOut - allocOut;
     const gapInPct = allocIn  > 0 ? (gapIn  / allocIn  * 100) : null;
     const gapOutPct= allocOut > 0 ? (gapOut / allocOut * 100) : null;
+    totalIn += bIn; totalOut += bOut;
+    const PALETTE = ['#4f8aff','#00a86b','#f59e0b','#cc2244','#a78bfa','#38bdf8','#f97316','#34d399','#fb923c','#ec4899'];
+    const rowColor = PALETTE[bi % PALETTE.length];
     function gs(gap, pct, isCost) {
       if(pct===null) return '<span style="color:#aaa">–</span>';
       const good = isCost ? gap<=0 : gap>=0;
@@ -4735,7 +4831,7 @@ function printReport() {
       return `<span style="color:${c};font-weight:700">${sign}$${Math.abs(gap).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}<br><small>(${pct>=0?'+':''}${pct.toFixed(1)}%)</small></span>`;
     }
     return `<tr>
-      <td>${b.emoji} ${b.name}</td>
+      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${rowColor};margin-right:6px"></span>${b.emoji} ${b.name}</td>
       <td style="text-align:right;color:#00a86b;font-weight:700">+$${bIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
       <td style="text-align:right">${gs(gapIn,gapInPct,false)}</td>
       <td style="text-align:right;color:#cc2244;font-weight:700">-$${bOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
@@ -4743,13 +4839,7 @@ function printReport() {
       <td style="text-align:right;font-weight:700;color:${bNet>=0?'#00a86b':'#cc2244'}">${bNet>=0?'+':''}$${Math.abs(bNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
     </tr>`}).join('');
 
-  const txRows = allTx.slice(0,30).map(t=>`
-    <tr>
-      <td>${t.date}</td>
-      <td>${t.detail}</td>
-      <td>${t.book}</td>
-      <td style="color:${t.type==='in'?'#00a86b':'#cc2244'};font-weight:700">${t.type==='in'?'+':'-'}${fmtFull(t.amount)}</td>
-    </tr>`).join('');
+  const net = totalIn - totalOut;
 
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -4759,6 +4849,7 @@ function printReport() {
     .header{text-align:center;border-bottom:3px solid #4f8aff;padding-bottom:16px;margin-bottom:24px}
     .header h1{margin:0;font-size:26px;color:#4f8aff}
     .header p{margin:4px 0;color:#666;font-size:13px}
+    .month-badge{display:inline-block;background:#4f8aff22;color:#4f8aff;border:1px solid #4f8aff55;border-radius:20px;padding:3px 14px;font-size:13px;font-weight:700;margin-top:6px}
     .section{margin-bottom:28px}
     .section h2{font-size:15px;font-weight:700;color:#333;border-left:4px solid #4f8aff;padding-left:10px;margin-bottom:12px}
     .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
@@ -4770,24 +4861,26 @@ function printReport() {
     th{background:#f5f6ff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0}
     td{padding:9px 12px;border-bottom:1px solid #f0f0f0}
     tr:last-child td{border-bottom:none}
+    tr:nth-child(even) td{background:#fafbff}
     .footer{text-align:center;margin-top:30px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px}
     @media print{body{padding:15px}}
   </style></head><body>
   <div class="header">
     <h1>📊 Warbixinta Lacagta</h1>
-    <p>XISAABIYE – مدرسة الحكمة</p>
-    <p>Taariikhda: ${new Date().toLocaleDateString('so-SO',{dateStyle:'full'})}</p>
+    <p>XISAABIYE – مدرسة الحكمة · Garowe, Puntland</p>
+    <div class="month-badge">📅 ${_prMonthLabel}</div>
+    <p style="margin-top:6px;font-size:11px;color:#999">La daabacay: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</p>
   </div>
   <div class="section">
-    <h2>Koobaadka Guud</h2>
+    <h2>Koobaadka Guud – ${_prMonthLabel}</h2>
     <div class="stats-grid">
-      <div class="stat-box"><div class="label">Wadarta Cash In</div><div class="value green">${totalIn}</div></div>
-      <div class="stat-box"><div class="label">Wadarta Cash Out</div><div class="value red">${totalOut}</div></div>
-      <div class="stat-box"><div class="label">Haraaga Net</div><div class="value blue">${net}</div></div>
+      <div class="stat-box"><div class="label">Wadarta Cash In</div><div class="value green">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div></div>
+      <div class="stat-box"><div class="label">Wadarta Cash Out</div><div class="value red">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div></div>
+      <div class="stat-box"><div class="label">Faa'iido / Khasaaro</div><div class="value ${net>=0?'blue':'red'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div></div>
     </div>
   </div>
   <div class="section">
-    <h2>Xaaladda Iskuulka – Dakhliga, Kharashka iyo U Dhimashada Miisaaniyada</h2>
+    <h2>Xaaladda Iskuulka – ${_prMonthLabel}</h2>
     <table><thead><tr>
       <th>Iskuulka</th>
       <th style="text-align:right">Dakhliga</th>
@@ -4799,20 +4892,15 @@ function printReport() {
     <tbody>${booksRows}
     <tr style="background:#f5f6ff;font-weight:800;border-top:2px solid #4f8aff">
       <td>📊 Wadarta Guud</td>
-      <td style="text-align:right;color:#00a86b">+${totalIn}</td>
+      <td style="text-align:right;color:#00a86b">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
       <td style="text-align:right;color:#aaa">–</td>
-      <td style="text-align:right;color:#cc2244">-${totalOut}</td>
+      <td style="text-align:right;color:#cc2244">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
       <td style="text-align:right;color:#aaa">–</td>
-      <td style="text-align:right;color:#4f8aff">${net}</td>
+      <td style="text-align:right;color:${net>=0?'#00a86b':'#cc2244'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
     </tr>
     </tbody></table>
   </div>
-  <div class="section">
-    <h2>Macaamiilada Ugu Dambeeyey (30)</h2>
-    <table><thead><tr><th>Taariikhda</th><th>Faahfaahinta</th><th>Buug</th><th>Xaddiga</th></tr></thead>
-    <tbody>${txRows}</tbody></table>
-  </div>
-  <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
+  <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()} · ${_prMonthLabel}</div>
   </body></html>`);
   w.document.close();
   w.focus();
@@ -4877,16 +4965,144 @@ function selectBook(id) {
 }
 
 // ── REPORT: PER-BOOK TABLE ──
+let _rptDuration = 'month';
+let _rptSelectedBooks = new Set(['__all__']);
+let _rptInitDone = false;
+
+function setRptDuration(val, labelEl) {
+  _rptDuration = val;
+  try { localStorage.setItem('rptDuration', val); } catch(e){}
+  document.getElementById('rptDurationLabel').textContent = durLabels[val] || val;
+  const btnEl = document.getElementById('rptDurationBtn');
+  if (btnEl) {
+    if (val === 'all') {
+      btnEl.style.background = 'var(--surface2)'; btnEl.style.color = 'var(--text-primary)'; btnEl.style.borderColor = 'var(--border)';
+    } else {
+      btnEl.style.background = 'var(--accent-blue)'; btnEl.style.color = '#fff'; btnEl.style.borderColor = 'var(--accent-blue)';
+    }
+  }
+  ['all','today','week','month','custom'].forEach(k => {
+    const e = document.getElementById('rpt-dur-'+k);
+    if(e) { e.textContent = k===val?'◉':'○'; e.style.color = k===val?'var(--accent-blue)':'var(--text-muted)'; }
+  });
+  const cg = document.getElementById('rptCustomDateGroup');
+  if(cg) cg.style.display = val==='custom'?'flex':'none';
+  renderReportBooksTable();
+}
+
+function toggleRptDurationDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('rptDurationDropdown');
+  dd.style.display = dd.style.display==='none'?'block':'none';
+}
+function toggleRptBookDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('rptBookDropdown');
+  dd.style.display = dd.style.display==='none'?'block':'none';
+}
+document.addEventListener('click', function(ev) {
+  ['rptDurationWrapper','rptBookWrapper'].forEach(id => {
+    const w = document.getElementById(id);
+    if(w && !w.contains(ev.target)) {
+      const dd = w.querySelector('.multiselect-dropdown');
+      if(dd) dd.style.display='none';
+    }
+  });
+});
+function onRptBookChange(cb) {
+  if(cb.value==='__all__') {
+    _rptSelectedBooks = cb.checked ? new Set(['__all__']) : new Set();
+    document.querySelectorAll('#rptMsBookOptions input').forEach(c=>c.checked=false);
+  } else {
+    _rptSelectedBooks.delete('__all__');
+    cb.checked ? _rptSelectedBooks.add(cb.value) : _rptSelectedBooks.delete(cb.value);
+    const allCb = document.querySelector('#rptMsAll input');
+    if(allCb) allCb.checked=false;
+  }
+  const vb = visibleBooks();
+  const selectedNames = _rptSelectedBooks.has('__all__') ? vb.map(b=>b.name) :
+    vb.filter(b=>_rptSelectedBooks.has(String(b.id))).map(b=>b.name);
+  const lbl = document.getElementById('rptBookLabel');
+  if(lbl) lbl.textContent = _rptSelectedBooks.has('__all__') ? 'Dhammaan' :
+    selectedNames.length===1 ? selectedNames[0] : selectedNames.length+' iskuul';
+  renderReportBooksTable();
+}
+function populateRptBookFilter() {
+  const c = document.getElementById('rptMsBookOptions');
+  if(!c) return;
+  c.innerHTML = visibleBooks().map(b=>`
+    <label class="ms-option">
+      <input type="checkbox" value="${b.id}" onchange="onRptBookChange(this)"
+        ${_rptSelectedBooks.has(String(b.id))?'checked':''}>
+      <span style="width:8px;height:8px;border-radius:50%;background:${b.color||'#4f8aff'};display:inline-block;flex-shrink:0"></span>
+      ${b.emoji} ${b.name}
+    </label>`).join('');
+}
+function clearRptFilter() {
+  setRptDuration('month', null);
+  _rptSelectedBooks = new Set(['__all__']);
+  populateRptBookFilter();
+  const allCb = document.querySelector('#rptMsAll input');
+  if(allCb) allCb.checked=true;
+  const lbl = document.getElementById('rptBookLabel');
+  if(lbl) lbl.textContent='Dhammaan';
+}
+
 function renderReportBooksTable() {
   const tbody = document.getElementById('rptBooksTable');
   if (!tbody) return;
+  // populate book filter options
+  populateRptBookFilter();
+  // Restore saved duration once
+  try {
+    const saved = localStorage.getItem('rptDuration');
+    if (saved && saved !== _rptDuration && !_rptInitDone) { _rptInitDone=true; setRptDuration(saved, null); return; }
+  } catch(e){}
+  _rptInitDone = true;
+  // Build tx filter based on duration
+  const now = new Date();
+  let durFrom = null, durTo = null;
+  if (_rptDuration==='today') {
+    durFrom=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    durTo=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,999);
+  } else if (_rptDuration==='week') {
+    const day=now.getDay();
+    durFrom=new Date(now); durFrom.setDate(now.getDate()-day); durFrom.setHours(0,0,0,0);
+    durTo=new Date(now); durTo.setDate(now.getDate()+(6-day)); durTo.setHours(23,59,59,999);
+  } else if (_rptDuration==='month') {
+    durFrom=new Date(now.getFullYear(),now.getMonth(),1);
+    durTo=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999);
+  } else if (_rptDuration==='custom') {
+    const fv=document.getElementById('rptFilterDateFrom')?.value;
+    const tv=document.getElementById('rptFilterDateTo')?.value;
+    if(fv){durFrom=new Date(fv); durFrom.setHours(0,0,0,0);}
+    if(tv){durTo=new Date(tv); durTo.setHours(23,59,59,999);}
+  }
+  const _rFilter = t => {
+    if(!t.dateObj) return true;
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj||t.date);
+    if(durFrom && d<durFrom) return false;
+    if(durTo   && d>durTo)   return false;
+    return true;
+  };
+  // Book filter
+  const allVisible = visibleBooks();
+  const displayBooks = _rptSelectedBooks.has('__all__') ? allVisible :
+    allVisible.filter(b=>_rptSelectedBooks.has(String(b.id)));
+  // Duration label for subtitle
+  const _rMNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const durLbl = _rptDuration==='month' ? _rMNames[now.getMonth()]+' '+now.getFullYear() :
+    durLabels[_rptDuration]||_rptDuration;
+  // Update table subtitle with current month
+  const rptCount = document.getElementById('rptBookCount');
+  if (rptCount) rptCount.textContent = displayBooks.length + ' iskuul – ' + durLbl;
   let totalIn=0, totalOut=0, totalNet=0, totalTx=0;
   let totalAllocIn=0, totalAllocOut=0;
-  const rows = visibleBooks().map(b => {
-    const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
-    const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
+  const rows = displayBooks.map(b => {
+    const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in' &&_rFilter(t)).reduce((s,t)=>s+t.amount,0);
+    const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out'&&_rFilter(t)).reduce((s,t)=>s+t.amount,0);
     const bNet   = bIn - bOut;
-    const bTx    = allTx.filter(t=>t.book===b.name).length;
+    const bTx    = allTx.filter(t=>t.book===b.name&&_rFilter(t)).length;
     const allocIn  = budgets['in_'+b.id]  ?? 0;
     const allocOut = budgets['out_'+b.id] ?? 0;
     const gapIn    = bIn  - allocIn;
@@ -4942,17 +5158,17 @@ function renderReportBooksTable() {
     <td style="text-align:right;font-weight:800">${totalTx}</td>
   </tr>`);
   tbody.innerHTML = rows.join('');
-  const cnt = document.getElementById('rptBookCount');
-  if(cnt) cnt.textContent = `${visibleBooks().length} iskuul`;
 }
 
 // ── BUDGET ──
 let budgets = {}; // bookId -> allocated amount
 
-function renderBudgetPage() {
+function renderBudgetPage(txList) {
   const tbody = document.getElementById('budgetTable');
   const count  = document.getElementById('budCount');
   if (!tbody) return;
+
+  const txSource = txList || allTx;
 
   const displayBooks = _budFilteredBooks !== null ? _budFilteredBooks : visibleBooks();
 
@@ -4961,8 +5177,8 @@ function renderBudgetPage() {
   const rows = displayBooks.map(b => {
     const allocIn  = budgets['in_'+b.id]  ?? 0;
     const allocOut = budgets['out_'+b.id] ?? 0;
-    const bookIn   = allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
-    const bookOut  = allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
+    const bookIn   = txSource.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
+    const bookOut  = txSource.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
 
     // gaps
     const gapIn    = bookIn - allocIn;   // negative = short of target
@@ -5085,16 +5301,17 @@ function renderBudgetPage() {
   setGapEl('budGapOut', totalGapOut, totalAllocOut, true);
 
   // build/update charts
-  buildBudgetCharts();
+  buildBudgetCharts(txSource);
 }
 
 let budBarChartInst = null, budNetChartInst = null;
 
-function buildBudgetCharts() {
+function buildBudgetCharts(txList) {
+  const txSource = txList || allTx;
   const booksToChart = (_budFilteredBooks !== null && _budFilteredBooks.length > 0) ? _budFilteredBooks : visibleBooks();
   const labels  = booksToChart.map(b => b.name.length > 10 ? b.name.slice(0,10)+'…' : b.name);
-  const actIn   = booksToChart.map(b => allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0));
-  const actOut  = booksToChart.map(b => allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0));
+  const actIn   = booksToChart.map(b => txSource.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0));
+  const actOut  = booksToChart.map(b => txSource.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0));
   const allocIn = booksToChart.map(b => budgets['in_'+b.id]  ?? 0);
   const allocOut= booksToChart.map(b => budgets['out_'+b.id] ?? 0);
   const netData = booksToChart.map((b,i) => actIn[i] - actOut[i]);
@@ -5257,6 +5474,13 @@ function _updateBudMultiselectLabel() {
 function populateBudgetFilter() {
   const container = document.getElementById('budMsBookOptions');
   if (!container) return;
+  // Restore saved duration (default: 'month')
+  try {
+    const saved = localStorage.getItem('budDuration') || 'month';
+    if (saved !== budCurrentDuration) {
+      setBudDuration(saved, null);
+    }
+  } catch(e){}
   container.innerHTML = visibleBooks().map(b => `
     <label class="ms-option">
       <input type="checkbox" value="${b.id}" onchange="onBudMultiChange(this)"
@@ -5324,7 +5548,7 @@ function applyBudgetFilter() {
     _budFilteredBooks = null;
   }
 
-  renderBudgetPage();
+  renderBudgetPage(filteredTx);
 }
 
 function clearBudgetFilter() {
@@ -5355,7 +5579,7 @@ function clearBudgetFilter() {
 }
 
 // ── BUDGET DURATION FILTER ──
-let budCurrentDuration = 'all';
+let budCurrentDuration = 'month';
 
 function toggleBudDurationDropdown(e) {
   e.stopPropagation();
@@ -5372,6 +5596,7 @@ document.addEventListener('click', function(e) {
 
 function setBudDuration(val, labelEl) {
   budCurrentDuration = val;
+  try { localStorage.setItem('budDuration', val); } catch(e){}
   document.getElementById('budDurationLabel').textContent = durLabels[val] || val;
   ['all','today','week','month','custom'].forEach(k => {
     const el = document.getElementById('bud-dur-'+k);
@@ -5405,11 +5630,41 @@ function updateBudgetLive2(type, bookId) {
 function _updateBudgetSummaryOnly() {
   let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
   const displayBooks = _budFilteredBooks !== null ? _budFilteredBooks : books;
+
+  // Apply same duration filter as applyBudgetFilter
+  const now = new Date();
+  let durFrom = null, durTo = null;
+  if (budCurrentDuration === 'today') {
+    durFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    durTo   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  } else if (budCurrentDuration === 'week') {
+    const day = now.getDay();
+    durFrom = new Date(now); durFrom.setDate(now.getDate() - day); durFrom.setHours(0,0,0,0);
+    durTo   = new Date(now); durTo.setDate(now.getDate() + (6-day)); durTo.setHours(23,59,59,999);
+  } else if (budCurrentDuration === 'month') {
+    durFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+    durTo   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59, 999);
+  } else if (budCurrentDuration === 'custom') {
+    const fromVal = document.getElementById('budFilterDateFrom')?.value;
+    const toVal   = document.getElementById('budFilterDateTo')?.value;
+    if (fromVal) { durFrom = new Date(fromVal); durFrom.setHours(0,0,0,0); }
+    if (toVal)   { durTo   = new Date(toVal);   durTo.setHours(23,59,59,999); }
+  }
+  const includeOpening = document.getElementById('budIncludeOpeningBal')?.checked || false;
+  const txSource = allTx.filter(t => {
+    if (!includeOpening && t.isOpening) return false;
+    if (!t.dateObj) return true;
+    const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj);
+    if (durFrom && d < durFrom) return false;
+    if (durTo   && d > durTo)   return false;
+    return true;
+  });
+
   displayBooks.forEach(b => {
     totalAllocIn  += budgets['in_'+b.id]  ?? 0;
     totalAllocOut += budgets['out_'+b.id] ?? 0;
-    totalIn  += allTx.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
-    totalOut += allTx.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
+    totalIn  += txSource.filter(t=>t.book===b.name&&t.type==='in').reduce((s,t)=>s+t.amount,0);
+    totalOut += txSource.filter(t=>t.book===b.name&&t.type==='out').reduce((s,t)=>s+t.amount,0);
   });
   const totalNet = totalIn - totalOut;
   const el = id => document.getElementById(id);
