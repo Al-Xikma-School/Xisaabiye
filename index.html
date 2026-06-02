@@ -3908,10 +3908,11 @@ function updateTxSummary(data, cutoffDate, includeOpening) {
   if(el('txTotalIn'))  el('txTotalIn').textContent  = fmtFull(totalIn);
   if(el('txTotalOut')) el('txTotalOut').textContent  = fmtFull(totalOut);
 
-  // Net Balance: shows net of period only (Opening Balance already shown separately)
+  // Net Balance: haddii "Include opening balance" tick yahay, ku dar opening balance
   if(el('txNetBal')) {
-    el('txNetBal').textContent = fmtFull(net);
-    el('txNetBal').style.color = net >= 0 ? '#16a34a' : '#dc2626';
+    const displayNet = (includeOpening && cutoffDate) ? netWithOpening : net;
+    el('txNetBal').textContent = fmtFull(displayNet);
+    el('txNetBal').style.color = displayNet >= 0 ? '#16a34a' : '#dc2626';
   }
 
   // ── Budget Remaining (U Dhiman Kharashka) ──
@@ -3922,10 +3923,9 @@ function updateTxSummary(data, cutoffDate, includeOpening) {
       const b = books.find(x=>x.name===bName);
       if(b) totalAllocOut += budgets['out_'+b.id] ?? 0;
     });
-    // Kharash guud = kharashka la muujiyay + kharashkii hore (haddii opening active yahay)
-    const prevSpending = (includeOpening && cutoffDate && openingBal < 0) ? Math.abs(openingBal) : 0;
-    const effectiveTotalOut = totalOut + prevSpending;
-    const budgetRemain = totalAllocOut - effectiveTotalOut;
+    // Haddii "Include opening balance" tick yahay: U Dhiman = Budget + Opening Balance - Kharash
+    const openingAdjust = (includeOpening && cutoffDate) ? openingBal : 0;
+    const budgetRemain = totalAllocOut + openingAdjust - totalOut;
     const lbl  = el('txBudgetRemainLabel');
     const icon = el('txBudgetRemainIcon');
 
