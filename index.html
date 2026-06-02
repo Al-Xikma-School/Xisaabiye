@@ -247,6 +247,27 @@
     border: 1px solid rgba(249,115,22,0.22);
   }
   .nav-item .icon { width: 18px; text-align: center; font-size: 15px; }
+  /* Mushaharo sub-nav */
+  .msh-subnav {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    margin: 2px 0 4px 18px;
+    border-left: 2px solid rgba(249,115,22,0.25);
+    padding-left: 10px;
+  }
+  .msh-subnav.open { display: flex; }
+  .msh-subitem {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; transition: all 0.2s;
+    font-size: 12.5px; font-weight: 500; color: var(--text-secondary);
+  }
+  .msh-subitem:hover { background: var(--surface2); color: var(--text-primary); }
+  .msh-subitem.active { background: rgba(249,115,22,0.10); color: #f97316; font-weight: 700; }
+  .nav-item .msh-arrow { margin-left:auto; font-size:10px; transition: transform 0.2s; }
+  .nav-item.msh-open .msh-arrow { transform: rotate(90deg); }
+
   .nav-badge {
     margin-left: auto; background: var(--accent-blue);
     color: #fff; font-size: 10px; font-weight: 700;
@@ -1552,6 +1573,18 @@ body.offline-mode #loginScreen { margin-top: 46px; }
     <div class="nav-item" onclick="showPage('budget')">
       <span class="icon">🎯</span> Miisaaniyada
     </div>
+    <div class="nav-item" id="navMushaharo" onclick="toggleMshNav()">
+      <span class="icon">💼</span> Mushaharo
+      <span class="msh-arrow">▶</span>
+    </div>
+    <div class="msh-subnav" id="mshSubNav">
+      <div class="msh-subitem" id="mshSub-staff" onclick="showMshTab('staff')">
+        <span>👥</span> Shaqaalaha
+      </div>
+      <div class="msh-subitem" id="mshSub-pay" onclick="showMshTab('pay')">
+        <span>💸</span> Mushahar Bixin
+      </div>
+    </div>
     <div class="nav-item" onclick="showPage('settings')">
       <span class="icon">⚙️</span> Settings
     </div>
@@ -1975,12 +2008,12 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <thead>
             <tr>
               <th>Iskuulka</th>
-              <th style="text-align:right">Dakhliga Soo Gashay</th>
-              <th style="text-align:right">U Dhiman Dakhli</th>
-              <th style="text-align:right">Kharashka la Bixiyay</th>
-              <th style="text-align:right">U Dhiman Kharash</th>
-              <th style="text-align:right">Faa'iido / Khasaaro</th>
-              <th style="text-align:right">Macaamiil</th>
+              <th style="text-align:left">Dakhliga Soo Gashay</th>
+              <th style="text-align:left">U Dhiman Dakhli</th>
+              <th style="text-align:left">Kharashka la Bixiyay</th>
+              <th style="text-align:left">U Dhiman Kharash</th>
+              <th style="text-align:left">Faa'iido / Khasaaro</th>
+              <th style="text-align:left">Macaamiil</th>
             </tr>
           </thead>
           <tbody id="rptBooksTable"></tbody>
@@ -2317,6 +2350,279 @@ body.offline-mode #loginScreen { margin-top: 46px; }
   </div>
 </div>
 
+<!-- MUSHAHARO PAGE -->
+<div class="page" id="page-mushaharo">
+
+  <!-- Section: Shaqaalaha -->
+  <div id="msh-section-staff">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div class="section-title">👥 Shaqaalaha</div>
+      <div class="section-sub">Diiwaanka shaqaalaha – magac, mushahar, canshuur, telefoon</div>
+    </div>
+    <button class="btn btn-green" onclick="openMushaharoModal()">+ Ku dar Shaqaale</button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-blue)">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(79,138,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">&#x1F465;</div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Shaqaalaha</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent-blue)" id="msh-totalStaff">0</div>
+      </div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-green)">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,224,158,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">&#x1F4B0;</div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Wadarta Mushaharka</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent-green)" id="msh-totalSalary">$0</div>
+      </div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:12px;border-top:3px solid var(--accent-red)">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,77,109,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">&#x1F4CB;</div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Wadarta Canshuurta</div>
+        <div style="font-size:20px;font-weight:800;color:var(--accent-red)" id="msh-totalTax">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff Table -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:700">&#x1F4CB; Liiska Shaqaalaha</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse" id="msh-staffTable">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Magaca</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Mushaharka</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Canshuurta</th>
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Telefoonka</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Ficilka</th>
+          </tr>
+        </thead>
+        <tbody id="msh-staffBody">
+          <tr id="msh-staffEmpty">
+            <td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px">
+              <div style="font-size:36px;margin-bottom:8px">&#x1F465;</div>
+              Wali shaqaale lama darin. Guji &ldquo;+ Ku dar Shaqaale&rdquo;
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /msh-section-staff -->
+
+  <!-- Section: Mushahar Bixin -->
+  <div id="msh-section-pay" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div class="section-title">💸 Mushahar Bixin</div>
+      <div class="section-sub">Taariikhda mushaharka la bixiyay – shaqaale kasta</div>
+    </div>
+    <button class="btn btn-green" onclick="openMshPayModal()">+ Bixin Mushahar</button>
+  </div>
+
+  <!-- Pay Summary Cards (2×2 mobile-friendly grid) -->
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:3px solid var(--accent-red)">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(220,38,38,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M2 10h20M6 14h.01M10 14h4"/></svg>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px">La Bixiyay</div>
+        <div style="font-size:18px;font-weight:900;color:var(--accent-red);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="msh-totalPaid">$0</div>
+      </div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:3px solid var(--accent-green)">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(22,163,74,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px">Lacag-bixinno</div>
+        <div style="font-size:18px;font-weight:900;color:var(--accent-green)" id="msh-totalPayCount">0</div>
+      </div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:3px solid var(--accent-blue)">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(79,138,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f8aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px">Shaqaalaha</div>
+        <div style="font-size:18px;font-weight:900;color:var(--accent-blue)" id="msh-totalPayStaff">0</div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(249,115,22,0.08),rgba(234,88,12,0.03));border:1px solid rgba(249,115,22,0.25);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:3px solid var(--accent-orange)">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:2px">U Dhiman</div>
+        <div style="font-size:18px;font-weight:900;color:var(--accent-orange);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="msh-totalRemain">$0</div>
+        <div style="font-size:10px;color:var(--text-muted)" id="msh-totalRemainSub">0 shaqaale</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Salary Chart -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:13px;font-weight:700">&#x1F4CA; Mushahar Bixinta – Shaqaale kasta</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Xaddiga la bixiyay marka loo eego mushaharka</div>
+      </div>
+      <div style="display:flex;gap:12px;font-size:11px">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#f97316;display:inline-block"></span>La Bixiyay</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(79,138,255,0.5);display:inline-block"></span>U Dhiman</span>
+      </div>
+    </div>
+    <div style="position:relative;height:200px">
+      <canvas id="msh-payChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px">
+    <!-- Period buttons row -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button id="msh-dur-all"       onclick="_mshSetPeriod('all',this)"       style="padding:6px 13px;border-radius:20px;border:1px solid var(--accent-orange);background:var(--accent-orange);color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">Dhamaan</button>
+      <button id="msh-dur-today"     onclick="_mshSetPeriod('today',this)"     style="padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-secondary);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">Maanta</button>
+      <button id="msh-dur-month"     onclick="_mshSetPeriod('month',this)"     style="padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-secondary);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">Bishatan</button>
+      <button id="msh-dur-lastmonth" onclick="_mshSetPeriod('lastmonth',this)" style="padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-secondary);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">La Dhaafay</button>
+      <button id="msh-dur-custom"    onclick="_mshSetPeriod('custom',this)"    style="padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-secondary);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">&#x1F4C5; Custom</button>
+    </div>
+    <!-- Custom date range (hidden by default) -->
+    <div id="msh-customDates" style="display:none;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+      <input type="date" id="msh-dateFrom" onchange="_mshApplyFilters()" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:12px;flex:1;min-width:130px">
+      <span style="color:var(--text-muted);font-size:12px">→</span>
+      <input type="date" id="msh-dateTo"   onchange="_mshApplyFilters()" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:12px;flex:1;min-width:130px">
+    </div>
+    <!-- Search + Staff filter row -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div style="position:relative;flex:1;min-width:150px">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none">&#x1F50D;</span>
+        <input id="msh-paySearch" type="text" placeholder="Raadi magac..." oninput="_mshApplyFilters()" style="width:100%;padding:7px 12px 7px 32px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:13px;box-sizing:border-box">
+      </div>
+      <select id="msh-payFilterStaff" onchange="_mshApplyFilters()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:13px;min-width:140px;flex:1">
+        <option value="">&#x1F464; Shaqaalaha Dhamaan</option>
+      </select>
+      <button onclick="_mshClearFilters()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-secondary);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">&#x2715; Naadi</button>
+      <span id="msh-payFilterCount" style="font-size:11px;color:var(--text-muted);white-space:nowrap"></span>
+    </div>
+  </div>
+
+  <!-- Payments Table -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:700">&#x1F4B8; Mushaharka la Bixiyay</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="printMshPays()" style="background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.3);color:var(--accent-blue);font-size:12px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer">🖨️ Daabac</button>
+        <button onclick="exportMshPaysPDF()" style="background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.3);color:var(--accent-green);font-size:12px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer">📄 PDF</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Taariikhda</th>
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Magaca Qaataha</th>
+            <th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Meesha</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Lacagta</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Haraaga</th>
+            <th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase">Ficilka</th>
+          </tr>
+        </thead>
+        <tbody id="msh-payBody">
+          <tr id="msh-payEmpty">
+            <td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px">
+              <div style="font-size:36px;margin-bottom:8px">&#x1F4B8;</div>
+              Wali lacag lama bixin
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div><!-- /msh-section-pay -->
+</div>
+
+<!-- MUSHAHARO: ADD STAFF MODAL -->
+<div class="modal-overlay" id="mshStaffModal" style="display:none">
+  <div class="modal" style="max-width:420px;width:92%">
+    <div class="modal-header">
+      <div class="modal-title">&#x1F464; Ku dar Shaqaale</div>
+      <button class="modal-close" onclick="closeMshStaffModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">Magaca Shaqaalaha *</label>
+        <input id="msh-sName" type="text" placeholder="Magaca buuxa" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:14px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">Xadka Mushaharka ($) *</label>
+        <input id="msh-sSalary" type="number" min="0" placeholder="0" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:14px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">Xadka Canshuurta ($)</label>
+        <input id="msh-sTax" type="number" min="0" placeholder="0" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:14px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">Telefoonka</label>
+        <input id="msh-sPhone" type="tel" placeholder="+252..." style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:14px;box-sizing:border-box">
+      </div>
+      <div id="msh-sErr" style="display:none;color:#dc2626;font-size:12px;font-weight:600"></div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary)" onclick="closeMshStaffModal()">Jooji</button>
+      <button class="btn btn-green" id="msh-sSaveBtn" onclick="saveMshStaff()">&#x1F4BE; Keydi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MUSHAHARO: PAY SALARY MODAL -->
+<div class="modal-overlay" id="mshPayModal" style="display:none">
+  <div class="modal" style="max-width:420px;width:92%">
+    <div class="modal-header">
+      <div class="modal-title">&#x1F4B8; Bixin Mushahar</div>
+      <button class="modal-close" onclick="closeMshPayModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">Magaca Qaataha *</label>
+        <select id="msh-pStaff" onchange="mshUpdatePayBalance()" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:14px;box-sizing:border-box">
+          <option value="">&#x2014; Dooro shaqaale &#x2014;</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">Lacagta la Bixinayo ($) *</label>
+        <input id="msh-pAmount" type="number" min="1" placeholder="0" oninput="mshUpdatePayBalance()" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:14px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px">💳 Meesha la qaatay *</label>
+        <select id="msh-pMethod" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-primary);font-size:14px;box-sizing:border-box">
+          <option value="Kaash">💵 Kaash</option>
+          <option value="Sahal">📱 Sahal</option>
+          <option value="Salaam Bank">🏦 Salaam Bank</option>
+          <option value="Amal Bank">🏦 Amal Bank</option>
+          <option value="Dahabshiil">🌐 Dahabshiil</option>
+          <option value="Kale">🔹 Kale</option>
+        </select>
+      </div>
+      <div id="msh-pBalPreview" style="display:none;padding:10px 14px;border-radius:8px;background:rgba(79,138,255,0.08);border:1px solid rgba(79,138,255,0.2);font-size:13px;color:var(--text-primary)"></div>
+      <div id="msh-pErr" style="display:none;color:#dc2626;font-size:12px;font-weight:600"></div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary)" onclick="closeMshPayModal()">Jooji</button>
+      <button class="btn btn-green" id="msh-pSaveBtn" onclick="saveMshPay()">&#x2705; Bixin</button>
+    </div>
+  </div>
+</div>
+
 <!-- NEW BOOK MODAL -->
 <div class="modal-overlay" id="newBookModal">
   <div class="modal">
@@ -2447,6 +2753,48 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           </label>
           <div id="amBookCheckList"></div>
         </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="margin-bottom:8px;display:block">🗂️ Bogagga La Ogol yahay</label>
+      <div id="amPagesSection" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <label id="amAllPagesRow" onclick="toggleAllPages(event)"
+          style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);background:rgba(79,138,255,0.06)">
+          <span id="amAllPagesCheck" style="width:18px;height:18px;border-radius:5px;border:2px solid #4f8aff;display:flex;align-items:center;justify-content:center;font-size:11px;background:#4f8aff;color:#fff;flex-shrink:0">✓</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text-primary)">Dhammaan Bogagga</span>
+        </label>
+        <label onclick="togglePageCheck(event,'dashboard')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span id="amPageCheck_dashboard" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">📊 Dashboard</span>
+        </label>
+        <label onclick="togglePageCheck(event,'cashbooks')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span id="amPageCheck_cashbooks" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">📚 Cashbooks</span>
+        </label>
+        <label onclick="togglePageCheck(event,'transactions')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span id="amPageCheck_transactions" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">💸 Transactions</span>
+        </label>
+        <label onclick="togglePageCheck(event,'reports')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span id="amPageCheck_reports" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">📈 Reports</span>
+        </label>
+        <label onclick="togglePageCheck(event,'budget')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span id="amPageCheck_budget" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">🎯 Miisaaniyada</span>
+        </label>
+        <label onclick="togglePageCheck(event,'mushaharo')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span id="amPageCheck_mushaharo" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">💼 Mushaharo</span>
+        </label>
+        <label onclick="togglePageCheck(event,'settings')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span id="amPageCheck_settings" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">⚙️ Settings</span>
+        </label>
+        <label onclick="togglePageCheck(event,'recycle')" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer">
+          <span id="amPageCheck_recycle" style="width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0"></span>
+          <span style="font-size:13px;color:var(--text-primary)">♻️ Recycle Bin</span>
+        </label>
       </div>
     </div>
     <div class="modal-actions">
@@ -2886,6 +3234,11 @@ document.addEventListener('firebaseReady', async function() {
 // ── LOGIN / LOGOUT ──
 function applyRoleRestrictions() {
   const isViewer = currentUser && currentUser.role === 'Viewer';
+  const allowedPages = currentUser ? (currentUser.allowedPages || null) : null;
+
+  // Reset all nav items visibility first so previous restrictions don't linger
+  document.querySelectorAll('.nav-item').forEach(n => { n.style.display = ''; });
+  document.querySelectorAll('.mnav-item').forEach(n => { n.style.display = ''; });
 
   // 1. Cash In / Cash Out buttons (topbar)
   document.querySelectorAll('.btn-green, .btn-red').forEach(b => {
@@ -2920,6 +3273,24 @@ function applyRoleRestrictions() {
   document.querySelectorAll('#page-transactions .btn-green').forEach(b => {
     b.style.display = isViewer ? 'none' : '';
   });
+
+  // 7. Apply allowedPages — hide nav items for pages user cannot access
+  if (allowedPages !== null) {
+    const ALL_PIDS = ['dashboard','cashbooks','transactions','reports','budget','mushaharo','settings','recycle'];
+    ALL_PIDS.forEach(page => {
+      if (!allowedPages.includes(page)) {
+        document.querySelectorAll('.nav-item').forEach(n => {
+          const oc = n.getAttribute('onclick') || '';
+          const nid = n.getAttribute('id') || '';
+          const matches = oc.includes(`'${page}'`) || (page==='mushaharo' && (nid==='navMushaharo' || oc.includes('toggleMshNav')));
+          if (matches) n.style.display = 'none';
+        });
+        document.querySelectorAll('.mnav-item').forEach(n => {
+          if (n.getAttribute('data-page') === page) n.style.display = 'none';
+        });
+      }
+    });
+  }
 }
 
 // ── PASSWORD SHOW/HIDE ──
@@ -3537,7 +3908,13 @@ function updateDashSummaryCards() {
 
 // ── NAVIGATION ──
 function showPage(id) {
-  // Block Viewer from settings
+  // Check allowedPages restrictions
+  const _allowedPages = currentUser ? (currentUser.allowedPages || null) : null;
+  if (_allowedPages !== null && !_allowedPages.includes(id)) {
+    showToast('⛔ Boggan ma arki kartid!');
+    return;
+  }
+  // Legacy: Block Viewer from settings (kept for safety)
   if (id === 'settings' && currentUser && currentUser.role === 'Viewer') {
     showToast('⛔ Awood kuma lihid Settings-ka!');
     return;
@@ -3545,7 +3922,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const titles = { dashboard:'Dashboard', cashbooks:'Cashbooks', transactions:'Transactions', reports:'Warbixinnada', budget:'Miisaaniyada Iskuulka', settings:'Settings', recycle:'♻️ Recycle Bin' };
+  const titles = { dashboard:'Dashboard', cashbooks:'Cashbooks', transactions:'Transactions', reports:'Warbixinnada', budget:'Miisaaniyada Iskuulka', mushaharo:'💼 Mushaharo', settings:'Settings', recycle:'♻️ Recycle Bin' };
   document.getElementById('pageTitle').textContent = titles[id]||id;
   document.querySelectorAll('.nav-item').forEach(n=>{
     if(n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
@@ -3555,6 +3932,7 @@ function showPage(id) {
   if(id==='budget') { populateBudgetFilter(); renderBudgetPage(); }
   if(id==='reports') { populateRptBookFilter(); }
   if(id==='recycle') { renderRecycleBin(); }
+  if(id==='mushaharo') { renderMushaharo(); }
 }
 
 // ── EDIT TRANSACTION ──
@@ -4032,6 +4410,9 @@ function renderMembersList() {
     const bookNames = m.allowedBooks
       ? m.allowedBooks.map(id => { const b = books.find(x=>x.id===id); return b ? b.name : id; }).join(', ')
       : 'Dhammaan';
+    const pageNames = (!m.allowedPages || m.allowedPages.length === 0)
+      ? 'Dhammaan bogagga'
+      : m.allowedPages.map(p => ({dashboard:'Dashboard',cashbooks:'Cashbooks',transactions:'Transactions',reports:'Reports',budget:'Miisaaniyada',mushaharo:'Mushaharo',settings:'Settings',recycle:'Recycle'})[p]||p).join(', ');
     return `
     <div class="member-item">
       <div class="member-avatar" style="background:${m.color}22;color:${m.color}">${m.name[0]}</div>
@@ -4039,6 +4420,7 @@ function renderMembersList() {
         <div class="member-name">${m.name}</div>
         <div class="member-phone">${m.phone} · <span style="color:#4f8aff;font-size:11px">@${m.username||'—'}</span></div>
         <div style="font-size:10px;color:#4a5270;margin-top:2px">📚 ${bookNames}</div>
+        <div style="font-size:10px;color:#4a5270;margin-top:1px">🗂️ ${pageNames}</div>
       </div>
       <span class="member-role role-${m.role.toLowerCase()}">${m.role}</span>
       <button style="background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.25);
@@ -4186,6 +4568,57 @@ function getSelectedBookIds() {
   }).map(b => b.id);
 }
 
+// ── PAGE PERMISSIONS HELPERS ──
+const ALL_PAGE_IDS = ['dashboard','cashbooks','transactions','reports','budget','mushaharo','settings','recycle'];
+
+function setPageCheck(pageId, checked) {
+  const el = document.getElementById('amPageCheck_' + pageId);
+  if (!el) return;
+  if (checked) {
+    el.style.background = '#4f8aff'; el.style.color = '#fff';
+    el.style.border = '2px solid #4f8aff'; el.textContent = '✓';
+  } else {
+    el.style.background = 'none'; el.style.color = 'transparent';
+    el.style.border = '2px solid var(--border)'; el.textContent = '';
+  }
+}
+
+function toggleAllPages(e) {
+  e.preventDefault();
+  const allChk = document.getElementById('amAllPagesCheck');
+  const isNowAll = allChk.textContent !== '✓';
+  if (isNowAll) {
+    allChk.style.background='#4f8aff'; allChk.style.color='#fff';
+    allChk.style.border='2px solid #4f8aff'; allChk.textContent='✓';
+    ALL_PAGE_IDS.forEach(p => setPageCheck(p, false));
+  } else {
+    allChk.style.background='none'; allChk.style.color='transparent';
+    allChk.style.border='2px solid var(--border)'; allChk.textContent='';
+    ALL_PAGE_IDS.forEach(p => setPageCheck(p, true));
+  }
+}
+
+function togglePageCheck(e, pageId) {
+  e.preventDefault();
+  const allChk = document.getElementById('amAllPagesCheck');
+  const el = document.getElementById('amPageCheck_' + pageId);
+  if (!el) return;
+  const wasChecked = el.textContent === '✓';
+  setPageCheck(pageId, !wasChecked);
+  allChk.style.background='none'; allChk.style.color='transparent';
+  allChk.style.border='2px solid var(--border)'; allChk.textContent='';
+}
+
+function getSelectedPageIds() {
+  const allChk = document.getElementById('amAllPagesCheck');
+  if (allChk && allChk.textContent === '✓') return null;
+  const selected = ALL_PAGE_IDS.filter(p => {
+    const el = document.getElementById('amPageCheck_' + p);
+    return el && el.textContent === '✓';
+  });
+  return selected.length === 0 ? null : selected;
+}
+
 function updateBooksLabel() {
   const ids = getSelectedBookIds();
   const lbl = document.getElementById('amBooksLabel');
@@ -4213,6 +4646,10 @@ function openAddMemberModal() {
   allChk.style.background = '#4f8aff'; allChk.style.color = '#fff'; allChk.textContent = '✓';
   books.forEach(b => setBookCheck(b.id, false));
   updateBooksLabel();
+  // Reset pages to "all"
+  const allPgChkA = document.getElementById('amAllPagesCheck');
+  if (allPgChkA) { allPgChkA.style.background='#4f8aff'; allPgChkA.style.color='#fff'; allPgChkA.style.border='2px solid #4f8aff'; allPgChkA.textContent='✓'; }
+  ALL_PAGE_IDS.forEach(p => setPageCheck(p, false));
   document.getElementById('addMemberModal').classList.add('open');
 }
 
@@ -4237,6 +4674,15 @@ function openEditMemberModal(i) {
     books.forEach(b => setBookCheck(b.id, m.allowedBooks.includes(b.id)));
   }
   updateBooksLabel();
+  // Populate pages
+  const allPgChk = document.getElementById('amAllPagesCheck');
+  if (!m.allowedPages || m.allowedPages.length === 0) {
+    if (allPgChk) { allPgChk.style.background='#4f8aff'; allPgChk.style.color='#fff'; allPgChk.style.border='2px solid #4f8aff'; allPgChk.textContent='✓'; }
+    ALL_PAGE_IDS.forEach(p => setPageCheck(p, false));
+  } else {
+    if (allPgChk) { allPgChk.style.background='none'; allPgChk.style.color='transparent'; allPgChk.style.border='2px solid var(--border)'; allPgChk.textContent=''; }
+    ALL_PAGE_IDS.forEach(p => setPageCheck(p, m.allowedPages.includes(p)));
+  }
   document.getElementById('addMemberModal').classList.add('open');
 }
 
@@ -4254,19 +4700,21 @@ async function addMember() {
   if (!name || !phone || !username || !password) { showToast('⚠️ Buuxi dhammaan xogta!'); return; }
   const rawIds = getSelectedBookIds();
   const allowedBooks = (rawIds === null || rawIds.length === 0) ? null : rawIds;
+  const rawPageIds = getSelectedPageIds();
+  const allowedPages = (rawPageIds === null || rawPageIds.length === 0) ? null : rawPageIds;
   const colors = ['#00e09e','#ffc947','#f97316','#c084fc','#4f8aff'];
   if (amEditIndex >= 0) {
     // Edit mode
     const m = teamMembers[amEditIndex];
     m.name = name; m.phone = phone; m.username = username;
-    m.password = password; m.role = role; m.allowedBooks = allowedBooks;
+    m.password = password; m.role = role; m.allowedBooks = allowedBooks; m.allowedPages = allowedPages;
     await fbSaveMember(m);
     closeAddMemberModal();
     renderMembersList();
     showToast(`✅ ${name} waa la cusboonaysiiyay!`);
   } else {
     // Add mode
-    const newMember = { name, phone, role, color: colors[teamMembers.length % colors.length], username, password, allowedBooks };
+    const newMember = { name, phone, role, color: colors[teamMembers.length % colors.length], username, password, allowedBooks, allowedPages };
     teamMembers.push(newMember);
     await fbSaveMember(newMember);
     closeAddMemberModal();
@@ -4726,72 +5174,107 @@ function printFilteredTx() {
 
   const txRows = data.map(t => `
     <tr>
-      <td>${t.date}</td>
-      <td><strong>${t.detail}</strong></td>
-      <td>${t.book}</td>
-      <td style="color:${t.type==='in'?'#00a86b':'#cc2244'};font-weight:700">${t.type==='in'?'Cash In':'Cash Out'}</td>
-      <td style="text-align:right;font-weight:700;color:${t.type==='in'?'#00a86b':'#cc2244'}">${t.type==='in'?'+':'-'}$${Math.abs(t.amount).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:right">$${(t.balance).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+      <td style="white-space:nowrap;color:#6b7280">${t.date}</td>
+      <td><strong style="color:#1a1a2e">${t.detail}</strong></td>
+      <td style="color:#374151">${t.book}</td>
+      <td><span class="type-badge ${t.type==='in'?'badge-in':'badge-out'}">${t.type==='in'?'Cash In':'Cash Out'}</span></td>
+      <td style="text-align:right;font-weight:800;color:${t.type==='in'?'#16a34a':'#dc2626'}">${t.type==='in'?'+':'-'}$${Math.abs(t.amount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="text-align:right;color:#374151;font-weight:600">$${(t.balance).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
     </tr>`).join('');
 
-  const w = window.open('','_blank');
+  const school = document.getElementById('schoolCodeDisplay')?.textContent || '';
+  const totalInAmt  = data.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+  const totalOutAmt = data.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+  const netAmt      = totalInAmt - totalOutAmt;
+  const w = window.open('','_blank','width=960,height=720');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Macaamiilada – XISAABIYE</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',Arial,sans-serif;padding:28px;color:#1a1a2e;background:#fff;font-size:13px}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #4f8aff;padding-bottom:14px;margin-bottom:18px}
-    .header h1{font-size:22px;color:#4f8aff;margin-bottom:3px}
-    .header p{font-size:11px;color:#888}
-    .header-right{text-align:right;font-size:11px;color:#666}
-    .summary{display:flex;gap:0;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden;margin-bottom:18px}
-    .sum-item{flex:1;padding:10px 12px;border-right:1px solid #e0e0e0;min-width:0}
-    .sum-item:last-child{border-right:none}
-    .sum-label{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:4px}
-    .sum-value{font-size:18px;font-weight:800}
-    .filters{background:#f5f6ff;border-radius:8px;padding:9px 14px;margin-bottom:16px;font-size:11px;color:#555;display:flex;gap:18px}
-    .filters span{display:flex;align-items:center;gap:4px}
-    table{width:100%;border-collapse:collapse}
-    th{background:#f5f6ff;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0;letter-spacing:0.5px}
-    th:nth-child(5),th:nth-child(6){text-align:right}
-    td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
-    tr:last-child td{border-bottom:none}
-    tr:nth-child(even) td{background:#fafbff}
-    .footer{text-align:center;margin-top:22px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:10px}
-    @media print{body{padding:14px}@page{margin:1.2cm}}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a2e;font-size:13px}
+    .page-wrap{max-width:960px;margin:0 auto;padding:32px 36px}
+    .pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;margin-bottom:20px;border-bottom:3px solid #f97316}
+    .pdf-logo{display:flex;align-items:center;gap:12px}
+    .pdf-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:800}
+    .pdf-title{font-size:22px;font-weight:900;color:#1a1a2e;letter-spacing:-0.5px}
+    .pdf-sub{font-size:11px;color:#888;margin-top:2px}
+    .pdf-meta{text-align:right;font-size:11px;color:#666;line-height:1.7}
+    .pdf-meta strong{color:#1a1a2e;font-size:13px}
+    .filter-bar{display:flex;gap:20px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 16px;margin-bottom:20px;font-size:11px;color:#92400e}
+    .filter-bar span{display:flex;align-items:center;gap:5px}
+    .filter-bar b{color:#c2410c}
+    .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:22px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+    .sum-cell{padding:14px 12px;border-right:1px solid #e5e7eb;text-align:center}
+    .sum-cell:last-child{border-right:none}
+    .sum-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:#9ca3af;margin-bottom:5px;font-weight:700}
+    .sum-val{font-size:17px;font-weight:900}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    thead th{background:#fff7ed;color:#92400e;padding:10px 12px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;border-bottom:2px solid #fed7aa}
+    thead th.r{text-align:right}
+    tbody td{padding:9px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+    tbody tr:hover td{background:#fffbf5}
+    tbody tr:nth-child(even) td{background:#fafafa}
+    .type-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700}
+    .badge-in{background:#dcfce7;color:#166534}
+    .badge-out{background:#fee2e2;color:#991b1b}
+    tfoot td{padding:11px 12px;font-weight:800;background:#fff7ed;border-top:2px solid #f97316;font-size:13px}
+    .footer{text-align:center;margin-top:24px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:12px}
+    .print-btn{position:fixed;bottom:24px;right:24px;background:#f97316;border:none;color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.4)}
+    @media print{
+      .print-btn{display:none}
+      body{font-size:11px}
+      @page{margin:1.2cm;size:A4}
+    }
   </style></head><body>
-  <div class="header">
-    <div>
-      <h1>📋 Warbixinta Macaamiilada</h1>
-      <p>XISAABIYE · مدرسة الحكمة · Garowe, Puntland</p>
+  <div class="page-wrap">
+    <div class="pdf-header">
+      <div class="pdf-logo">
+        <div class="pdf-logo-icon">X</div>
+        <div>
+          <div class="pdf-title">XISAABIYE</div>
+          <div class="pdf-sub">مدرسة الحكمة · Garowe, Puntland${school?' · '+school:''}</div>
+        </div>
+      </div>
+      <div class="pdf-meta">
+        <strong>📋 Warbixinta Macaamiilada</strong><br>
+        La daabacay: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}<br>
+        ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})} &nbsp;·&nbsp; ${data.length} macaamiil
+      </div>
     </div>
-    <div class="header-right">
-      <div style="font-weight:700;font-size:13px">${data.length} macaamiil</div>
-      <div>La daabacay: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
-      <div style="margin-top:2px">${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
+    <div class="filter-bar">
+      <span>⏱ Mudada: <b>${durLabel}</b></span>
+      <span>📋 Nooca: <b>${typeLabel}</b></span>
+      <span>📚 Buug: <b>${bookLabel}</b></span>
     </div>
+    <div class="summary-grid">
+      <div class="sum-cell"><div class="sum-lbl">Opening Balance</div><div class="sum-val" style="color:#374151">${openingBal}</div></div>
+      <div class="sum-cell"><div class="sum-lbl">Cash In</div><div class="sum-val" style="color:#16a34a">${totalIn}</div></div>
+      <div class="sum-cell"><div class="sum-lbl">Cash Out</div><div class="sum-val" style="color:#dc2626">${totalOut}</div></div>
+      <div class="sum-cell"><div class="sum-lbl">Net Balance</div><div class="sum-val" style="color:#2563eb">${netBal}</div></div>
+      <div class="sum-cell" style="background:${budgetOver?'#fff5f5':'#faf5ff'}"><div class="sum-lbl">${budgetLbl}</div><div class="sum-val" style="color:${budgetColor}">${budgetRemain}</div></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Taariikhda</th><th>Faahfaahinta</th><th>Buug</th><th>Nooca</th>
+        <th class="r">Xaddiga</th><th class="r">Haraaga</th>
+      </tr></thead>
+      <tbody>${txRows}</tbody>
+      <tfoot><tr>
+        <td colspan="4">📊 Wadarta</td>
+        <td style="text-align:right;color:${netAmt>=0?'#16a34a':'#dc2626'}">
+          In: <span style="color:#16a34a">+$${totalInAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span> &nbsp;
+          Out: <span style="color:#dc2626">-$${totalOutAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+        </td>
+        <td style="text-align:right;color:${netAmt>=0?'#16a34a':'#dc2626'}">${netAmt>=0?'+':'-'}$${Math.abs(netAmt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      </tr></tfoot>
+    </table>
+    <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()} · ${data.length} macaamiil</div>
   </div>
-  <div class="filters">
-    <span>⏱ Mudada: <strong>${durLabel}</strong></span>
-    <span>📋 Nooca: <strong>${typeLabel}</strong></span>
-    <span>📚 Buug: <strong>${bookLabel}</strong></span>
-  </div>
-  <div class="summary">
-    <div class="sum-item"><div class="sum-label">Opening Balance</div><div class="sum-value" style="color:#333">${openingBal}</div></div>
-    <div class="sum-item"><div class="sum-label">Cash In</div><div class="sum-value" style="color:#00a86b">${totalIn}</div></div>
-    <div class="sum-item"><div class="sum-label">Cash Out</div><div class="sum-value" style="color:#cc2244">${totalOut}</div></div>
-    <div class="sum-item"><div class="sum-label">Net Balance</div><div class="sum-value" style="color:#4f8aff">${netBal}</div></div>
-    <div class="sum-item" style="background:${budgetOver?'#fff5f5':'#faf5ff'}"><div class="sum-label">${budgetLbl}</div><div class="sum-value" style="color:${budgetColor}">${budgetRemain}</div></div>
-  </div>
-  <table>
-    <thead><tr><th>Taariikhda</th><th>Faahfaahinta</th><th>Buug</th><th>Nooc</th><th>Xaddiga</th><th>Haraaga</th></tr></thead>
-    <tbody>${txRows}</tbody>
-  </table>
-  <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
+  <button class="print-btn" onclick="window.print()">🖨️ Daabac / PDF</button>
   </body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(()=>w.print(), 500);
+  setTimeout(()=>{ if(w && !w.closed) w.print(); }, 800);
 }
 
 function exportFilteredPDF() {
@@ -4801,112 +5284,207 @@ function exportFilteredPDF() {
 
 // ── PRINT REPORT ──
 function printReport() {
-  // Current month filter for print
-  const _prNow = new Date();
-  const _prCm = _prNow.getMonth(), _prCy = _prNow.getFullYear();
+  // ── Use the SAME filter state as the report page ──
+  const now = new Date();
   const _prMN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const _prMonthLabel = _prMN[_prCm] + ' ' + _prCy;
+
+  // Build date range from current filter (_rptDuration)
+  let durFrom = null, durTo = null;
+  let _prPeriodLabel = '';
+  if (_rptDuration === 'today') {
+    durFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    durTo   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    _prPeriodLabel = 'Maanta – ' + now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  } else if (_rptDuration === 'week') {
+    const day = now.getDay();
+    durFrom = new Date(now); durFrom.setDate(now.getDate()-day); durFrom.setHours(0,0,0,0);
+    durTo   = new Date(now); durTo.setDate(now.getDate()+(6-day)); durTo.setHours(23,59,59,999);
+    _prPeriodLabel = 'Todobaadkan';
+  } else if (_rptDuration === 'month') {
+    durFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+    durTo   = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59, 999);
+    _prPeriodLabel = _prMN[now.getMonth()] + ' ' + now.getFullYear();
+  } else if (_rptDuration === 'custom') {
+    const fv = document.getElementById('rptFilterDateFrom')?.value;
+    const tv = document.getElementById('rptFilterDateTo')?.value;
+    if (fv) { durFrom = new Date(fv); durFrom.setHours(0,0,0,0); }
+    if (tv) { durTo   = new Date(tv); durTo.setHours(23,59,59,999); }
+    _prPeriodLabel = (fv||'') + (fv&&tv?' → ':'') + (tv||'');
+  } else {
+    // 'all'
+    _prPeriodLabel = 'Dhammaan Wakhtiga';
+  }
+
   const _prFilter = t => {
+    if (!durFrom && !durTo) return true;
     const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj || t.date);
-    return d.getMonth() === _prCm && d.getFullYear() === _prCy;
+    if (durFrom && d < durFrom) return false;
+    if (durTo   && d > durTo)   return false;
+    return true;
   };
 
-  let totalIn=0, totalOut=0;
-  const booksRows = visibleBooks().map((b,bi)=>{
+  // Book filter – use same selection as report page
+  const allVisible = visibleBooks();
+  const displayBooks = _rptSelectedBooks.has('__all__') ? allVisible :
+    allVisible.filter(b => _rptSelectedBooks.has(String(b.id)));
+
+  // Build label for which schools are selected
+  const _prBookLabel = _rptSelectedBooks.has('__all__') ? 'Dhammaan Iskuulada' :
+    displayBooks.length === 1 ? displayBooks[0].name :
+    displayBooks.length + ' iskuul oo la doortay';
+
+  let totalIn=0, totalOut=0, totalNet=0, totalTx=0;
+  let totalAllocIn=0, totalAllocOut=0;
+
+  const PALETTE = ['#4f8aff','#00a86b','#f59e0b','#cc2244','#a78bfa','#38bdf8','#f97316','#34d399','#fb923c','#ec4899'];
+
+  const booksRows = displayBooks.map((b, bi) => {
     const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in' &&_prFilter(t)).reduce((s,t)=>s+t.amount,0);
     const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out'&&_prFilter(t)).reduce((s,t)=>s+t.amount,0);
     const bNet   = bIn - bOut;
+    const bTx    = allTx.filter(t=>t.book===b.name&&_prFilter(t)).length;
     const allocIn  = budgets['in_'+b.id]  ?? 0;
     const allocOut = budgets['out_'+b.id] ?? 0;
     const gapIn    = bIn  - allocIn;
     const gapOut   = bOut - allocOut;
     const gapInPct = allocIn  > 0 ? (gapIn  / allocIn  * 100) : null;
     const gapOutPct= allocOut > 0 ? (gapOut / allocOut * 100) : null;
-    totalIn += bIn; totalOut += bOut;
-    const PALETTE = ['#4f8aff','#00a86b','#f59e0b','#cc2244','#a78bfa','#38bdf8','#f97316','#34d399','#fb923c','#ec4899'];
+    totalIn += bIn; totalOut += bOut; totalNet += bNet; totalTx += bTx;
+    totalAllocIn += allocIn; totalAllocOut += allocOut;
     const rowColor = PALETTE[bi % PALETTE.length];
     function gs(gap, pct, isCost) {
-      if(pct===null) return '<span style="color:#aaa">–</span>';
+      if (pct === null) return '<span style="color:#aaa">–</span>';
       const good = isCost ? gap<=0 : gap>=0;
-      const c    = good?'#00a86b':'#cc2244';
-      const sign = gap>=0?'+':'';
+      const c    = good ? '#00a86b' : '#cc2244';
+      const sign = gap>=0 ? '+' : '';
       return `<span style="color:${c};font-weight:700">${sign}$${Math.abs(gap).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}<br><small>(${pct>=0?'+':''}${pct.toFixed(1)}%)</small></span>`;
     }
     return `<tr>
       <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${rowColor};margin-right:6px"></span>${b.emoji} ${b.name}</td>
-      <td style="text-align:right;color:#00a86b;font-weight:700">+$${bIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:right">${gs(gapIn,gapInPct,false)}</td>
-      <td style="text-align:right;color:#cc2244;font-weight:700">-$${bOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:right">${gs(gapOut,gapOutPct,true)}</td>
-      <td style="text-align:right;font-weight:700;color:${bNet>=0?'#00a86b':'#cc2244'}">${bNet>=0?'+':''}$${Math.abs(bNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    </tr>`}).join('');
+      <td style="text-align:left;color:#00a86b;font-weight:700">+$${bIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+      <td style="text-align:left">${gs(gapIn,gapInPct,false)}</td>
+      <td style="text-align:left;color:#cc2244;font-weight:700">-$${bOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+      <td style="text-align:left">${gs(gapOut,gapOutPct,true)}</td>
+      <td style="text-align:left;font-weight:700;color:${bNet>=0?'#00a86b':'#cc2244'}">${bNet>=0?'+':''}$${Math.abs(bNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+      <td style="text-align:left;color:#666">${bTx}</td>
+    </tr>`;
+  }).join('');
 
   const net = totalIn - totalOut;
 
-  const w = window.open('','_blank');
+  // Grand total gap cells
+  function grandGs(gap, alloc, isCost) {
+    if (alloc === 0) return '<span style="color:#aaa">–</span>';
+    const good = isCost ? gap<=0 : gap>=0;
+    const c    = good ? '#00a86b' : '#cc2244';
+    const sign = gap>=0 ? '+' : '';
+    const pct  = gap/alloc*100;
+    return `<span style="color:${c};font-weight:800">${sign}$${Math.abs(gap).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}<br><small>(${pct>=0?'+':''}${pct.toFixed(1)}%)</small></span>`;
+  }
+
+  const totalRow = `<tr style="background:#fff7ed;font-weight:900;border-top:3px solid #f97316">
+    <td style="font-weight:800">📊 Wadarta Guud<br><small style="color:#888;font-weight:400">${displayBooks.length} iskuul · ${totalTx} xaaladood</small></td>
+    <td style="text-align:left;color:#16a34a;font-size:13px;font-weight:800">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+    <td style="text-align:left">${grandGs(totalIn-totalAllocIn, totalAllocIn, false)}</td>
+    <td style="text-align:left;color:#dc2626;font-size:13px;font-weight:800">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+    <td style="text-align:left">${grandGs(totalOut-totalAllocOut, totalAllocOut, true)}</td>
+    <td style="text-align:left;font-size:13px;font-weight:800;color:${net>=0?'#16a34a':'#dc2626'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+    <td style="text-align:left;font-weight:800">${totalTx}</td>
+  </tr>`;
+
+  const _prSchool = document.getElementById('schoolCodeDisplay')?.textContent || '';
+  const w = window.open('','_blank','width=960,height=720');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Warbixinta – XISAABIYE</title>
   <style>
-    body{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:30px;color:#1a1a2e;background:#fff}
-    .header{text-align:center;border-bottom:3px solid #4f8aff;padding-bottom:16px;margin-bottom:24px}
-    .header h1{margin:0;font-size:26px;color:#4f8aff}
-    .header p{margin:4px 0;color:#666;font-size:13px}
-    .month-badge{display:inline-block;background:#4f8aff22;color:#4f8aff;border:1px solid #4f8aff55;border-radius:20px;padding:3px 14px;font-size:13px;font-weight:700;margin-top:6px}
-    .section{margin-bottom:28px}
-    .section h2{font-size:15px;font-weight:700;color:#333;border-left:4px solid #4f8aff;padding-left:10px;margin-bottom:12px}
-    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
-    .stat-box{border:1px solid #e0e0e0;border-radius:10px;padding:14px;text-align:center}
-    .stat-box .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px}
-    .stat-box .value{font-size:22px;font-weight:800;margin:4px 0}
-    .value.green{color:#00a86b}.value.red{color:#cc2244}.value.blue{color:#4f8aff}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th{background:#f5f6ff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0}
-    td{padding:9px 12px;border-bottom:1px solid #f0f0f0}
-    tr:last-child td{border-bottom:none}
-    tr:nth-child(even) td{background:#fafbff}
-    .footer{text-align:center;margin-top:30px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px}
-    @media print{body{padding:15px}}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a2e;font-size:13px}
+    .page-wrap{max-width:960px;margin:0 auto;padding:32px 36px}
+    .pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;margin-bottom:24px;border-bottom:3px solid #f97316}
+    .pdf-logo{display:flex;align-items:center;gap:12px}
+    .pdf-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:800}
+    .pdf-title{font-size:22px;font-weight:900;color:#1a1a2e;letter-spacing:-0.5px}
+    .pdf-sub{font-size:11px;color:#888;margin-top:2px}
+    .pdf-meta{text-align:left;font-size:11px;color:#666;line-height:1.7}
+    .pdf-meta strong{color:#1a1a2e;font-size:14px}
+    .period-badge{display:inline-flex;align-items:center;gap:8px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:800;margin-bottom:8px}
+    .book-badge{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;margin-bottom:20px;margin-left:8px}
+    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px}
+    .stat-box{border:1px solid #e5e7eb;border-radius:12px;padding:18px 16px;text-align:center;background:#fafafa}
+    .stat-box.green{border-top:3px solid #16a34a;background:#f0fdf4}
+    .stat-box.red{border-top:3px solid #dc2626;background:#fef2f2}
+    .stat-box.blue{border-top:3px solid #f97316;background:#fff7ed}
+    .stat-lbl{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px}
+    .stat-val{font-size:24px;font-weight:900}
+    .stat-val.green{color:#16a34a}.stat-val.red{color:#dc2626}.stat-val.blue{color:#f97316}
+    .section-head{font-size:14px;font-weight:800;color:#1a1a2e;border-left:4px solid #f97316;padding-left:10px;margin-bottom:14px;margin-top:4px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    thead th{background:#fff7ed;color:#92400e;padding:10px 12px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;border-bottom:2px solid #fed7aa}
+    thead th.r{text-align:left}
+    tbody td{padding:9px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+    tbody tr:nth-child(even) td{background:#fafafa}
+    tfoot tr td{padding:11px 12px;font-weight:800;background:#fff7ed;border-top:2px solid #f97316;font-size:13px}
+    .footer{text-align:center;margin-top:26px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:12px}
+    .print-btn{position:fixed;bottom:24px;right:24px;background:#f97316;border:none;color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.4)}
+    @media print{
+      .print-btn{display:none}
+      body{font-size:11px}
+      @page{margin:1.2cm;size:A4}
+    }
   </style></head><body>
-  <div class="header">
-    <h1>📊 Warbixinta Lacagta</h1>
-    <p>XISAABIYE – مدرسة الحكمة · Garowe, Puntland</p>
-    <div class="month-badge">📅 ${_prMonthLabel}</div>
-    <p style="margin-top:6px;font-size:11px;color:#999">La daabacay: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</p>
-  </div>
-  <div class="section">
-    <h2>Koobaadka Guud – ${_prMonthLabel}</h2>
-    <div class="stats-grid">
-      <div class="stat-box"><div class="label">Wadarta Cash In</div><div class="value green">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div></div>
-      <div class="stat-box"><div class="label">Wadarta Cash Out</div><div class="value red">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div></div>
-      <div class="stat-box"><div class="label">Faa'iido / Khasaaro</div><div class="value ${net>=0?'blue':'red'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div></div>
+  <div class="page-wrap">
+    <div class="pdf-header">
+      <div class="pdf-logo">
+        <div class="pdf-logo-icon">X</div>
+        <div>
+          <div class="pdf-title">XISAABIYE</div>
+          <div class="pdf-sub">مدرسة الحكمة · Garowe, Puntland${_prSchool?' · '+_prSchool:''}</div>
+        </div>
+      </div>
+      <div class="pdf-meta">
+        <strong>📊 Warbixinta Lacagta</strong><br>
+        La daabacay: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}<br>
+        ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+      </div>
     </div>
+    <div>
+      <span class="period-badge">📅 ${_prPeriodLabel}</span>
+      <span class="book-badge">🏫 ${_prBookLabel}</span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box green">
+        <div class="stat-lbl">Wadarta Dakhliga</div>
+        <div class="stat-val green">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
+      </div>
+      <div class="stat-box red">
+        <div class="stat-lbl">Wadarta Kharashka</div>
+        <div class="stat-val red">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
+      </div>
+      <div class="stat-box blue">
+        <div class="stat-lbl">Faa'iido / Khasaaro</div>
+        <div class="stat-val ${net>=0?'blue':'red'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</div>
+      </div>
+    </div>
+    <div class="section-head">Xaaladda Iskuulada – ${_prPeriodLabel}</div>
+    <table>
+      <thead><tr>
+        <th>Buugga / Iskuulka</th>
+        <th class="r">Dakhliga</th>
+        <th class="r">U Dhiman Dakhli</th>
+        <th class="r">Kharashka</th>
+        <th class="r">U Dhiman Kharash</th>
+        <th class="r">Faa'iido / Khasaaro</th>
+        <th class="r">Xaaladood</th>
+      </tr></thead>
+      <tbody>${booksRows}${totalRow}</tbody>
+    </table>
+    <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()} · ${_prPeriodLabel} · ${_prBookLabel}</div>
   </div>
-  <div class="section">
-    <h2>Xaaladda Iskuulka – ${_prMonthLabel}</h2>
-    <table><thead><tr>
-      <th>Iskuulka</th>
-      <th style="text-align:right">Dakhliga</th>
-      <th style="text-align:right">U Dhiman Dakhli</th>
-      <th style="text-align:right">Kharashka</th>
-      <th style="text-align:right">U Dhiman Kharash</th>
-      <th style="text-align:right">Faa'iido/Khasaaro</th>
-    </tr></thead>
-    <tbody>${booksRows}
-    <tr style="background:#f5f6ff;font-weight:800;border-top:2px solid #4f8aff">
-      <td>📊 Wadarta Guud</td>
-      <td style="text-align:right;color:#00a86b">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:right;color:#aaa">–</td>
-      <td style="text-align:right;color:#cc2244">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:right;color:#aaa">–</td>
-      <td style="text-align:right;color:${net>=0?'#00a86b':'#cc2244'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    </tr>
-    </tbody></table>
-  </div>
-  <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()} · ${_prMonthLabel}</div>
+  <button class="print-btn" onclick="window.print()">🖨️ Daabac / PDF</button>
   </body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(()=>w.print(), 600);
+  setTimeout(()=>{ if(w && !w.closed) w.print(); }, 800);
 }
 
 // ── EXPORT PDF ──
@@ -5125,16 +5703,16 @@ function renderReportBooksTable() {
 
     return `<tr>
       <td><span style="font-size:15px">${b.emoji}</span> <strong>${b.name}</strong></td>
-      <td style="text-align:right"><div class="td-amount in">+${fmtFull(bIn)}</div></td>
-      <td style="text-align:right">${gapCell(gapIn,gapInPct,false)}</td>
-      <td style="text-align:right"><div class="td-amount out">-${fmtFull(bOut)}</div></td>
-      <td style="text-align:right">${gapCell(gapOut,gapOutPct,true)}</td>
-      <td style="text-align:right">
+      <td style="text-align:left"><div class="td-amount in">+${fmtFull(bIn)}</div></td>
+      <td style="text-align:left">${gapCell(gapIn,gapInPct,false)}</td>
+      <td style="text-align:left"><div class="td-amount out">-${fmtFull(bOut)}</div></td>
+      <td style="text-align:left">${gapCell(gapOut,gapOutPct,true)}</td>
+      <td style="text-align:left">
         <div style="font-weight:800;color:${bNet>=0?'var(--accent-green)':'var(--accent-red)'}">
           ${bNet>=0?'+':''}${fmtFull(bNet)}
         </div>
       </td>
-      <td style="text-align:right"><span class="table-count">${bTx}</span></td>
+      <td style="text-align:left"><span class="table-count">${bTx}</span></td>
     </tr>`;
   });
   // grand total row
@@ -5150,14 +5728,14 @@ function renderReportBooksTable() {
   }
   rows.push(`<tr style="background:var(--surface2);border-top:2px solid var(--border)">
     <td><strong>📊 Wadarta Guud</strong></td>
-    <td style="text-align:right;color:var(--accent-green);font-weight:800">+${fmtFull(totalIn)}</td>
-    <td style="text-align:right">${grandGapCell(totalGapIn,totalAllocIn,false)}</td>
-    <td style="text-align:right;color:var(--accent-red);font-weight:800">-${fmtFull(totalOut)}</td>
-    <td style="text-align:right">${grandGapCell(totalGapOut,totalAllocOut,true)}</td>
-    <td style="text-align:right;font-weight:800;color:${totalNet>=0?'var(--accent-green)':'var(--accent-red)'}">
+    <td style="text-align:left;color:var(--accent-green);font-weight:800">+${fmtFull(totalIn)}</td>
+    <td style="text-align:left">${grandGapCell(totalGapIn,totalAllocIn,false)}</td>
+    <td style="text-align:left;color:var(--accent-red);font-weight:800">-${fmtFull(totalOut)}</td>
+    <td style="text-align:left">${grandGapCell(totalGapOut,totalAllocOut,true)}</td>
+    <td style="text-align:left;font-weight:800;color:${totalNet>=0?'var(--accent-green)':'var(--accent-red)'}">
       ${totalNet>=0?'+':''}${fmtFull(totalNet)}
     </td>
-    <td style="text-align:right;font-weight:800">${totalTx}</td>
+    <td style="text-align:left;font-weight:800">${totalTx}</td>
   </tr>`);
   tbody.innerHTML = rows.join('');
 }
@@ -6353,6 +6931,581 @@ window.addEventListener('online',  checkOnline);
 window.addEventListener('offline', checkOnline);
 window.addEventListener('load',    checkOnline);
 
+// ════════════════════════════════════════════
+// MUSHAHARO MODULE
+// ════════════════════════════════════════════
+let mshStaff = [];   // [{id, name, salary, tax, phone}]
+let mshPays  = [];   // [{id, staffId, staffName, amount, dateMs}]
+let _mshEditStaffId = null;
+
+// ── Firebase helpers ──
+function mshBase() {
+  const code = window._currentSchoolCode;
+  return code ? `schools/${code}` : null;
+}
+
+async function mshFbSaveStaff(s) {
+  try {
+    const base = mshBase(); if (!base) return;
+    const { doc, setDoc, collection } = fbLib();
+    const ref = s.id
+      ? doc(db(), `${base}/mushaharo_staff/${s.id}`)
+      : doc(collection(db(), `${base}/mushaharo_staff`));
+    if (!s.id) s.id = ref.id;
+    await setDoc(ref, { name: s.name, salary: s.salary, tax: s.tax||0, phone: s.phone||'' });
+  } catch(e){ console.error('mshFbSaveStaff', e); }
+}
+
+async function mshFbDeleteStaff(id) {
+  try {
+    const base = mshBase(); if (!base) return;
+    const { doc, deleteDoc } = fbLib();
+    await deleteDoc(doc(db(), `${base}/mushaharo_staff/${id}`));
+  } catch(e){ console.error('mshFbDeleteStaff', e); }
+}
+
+async function mshFbSavePay(p) {
+  try {
+    const base = mshBase(); if (!base) return;
+    const { doc, setDoc, collection } = fbLib();
+    const ref = p.id
+      ? doc(db(), `${base}/mushaharo_payments/${p.id}`)
+      : doc(collection(db(), `${base}/mushaharo_payments`));
+    if (!p.id) p.id = ref.id;
+    await setDoc(ref, { staffId: p.staffId, staffName: p.staffName, amount: p.amount, method: p.method||'Kaash', dateMs: p.dateMs });
+  } catch(e){ console.error('mshFbSavePay', e); }
+}
+
+async function mshFbDeletePay(id) {
+  try {
+    const base = mshBase(); if (!base) return;
+    const { doc, deleteDoc } = fbLib();
+    await deleteDoc(doc(db(), `${base}/mushaharo_payments/${id}`));
+  } catch(e){ console.error('mshFbDeletePay', e); }
+}
+
+async function mshLoadData() {
+  try {
+    const base = mshBase(); if (!base) { mshStaff = []; mshPays = []; return; }
+    const { collection, getDocs } = fbLib();
+    const [sSnap, pSnap] = await Promise.all([
+      getDocs(collection(db(), `${base}/mushaharo_staff`)),
+      getDocs(collection(db(), `${base}/mushaharo_payments`))
+    ]);
+    mshStaff = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    mshPays  = pSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.dateMs - a.dateMs);
+  } catch(e) {
+    mshStaff = []; mshPays = [];
+    console.error('mshLoadData', e);
+  }
+}
+
+// ── Render ──
+async function renderMushaharo() {
+  await mshLoadData();
+  _renderMshStaff();
+  _renderMshPays();
+  _renderMshSummary();
+  _renderMshPaySummary();
+}
+
+function _renderMshPaySummary() {
+  const totalPaid = mshPays.reduce((a,p)=>a+p.amount,0);
+  const uniqueStaff = new Set(mshPays.map(p=>p.staffId)).size;
+  const totalSalary = mshStaff.reduce((s,x)=>s+(x.salary||0),0);
+  const totalRemain = totalSalary - totalPaid;
+  const staffWithRemain = mshStaff.filter(s=>{
+    const paid = mshPays.filter(p=>p.staffId===s.id).reduce((a,p)=>a+p.amount,0);
+    return (s.salary||0) - paid > 0;
+  }).length;
+  const el = id => document.getElementById(id);
+  if(el('msh-totalPaid'))       el('msh-totalPaid').textContent       = fmtFull(totalPaid);
+  if(el('msh-totalPayCount'))   el('msh-totalPayCount').textContent   = mshPays.length;
+  if(el('msh-totalPayStaff'))   el('msh-totalPayStaff').textContent   = uniqueStaff;
+  if(el('msh-totalRemain'))     el('msh-totalRemain').textContent     = fmtFull(Math.max(0,totalRemain));
+  if(el('msh-totalRemainSub'))  el('msh-totalRemainSub').textContent  = staffWithRemain + ' shaqaale';
+  _mshPopulateFilters();
+  _mshRenderChart();
+}
+
+function _renderMshSummary() {
+  const el = id => document.getElementById(id);
+  el('msh-totalStaff').textContent  = mshStaff.length;
+  const totSal = mshStaff.reduce((s,x)=>s+(x.salary||0),0);
+  const totTax = mshStaff.reduce((s,x)=>s+(x.tax||0),0);
+  el('msh-totalSalary').textContent = fmtFull(totSal);
+  el('msh-totalTax').textContent    = fmtFull(totTax);
+}
+
+function _renderMshStaff() {
+  const tbody = document.getElementById('msh-staffBody');
+  const empty = document.getElementById('msh-staffEmpty');
+  if (!mshStaff.length) {
+    empty.style.display = '';
+    // remove old rows except empty row
+    [...tbody.querySelectorAll('tr:not(#msh-staffEmpty)')].forEach(r=>r.remove());
+    return;
+  }
+  empty.style.display = 'none';
+  [...tbody.querySelectorAll('tr:not(#msh-staffEmpty)')].forEach(r=>r.remove());
+  mshStaff.forEach(s => {
+    const paid = mshPays.filter(p=>p.staffId===s.id).reduce((a,p)=>a+p.amount,0);
+    const remain = (s.salary||0) - paid;
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.innerHTML = `
+      <td style="padding:10px 14px;font-size:13px;font-weight:600">${s.name}</td>
+      <td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--accent-green);font-weight:700">${fmtFull(s.salary||0)}</td>
+      <td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--accent-red)">${fmtFull(s.tax||0)}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--text-muted)">${s.phone||'—'}</td>
+      <td style="padding:10px 14px;text-align:right">
+        <button onclick="openMushaharoEditModal('${s.id}')" style="background:rgba(79,138,255,0.12);border:1px solid rgba(79,138,255,0.3);color:var(--accent-blue);font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;margin-right:4px">✏️</button>
+        <button onclick="deleteMshStaff('${s.id}')" style="background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.3);color:#ff4d6d;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer">🗑️</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function _mshFmtDate(ms) {
+  const d = new Date(ms);
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  const yr  = d.getFullYear();
+  let h = d.getHours(), m = String(d.getMinutes()).padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${dd} ${mon}, ${yr} – ${h}:${m} ${ampm}`;
+}
+
+let _mshPeriod = 'all';
+
+function _mshSetPeriod(val, btnEl) {
+  _mshPeriod = val;
+  document.querySelectorAll('[id^="msh-dur-"]').forEach(b => {
+    b.style.background = 'var(--surface2)';
+    b.style.color = 'var(--text-secondary)';
+    b.style.borderColor = 'var(--border)';
+  });
+  if (btnEl) {
+    btnEl.style.background = 'var(--accent-orange)';
+    btnEl.style.color = '#fff';
+    btnEl.style.borderColor = 'var(--accent-orange)';
+  }
+  const cd = document.getElementById('msh-customDates');
+  if (cd) cd.style.display = val === 'custom' ? 'flex' : 'none';
+  _mshApplyFilters();
+}
+
+function _mshPopulateFilters() {
+  const staffSel = document.getElementById('msh-payFilterStaff');
+  if (!staffSel) return;
+  const curStaff = staffSel.value;
+  staffSel.innerHTML = '<option value="">&#x1F464; Shaqaalaha Dhamaan</option>';
+  mshStaff.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name;
+    if (s.id === curStaff) o.selected = true;
+    staffSel.appendChild(o);
+  });
+  // Keep active period button highlighted after re-render
+  const activeBtn = document.getElementById('msh-dur-' + _mshPeriod);
+  if (activeBtn) _mshSetPeriod(_mshPeriod, activeBtn);
+}
+
+function _mshGetFilteredPays() {
+  const search  = (document.getElementById('msh-paySearch')?.value||'').trim().toLowerCase();
+  const staffId = document.getElementById('msh-payFilterStaff')?.value||'';
+  const now     = new Date();
+  const todayStart     = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const monthStart     = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth()-1, 1).getTime();
+  const lastMonthEnd   = monthStart - 1;
+  return mshPays.filter(p => {
+    if (staffId && p.staffId !== staffId) return false;
+    if (_mshPeriod === 'today'     && p.dateMs < todayStart)     return false;
+    if (_mshPeriod === 'month'     && p.dateMs < monthStart)     return false;
+    if (_mshPeriod === 'lastmonth' && (p.dateMs < lastMonthStart || p.dateMs > lastMonthEnd)) return false;
+    if (_mshPeriod === 'custom') {
+      const fromVal = document.getElementById('msh-dateFrom')?.value;
+      const toVal   = document.getElementById('msh-dateTo')?.value;
+      if (fromVal && p.dateMs < new Date(fromVal).getTime()) return false;
+      if (toVal   && p.dateMs > new Date(toVal).getTime() + 86399999) return false;
+    }
+    if (search && !p.staffName.toLowerCase().includes(search) && !(p.method||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function _mshApplyFilters() {
+  _renderMshPays();
+}
+
+function _mshClearFilters() {
+  const s  = document.getElementById('msh-paySearch');      if(s)  s.value = '';
+  const sf = document.getElementById('msh-payFilterStaff'); if(sf) sf.value = '';
+  const df = document.getElementById('msh-dateFrom');       if(df) df.value = '';
+  const dt = document.getElementById('msh-dateTo');         if(dt) dt.value = '';
+  _mshSetPeriod('all', document.getElementById('msh-dur-all'));
+}
+
+let _mshPayChart = null;
+function _mshRenderChart() {
+  const canvas = document.getElementById('msh-payChart');
+  if (!canvas || !mshStaff.length) return;
+  const labels  = mshStaff.map(s => s.name);
+  const salaries = mshStaff.map(s => s.salary||0);
+  const paids    = mshStaff.map(s => mshPays.filter(p=>p.staffId===s.id).reduce((a,p)=>a+p.amount,0));
+  const remains  = mshStaff.map((s,i) => Math.max(0,(s.salary||0)-paids[i]));
+  if (_mshPayChart) { _mshPayChart.destroy(); _mshPayChart = null; }
+  _mshPayChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'La Bixiyay',
+          data: paids,
+          backgroundColor: 'rgba(249,115,22,0.85)',
+          borderRadius: 6,
+          borderSkipped: false,
+        },
+        {
+          label: 'U Dhiman',
+          data: remains,
+          backgroundColor: 'rgba(79,138,255,0.45)',
+          borderRadius: 6,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11, weight: '600' }, color: '#6b4226' }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: {
+            font: { size: 10 },
+            callback: v => '$'+v.toLocaleString('en-US',{maximumFractionDigits:0})
+          },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function _renderMshPays() {
+  const tbody = document.getElementById('msh-payBody');
+  const empty = document.getElementById('msh-payEmpty');
+  const filtered = _mshGetFilteredPays();
+  const countEl = document.getElementById('msh-payFilterCount');
+  if(countEl) countEl.textContent = filtered.length < mshPays.length ? filtered.length + ' / ' + mshPays.length + ' natiijo' : '';
+  if (!filtered.length) {
+    empty.style.display = '';
+    [...tbody.querySelectorAll('tr:not(#msh-payEmpty)')].forEach(r=>r.remove());
+    return;
+  }
+  empty.style.display = 'none';
+  [...tbody.querySelectorAll('tr:not(#msh-payEmpty)')].forEach(r=>r.remove());
+  filtered.forEach(p => {
+    const staff = mshStaff.find(s=>s.id===p.staffId);
+    const totalPaidForStaff = mshPays.filter(x=>x.staffId===p.staffId && x.dateMs<=p.dateMs).reduce((a,x)=>a+x.amount,0);
+    const remain = staff ? (staff.salary||0) - totalPaidForStaff : null;
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.innerHTML = `
+      <td style="padding:10px 14px;font-size:12px;color:var(--text-muted)">${_mshFmtDate(p.dateMs)}</td>
+      <td style="padding:10px 14px;font-size:13px;font-weight:600">${p.staffName}</td>
+      <td style="padding:10px 14px;font-size:12px">
+        <span style="background:rgba(79,138,255,0.1);border:1px solid rgba(79,138,255,0.25);color:var(--accent-blue);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">${p.method||'Kaash'}</span>
+      </td>
+      <td style="padding:10px 14px;text-align:right;font-size:13px;color:var(--accent-red);font-weight:700">-${fmtFull(p.amount)}</td>
+      <td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:600;color:${remain!==null&&remain>=0?'var(--accent-green)':'#dc2626'}">${remain!==null?fmtFull(remain):'—'}</td>
+      <td style="padding:10px 14px;text-align:right">
+        <button onclick="deleteMshPay('${p.id}')" style="background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.3);color:#ff4d6d;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer">🗑️</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Staff Modal ──
+function openMushaharoModal() {
+  _mshEditStaffId = null;
+  document.getElementById('msh-sName').value   = '';
+  document.getElementById('msh-sSalary').value = '';
+  document.getElementById('msh-sTax').value    = '';
+  document.getElementById('msh-sPhone').value  = '';
+  document.getElementById('msh-sErr').style.display = 'none';
+  document.querySelector('#mshStaffModal .modal-title').textContent = '👤 Ku dar Shaqaale';
+  const _mshSM = document.getElementById('mshStaffModal');
+  _mshSM.style.display = 'flex';
+  requestAnimationFrame(() => _mshSM.classList.add('open'));
+}
+
+function openMushaharoEditModal(id) {
+  const s = mshStaff.find(x=>x.id===id);
+  if (!s) return;
+  _mshEditStaffId = id;
+  document.getElementById('msh-sName').value   = s.name;
+  document.getElementById('msh-sSalary').value = s.salary||'';
+  document.getElementById('msh-sTax').value    = s.tax||'';
+  document.getElementById('msh-sPhone').value  = s.phone||'';
+  document.getElementById('msh-sErr').style.display = 'none';
+  document.querySelector('#mshStaffModal .modal-title').textContent = '✏️ Wax ka beddel';
+  const _mshSMe = document.getElementById('mshStaffModal');
+  _mshSMe.style.display = 'flex';
+  requestAnimationFrame(() => _mshSMe.classList.add('open'));
+}
+
+function closeMshStaffModal() {
+  const _mshSMc = document.getElementById('mshStaffModal');
+  _mshSMc.classList.remove('open');
+  setTimeout(() => { _mshSMc.style.display = 'none'; }, 200);
+}
+
+async function saveMshStaff() {
+  const name   = document.getElementById('msh-sName').value.trim();
+  const salary = parseFloat(document.getElementById('msh-sSalary').value)||0;
+  const tax    = parseFloat(document.getElementById('msh-sTax').value)||0;
+  const phone  = document.getElementById('msh-sPhone').value.trim();
+  const errEl  = document.getElementById('msh-sErr');
+  const btn    = document.getElementById('msh-sSaveBtn');
+
+  if (!name) { errEl.textContent='⚠️ Magaca shaqaalaha geli!'; errEl.style.display='block'; return; }
+  if (salary<=0) { errEl.textContent='⚠️ Mushaharka waa inuu ka weyn yahay $0!'; errEl.style.display='block'; return; }
+
+  btn.disabled = true; btn.textContent = '...';
+  const obj = { name, salary, tax, phone };
+  if (_mshEditStaffId) {
+    obj.id = _mshEditStaffId;
+    const idx = mshStaff.findIndex(x=>x.id===_mshEditStaffId);
+    if (idx>=0) mshStaff[idx] = obj;
+  } else {
+    mshStaff.push(obj);
+  }
+  await mshFbSaveStaff(obj);
+  btn.disabled = false; btn.textContent = '💾 Keydi';
+  closeMshStaffModal();
+  _renderMshStaff();
+  _renderMshSummary();
+  showToast('✅ Shaqaalaha waa la keydiyay!');
+}
+
+async function deleteMshStaff(id) {
+  if (!confirm('Shaqaaluhu waa la tirtirayaa. Ma hubtaa?')) return;
+  mshStaff = mshStaff.filter(s=>s.id!==id);
+  mshPays  = mshPays.filter(p=>p.staffId!==id);
+  await mshFbDeleteStaff(id);
+  _renderMshStaff();
+  _renderMshPays();
+  _renderMshSummary();
+  showToast('🗑️ Shaqaalaha waa la tirtiray');
+}
+
+// ── Pay Modal ──
+function openMshPayModal() {
+  const sel = document.getElementById('msh-pStaff');
+  sel.innerHTML = '<option value="">— Dooro shaqaale —</option>';
+  mshStaff.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+  document.getElementById('msh-pAmount').value = '';
+  document.getElementById('msh-pMethod').value = 'Kaash';
+  document.getElementById('msh-pBalPreview').style.display = 'none';
+  document.getElementById('msh-pErr').style.display = 'none';
+  const _mshPM = document.getElementById('mshPayModal');
+  _mshPM.style.display = 'flex';
+  requestAnimationFrame(() => _mshPM.classList.add('open'));
+}
+
+function closeMshPayModal() {
+  const _mshPMc = document.getElementById('mshPayModal');
+  _mshPMc.classList.remove('open');
+  setTimeout(() => { _mshPMc.style.display = 'none'; }, 200);
+}
+
+function mshUpdatePayBalance() {
+  const staffId = document.getElementById('msh-pStaff').value;
+  const amount  = parseFloat(document.getElementById('msh-pAmount').value)||0;
+  const preview = document.getElementById('msh-pBalPreview');
+  if (!staffId) { preview.style.display='none'; return; }
+  const s = mshStaff.find(x=>x.id===staffId);
+  if (!s) { preview.style.display='none'; return; }
+  const paid   = mshPays.filter(p=>p.staffId===staffId).reduce((a,p)=>a+p.amount,0);
+  const remain = (s.salary||0) - paid;
+  const after  = remain - amount;
+  preview.style.display = 'block';
+  preview.innerHTML = `<b>${s.name}</b> — Mushaharka: <b>${fmtFull(s.salary||0)}</b> | La bixiyay: <b>${fmtFull(paid)}</b> | Hara: <b style="color:${remain>=0?'var(--accent-green)':'#dc2626'}">${fmtFull(remain)}</b>${amount>0?` → Ka dib bixinta: <b style="color:${after>=0?'var(--accent-green)':'#dc2626'}">${fmtFull(after)}</b>`:''}`;
+}
+
+async function saveMshPay() {
+  const staffId = document.getElementById('msh-pStaff').value;
+  const amount  = parseFloat(document.getElementById('msh-pAmount').value)||0;
+  const errEl   = document.getElementById('msh-pErr');
+  const btn     = document.getElementById('msh-pSaveBtn');
+
+  if (!staffId) { errEl.textContent='⚠️ Dooro shaqaale!'; errEl.style.display='block'; return; }
+  if (amount<=0) { errEl.textContent='⚠️ Lacagta waa inay ka badan tahay $0!'; errEl.style.display='block'; return; }
+
+  const s = mshStaff.find(x=>x.id===staffId);
+  if (s) {
+    const alreadyPaid = mshPays.filter(p=>p.staffId===staffId).reduce((a,p)=>a+p.amount,0);
+    const remaining   = (s.salary||0) - alreadyPaid;
+    if (amount > remaining + 0.001) {
+      errEl.textContent = '🚫 Lacagtu way ka badan tahay harsiga mushaharka! Harsiga: ' + fmtFull(Math.max(0,remaining));
+      errEl.style.display = 'block';
+      return;
+    }
+  }
+  errEl.style.display = 'none';
+
+  const method = document.getElementById('msh-pMethod').value || 'Kaash';
+  btn.disabled = true; btn.textContent = '...';
+
+  const pay = { staffId, staffName: s ? s.name : '', amount, method, dateMs: Date.now() };
+  mshPays.unshift(pay);
+  await mshFbSavePay(pay);
+
+  btn.disabled = false; btn.textContent = '✅ Bixin';
+  closeMshPayModal();
+  _renderMshPays();
+  _renderMshSummary();
+  showToast('✅ Mushaharka waa la bixiyay!');
+}
+
+async function deleteMshPay(id) {
+  if (!confirm('Lacag-bixintaan waa la tirtirayaa. Ma hubtaa?')) return;
+  mshPays = mshPays.filter(p=>p.id!==id);
+  await mshFbDeletePay(id);
+  _renderMshPays();
+  _renderMshSummary();
+  showToast('🗑️ Waa la tirtiray');
+}
+
+function printMshPays() {
+  if (!mshPays.length) { showToast('⚠️ Ma jiraan lacago la bixiyay!'); return; }
+  const rows = mshPays.map(p => {
+    const staff = mshStaff.find(s=>s.id===p.staffId);
+    const totalPaidForStaff = mshPays.filter(x=>x.staffId===p.staffId && x.dateMs<=p.dateMs).reduce((a,x)=>a+x.amount,0);
+    const remain = staff ? (staff.salary||0) - totalPaidForStaff : null;
+    const remainStr = remain !== null ? '$'+(remain).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+    const remainColor = remain !== null && remain >= 0 ? '#16a34a' : '#dc2626';
+    return `<tr>
+      <td>${_mshFmtDate(p.dateMs)}</td>
+      <td>${p.staffName}</td>
+      <td><span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">${p.method||'Kaash'}</span></td>
+      <td style="text-align:right;color:#dc2626;font-weight:700">-$${(p.amount||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="text-align:right;font-weight:600;color:${remainColor}">${remainStr}</td>
+    </tr>`;
+  }).join('');
+  const totalPaid = mshPays.reduce((a,p)=>a+p.amount,0);
+  const school = document.getElementById('schoolCodeDisplay')?.textContent || '';
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="so"><head><meta charset="UTF-8">
+  <title>Mushaharka la Bixiyay — XISAABIYE</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;padding:28px 32px;color:#111;background:#fff}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    h2{margin:0;font-size:20px;color:#111}
+    .sub{color:#555;font-size:12px;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+    thead th{background:#f97316;color:#fff;padding:10px 13px;text-align:left;font-weight:700}
+    thead th:last-child,thead th:nth-child(4){text-align:right}
+    tbody td{padding:9px 13px;border-bottom:1px solid #e5e7eb;vertical-align:middle}
+    tbody tr:nth-child(even) td{background:#fafafa}
+    tfoot td{padding:10px 13px;font-weight:700;background:#fff7ed;border-top:2px solid #f97316;font-size:14px}
+    @media print{
+      @page{margin:1.5cm}
+      .no-print{display:none}
+      body{padding:0}
+    }
+  </style></head><body>
+  <div class="header">
+    <div>
+      <h2>💸 Mushaharka la Bixiyay</h2>
+      <div class="sub">Iskuulka: <b>${school}</b> &nbsp;|&nbsp; Taariikhda: <b>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</b> &nbsp;|&nbsp; XISAABIYE</div>
+    </div>
+    <button class="no-print" onclick="window.print()" style="background:#f97316;border:none;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨️ Daabac</button>
+  </div>
+  <table>
+    <thead><tr><th>Taariikhda</th><th>Magaca Qaataha</th><th>Meesha</th><th>Lacagta</th><th>Haraaga</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr>
+      <td colspan="3"><b>Wadarta Lacagta la Bixiyay</b></td>
+      <td colspan="2" style="text-align:right;color:#dc2626">-$${totalPaid.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    </tr></tfoot>
+  </table>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function exportMshPaysPDF() {
+  printMshPays();
+}
+
+// ── Mushaharo Sub-Nav Toggle ──
+function toggleMshNav() {
+  const subnav = document.getElementById('mshSubNav');
+  const navItem = document.getElementById('navMushaharo');
+  const isOpen = subnav.classList.contains('open');
+  if (isOpen) {
+    subnav.classList.remove('open');
+    navItem.classList.remove('msh-open');
+  } else {
+    subnav.classList.add('open');
+    navItem.classList.add('msh-open');
+    // Auto-show first tab if none active
+    const anyActive = document.querySelector('.msh-subitem.active');
+    if (!anyActive) showMshTab('staff');
+  }
+}
+
+function showMshTab(tab) {
+  // Mark page active (needed for showPage logic)
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-mushaharo').classList.add('active');
+
+  // Sub-items active state
+  document.querySelectorAll('.msh-subitem').forEach(s => s.classList.remove('active'));
+  const activeItem = document.getElementById('mshSub-' + tab);
+  if (activeItem) activeItem.classList.add('active');
+
+  // Show correct section
+  document.getElementById('msh-section-staff').style.display = tab === 'staff' ? '' : 'none';
+  document.getElementById('msh-section-pay').style.display   = tab === 'pay'   ? '' : 'none';
+
+  // Update header title
+  const titleEl = document.getElementById('pageTitle');
+  if (titleEl) titleEl.textContent = tab === 'staff' ? '👥 Shaqaalaha' : '💸 Mushahar Bixin';
+
+  // Keep subnav open, make sure nav-item active style removed (subnav handles it)
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('navMushaharo').classList.add('msh-open');
+  document.getElementById('mshSubNav').classList.add('open');
+
+  // Load data
+  renderMushaharo();
+}
+
+// ── End Mushaharo Module ──
+
 </script>
 
 <!-- TRANSFER MODAL -->
@@ -6465,6 +7618,9 @@ window.addEventListener('load',    checkOnline);
     </div>
     <div class="mnav-item" data-page="budget" onclick="showPage('budget')">
       <span class="micon">🎯</span>Budget
+    </div>
+    <div class="mnav-item" data-page="mushaharo" onclick="showPage('mushaharo')">
+      <span class="micon">💼</span>Mushaharo
     </div>
     <div class="mnav-item" data-page="settings" onclick="showPage('settings')">
       <span class="micon">⚙️</span>Settings
