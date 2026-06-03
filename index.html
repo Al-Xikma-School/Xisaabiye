@@ -639,7 +639,10 @@
 
   /* ── PAGE SECTIONS ── */
   .page { display: none; flex-direction: column; gap: 20px; }
-  .page.active { display: flex; }
+  /* SCROLL FIX: display:block lets height be content-driven so .content scrolls */
+  .page.active { display: block; }
+  .page.active > * { margin-bottom: 20px; }
+  .page.active > *:last-child { margin-bottom: 0; }
 
   /* ── DASHBOARD SUBTLE GRID ── */
   #page-dashboard {
@@ -4666,7 +4669,7 @@ function openEditMemberModal(i) {
   document.getElementById('amBooksPanel').style.display = 'none';
   buildBooksChecklist();
   const allChk = document.getElementById('amAllCheck');
-  if (m.allowedBooks === null || m.allowedBooks.length === 0) {
+  if (!m.allowedBooks || m.allowedBooks.length === 0) {
     allChk.style.background = '#4f8aff'; allChk.style.color = '#fff'; allChk.textContent = '✓';
     books.forEach(b => setBookCheck(b.id, false));
   } else {
@@ -5274,7 +5277,7 @@ function printFilteredTx() {
   </body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(()=>{ if(w && !w.closed) w.print(); }, 800);
+  // Print button in the page - user clicks to print/save PDF
 }
 
 function exportFilteredPDF() {
@@ -5484,7 +5487,7 @@ function printReport() {
   </body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(()=>{ if(w && !w.closed) w.print(); }, 800);
+  // Print button in the page - user clicks to print/save PDF
 }
 
 // ── EXPORT PDF ──
@@ -6375,8 +6378,7 @@ function printBudget() {
   </body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(()=>w.print(),500);
-  showToast('🖨️ Dooro "Save as PDF" daabacaadda!');
+  showToast('🖨️ Guji "Daabac / PDF" badhanka ee furnaanta!');
 }
 
 // ── INIT ──
