@@ -5156,35 +5156,6 @@ async function submitEntry() {
 // ── PRINT FILTERED TRANSACTIONS ──
 let lastFilteredData = [];
 
-
-// ── MOBILE-FRIENDLY PDF HELPER ──
-// Desktop: window.open + print dialog
-// Mobile:  Blob download (avoids broken mobile print dialog)
-function _openPdfWindow(htmlContent, filename) {
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    || (window.innerWidth <= 768);
-
-  if (isMobile) {
-    // Mobile: create Blob and trigger download
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = filename || 'xisaabiye.html';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-    showToast('📥 Faylka wuu soo degayaa — Chrome-ka ku fur oo PDF u keydi!');
-  } else {
-    // Desktop: classic window.open
-    const w = window.open('', '_blank', 'width=960,height=720');
-    if (!w) { showToast('⚠️ Popup waa la xannibay — dib u isku day!'); return; }
-    w.document.write(htmlContent);
-    w.document.close();
-    w.focus();
-  }
-}
-
 function printFilteredTx() {
   const data = lastFilteredData.length ? lastFilteredData : allTx;
 
@@ -5218,13 +5189,13 @@ function printFilteredTx() {
   const totalInAmt  = data.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
   const totalOutAmt = data.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
   const netAmt      = totalInAmt - totalOutAmt;
-  const _txHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  const w = window.open('','_blank','width=960,height=720');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Macaamiilada – XISAABIYE</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a2e;font-size:13px}
-    .page-wrap{max-width:960px;margin:0 auto;padding:28px 24px}
+    .page-wrap{max-width:960px;margin:0 auto;padding:32px 36px}
     .pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;margin-bottom:20px;border-bottom:3px solid #f97316}
     .pdf-logo{display:flex;align-items:center;gap:12px}
     .pdf-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:800}
@@ -5252,19 +5223,10 @@ function printFilteredTx() {
     tfoot td{padding:11px 12px;font-weight:800;background:#fff7ed;border-top:2px solid #f97316;font-size:13px}
     .footer{text-align:center;margin-top:24px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:12px}
     .print-btn{position:fixed;bottom:24px;right:24px;background:#f97316;border:none;color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.4)}
-    @media screen and (max-width:600px){
-      .page-wrap{padding:16px 12px}
-      .pdf-header{flex-direction:column;gap:10px}
-      .pdf-meta{text-align:left}
-      .summary-grid{grid-template-columns:repeat(2,1fr)!important}
-      .filter-bar{flex-wrap:wrap;gap:8px}
-      table{font-size:11px}
-      th,td{padding:7px 8px}
-    }
     @media print{
-      .print-btn{display:none!important}
+      .print-btn{display:none}
       body{font-size:11px}
-      @page{margin:1.2cm;size:A4 portrait}
+      @page{margin:1.2cm;size:A4}
     }
   </style></head><body>
   <div class="page-wrap">
@@ -5311,13 +5273,16 @@ function printFilteredTx() {
     </table>
     <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()} · ${data.length} macaamiil</div>
   </div>
-  <button class="print-btn" onclick="window.print()">🖨️ Daabac / Save as PDF</button>
-  </body></html>`;
-  _openPdfWindow(_txHtml, 'xisaabiye-macaamiil-' + new Date().toISOString().slice(0,10) + '.html');
+  <button class="print-btn" onclick="window.print()">🖨️ Daabac / PDF</button>
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  // Print button in the page - user clicks to print/save PDF
 }
 
 function exportFilteredPDF() {
   printFilteredTx();
+  showToast('🖨️ Dooro "Save as PDF" daabacaadda!');
 }
 
 // ── PRINT REPORT ──
@@ -5431,13 +5396,13 @@ function printReport() {
   </tr>`;
 
   const _prSchool = document.getElementById('schoolCodeDisplay')?.textContent || '';
-  const _rptHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  const w = window.open('','_blank','width=960,height=720');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Warbixinta – XISAABIYE</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a2e;font-size:13px}
-    .page-wrap{max-width:960px;margin:0 auto;padding:28px 24px}
+    .page-wrap{max-width:960px;margin:0 auto;padding:32px 36px}
     .pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;margin-bottom:24px;border-bottom:3px solid #f97316}
     .pdf-logo{display:flex;align-items:center;gap:12px}
     .pdf-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:800}
@@ -5464,18 +5429,10 @@ function printReport() {
     tfoot tr td{padding:11px 12px;font-weight:800;background:#fff7ed;border-top:2px solid #f97316;font-size:13px}
     .footer{text-align:center;margin-top:26px;font-size:10px;color:#bbb;border-top:1px solid #eee;padding-top:12px}
     .print-btn{position:fixed;bottom:24px;right:24px;background:#f97316;border:none;color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.4)}
-    @media screen and (max-width:600px){
-      .page-wrap{padding:16px 12px}
-      .pdf-header{flex-direction:column;gap:10px}
-      .stats-grid{grid-template-columns:1fr 1fr!important}
-      table{font-size:11px}
-      th,td{padding:7px 8px}
-      .pdf-meta{text-align:left}
-    }
     @media print{
-      .print-btn{display:none!important}
+      .print-btn{display:none}
       body{font-size:11px}
-      @page{margin:1.2cm;size:A4 portrait}
+      @page{margin:1.2cm;size:A4}
     }
   </style></head><body>
   <div class="page-wrap">
@@ -5526,14 +5483,17 @@ function printReport() {
     </table>
     <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()} · ${_prPeriodLabel} · ${_prBookLabel}</div>
   </div>
-  <button class="print-btn" onclick="window.print()">🖨️ Daabac / Save as PDF</button>
-  </body></html>`;
-  _openPdfWindow(_rptHtml, 'xisaabiye-warbixin-' + new Date().toISOString().slice(0,10) + '.html');
+  <button class="print-btn" onclick="window.print()">🖨️ Daabac / PDF</button>
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  // Print button in the page - user clicks to print/save PDF
 }
 
 // ── EXPORT PDF ──
 function exportPDF() {
-  printReport();
+  printReport(); // Opens print dialog which includes Save as PDF option
+  showToast('🖨️ Dooro "Save as PDF" daabacaadda!');
 }
 
 // ── MOUSE WHEEL SCROLL FIX ──
@@ -6378,12 +6338,12 @@ function printBudget() {
     <td style="text-align:right;color:${totalNet>=0?'#00a86b':'#cc2244'}">${totalNet>=0?'+':''}$${Math.abs(totalNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
   </tr>`;
 
-  const _budHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Miisaaniyada – XISAABIYE</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',Arial,sans-serif;padding:28px 24px;color:#1a1a2e;background:#fff;font-size:13px}
+    body{font-family:'Segoe UI',Arial,sans-serif;padding:30px;color:#1a1a2e;background:#fff;font-size:13px}
     .header{text-align:center;border-bottom:3px solid #4f8aff;padding-bottom:16px;margin-bottom:24px}
     .header h1{font-size:24px;color:#4f8aff;margin-bottom:4px}
     .header p{color:#666;font-size:12px}
@@ -6393,16 +6353,7 @@ function printBudget() {
     td{padding:10px 12px;border-bottom:1px solid #f0f0f0}
     tr:nth-child(even) td{background:#fafbff}
     .footer{text-align:center;margin-top:24px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px}
-    @media screen and (max-width:600px){
-      body{padding:14px 10px}
-      table{font-size:11px}
-      th,td{padding:7px 8px}
-      h1{font-size:18px}
-    }
-    @media print{
-      body{padding:0}
-      @page{margin:1.2cm;size:A4 landscape}
-    }
+    @media print{body{padding:15px}}
   </style></head><body>
   <div class="header">
     <h1>🎯 Miisaaniyada Iskuulka</h1>
@@ -6424,9 +6375,10 @@ function printBudget() {
     <tbody>${booksRows}${grandRow}</tbody>
   </table>
   <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()}</div>
-  <button class="print-btn" onclick="window.print()" style="position:fixed;bottom:24px;right:24px;background:#4f8aff;border:none;color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">🖨️ Daabac / PDF</button>
-  </body></html>`;
-  _openPdfWindow(_budHtml, 'xisaabiye-miisaaniyad-' + new Date().toISOString().slice(0,10) + '.html');
+  </body></html>`);
+  w.document.close();
+  w.focus();
+  showToast('🖨️ Guji "Daabac / PDF" badhanka ee furnaanta!');
 }
 
 // ── INIT ──
@@ -7465,12 +7417,12 @@ function printMshPays() {
   }).join('');
   const totalPaid = mshPays.reduce((a,p)=>a+p.amount,0);
   const school = document.getElementById('schoolCodeDisplay')?.textContent || '';
-  const _mshHtml = `<!DOCTYPE html><html lang="so"><head><meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="so"><head><meta charset="UTF-8">
   <title>Mushaharka la Bixiyay — XISAABIYE</title>
   <style>
     *{box-sizing:border-box}
-    body{font-family:Arial,Helvetica,sans-serif;padding:24px 20px;color:#111;background:#fff}
+    body{font-family:Arial,Helvetica,sans-serif;padding:28px 32px;color:#111;background:#fff}
     .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
     h2{margin:0;font-size:20px;color:#111}
     .sub{color:#555;font-size:12px;margin-bottom:20px}
@@ -7480,15 +7432,9 @@ function printMshPays() {
     tbody td{padding:9px 13px;border-bottom:1px solid #e5e7eb;vertical-align:middle}
     tbody tr:nth-child(even) td{background:#fafafa}
     tfoot td{padding:10px 13px;font-weight:700;background:#fff7ed;border-top:2px solid #f97316;font-size:14px}
-    @media screen and (max-width:600px){
-      body{padding:14px 10px}
-      .header{flex-direction:column;gap:10px;align-items:flex-start}
-      table{font-size:11px}
-      th,td{padding:7px 8px}
-    }
     @media print{
-      @page{margin:1.2cm;size:A4 portrait}
-      .no-print{display:none!important}
+      @page{margin:1.5cm}
+      .no-print{display:none}
       body{padding:0}
     }
   </style></head><body>
@@ -7507,9 +7453,9 @@ function printMshPays() {
       <td colspan="2" style="text-align:right;color:#dc2626">-$${totalPaid.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
     </tr></tfoot>
   </table>
-  <button class="no-print" onclick="window.print()" style="background:#f97316;border:none;color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:16px;display:block">🖨️ Daabac / Save as PDF</button>
-  </body></html>`;
-  _openPdfWindow(_mshHtml, 'xisaabiye-mushaharo-' + new Date().toISOString().slice(0,10) + '.html');
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
 }
 
 function exportMshPaysPDF() {
