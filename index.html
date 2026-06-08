@@ -6549,13 +6549,11 @@ document.addEventListener('appReady', function() {
   // Listen for page visibility change (user switches apps / tabs)
   // Waxaan sugaynaa 30 ilbiriqsi kahor xidhitaanka - haddii aad si dhakhso ah u soo noqoto, ma xidhmi
   let _lockDelayTimer = null;
-  const LOCK_DELAY_MS = 999 * 60 * 60 * 1000; // DISABLED - auto-lock la joojiyey
+  const LOCK_DELAY_MS = 999 * 60 * 60 * 1000; // DISABLED
 
   document.addEventListener('visibilitychange', function() {
-    // AUTO-LOCK LA JOOJIYEY - ma xidhi markaad tab ka baxdo
-    if (!document.hidden) {
-      if (_lockDelayTimer) { clearTimeout(_lockDelayTimer); _lockDelayTimer = null; }
-    }
+    // AUTO-LOCK DISABLED - waxba ma samaynayso
+    if (_lockDelayTimer) { clearTimeout(_lockDelayTimer); _lockDelayTimer = null; }
   });
 
   // Also catches mobile "home button" / app switcher
