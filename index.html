@@ -3231,6 +3231,10 @@ document.addEventListener('firebaseReady', async function() {
   initApp();
   window._appInitDone = true;
   document.dispatchEvent(new Event('appReady'));
+  // Auto-restore session markuu page dib u load-gareeyo
+  if (document.getElementById('loginScreen').style.display !== 'none') {
+    _tryRestoreSession();
+  }
 });
 
 // ── RENDER SIDEBAR BOOKS ──
@@ -3343,6 +3347,8 @@ function doLogin() {
     window._setupBudgetsListener(code);
 
     currentUser = member;
+    // Keydi session localStorage si page reload ka dib uu toos u soo galo
+    try { localStorage.setItem('_session', JSON.stringify({code: code, username: u, password: p})); } catch(e) {}
     document.getElementById('loginScreen').style.display = 'none';
     document.querySelector('.user-avatar').textContent = member.name[0];
     document.querySelector('.user-name').textContent = member.name.split(' ')[0] + ' ' + (member.name.split(' ')[1]||'');
@@ -3356,6 +3362,7 @@ function doLogin() {
 }
 
 function doLogout() {
+  try { localStorage.removeItem('_session'); } catch(e) {}
   currentUser = null;
   window._currentSchoolCode = null;
   window._appInitDone = false;
@@ -3366,6 +3373,21 @@ function doLogout() {
   document.getElementById('loginPassword').value = '';
   document.getElementById('loginError').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// Auto-restore session markuu page dib u load-gareeyo (WebIntoApp/PWA)
+function _tryRestoreSession() {
+  try {
+    const saved = localStorage.getItem('_session');
+    if (!saved) return;
+    const s = JSON.parse(saved);
+    if (!s || !s.code || !s.username || !s.password) return;
+    // Auto-fill oo login garee
+    document.getElementById('loginSchoolCode').value = s.code;
+    document.getElementById('loginUsername').value = s.username;
+    document.getElementById('loginPassword').value = s.password;
+    doLogin();
+  } catch(e) {}
 }
 
 // Allow Enter key to submit login
