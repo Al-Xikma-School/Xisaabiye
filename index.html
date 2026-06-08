@@ -6549,20 +6549,12 @@ document.addEventListener('appReady', function() {
   // Listen for page visibility change (user switches apps / tabs)
   // Waxaan sugaynaa 30 ilbiriqsi kahor xidhitaanka - haddii aad si dhakhso ah u soo noqoto, ma xidhmi
   let _lockDelayTimer = null;
-  const LOCK_DELAY_MS = 30 * 1000; // 30 ilbiriqsi
+  const LOCK_DELAY_MS = 999 * 60 * 60 * 1000; // DISABLED - auto-lock la joojiyey
 
   document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-      // Bilow timer-ka laakiin ha xidhin si toos ah
-      _lockDelayTimer = setTimeout(function() {
-        lockApp();
-      }, LOCK_DELAY_MS);
-    } else {
-      // Haddii aad soo noqotay kahor wakhtigii, jooji timer-ka
-      if (_lockDelayTimer) {
-        clearTimeout(_lockDelayTimer);
-        _lockDelayTimer = null;
-      }
+    // AUTO-LOCK LA JOOJIYEY - ma xidhi markaad tab ka baxdo
+    if (!document.hidden) {
+      if (_lockDelayTimer) { clearTimeout(_lockDelayTimer); _lockDelayTimer = null; }
     }
   });
 
@@ -6581,7 +6573,7 @@ document.addEventListener('appReady', function() {
 //  FEATURE: IDLE TIMEOUT AUTO-LOGOUT (3 minutes)
 // ══════════════════════════════════════════════
 (function() {
-  const IDLE_TIMEOUT_MS  = 5 * 60 * 1000; // 5 daqiiqo
+  const IDLE_TIMEOUT_MS  = 999 * 60 * 60 * 1000; // DISABLED - idle logout la joojiyey
   const WARNING_SECS     = 30;             // 30 ilbiriqsi digniinta
 
   let idleTimer      = null;
