@@ -7664,5 +7664,70 @@ function showMshTab(tab) {
   </div>
 </nav>
 
+<script>
+// ── WebIntoApp 500 Error Interceptor ──
+(function() {
+  // Haddii page-ka oo dhan blank yahay ama 500 ka yimid, custom page soo bandhig
+  function show500Page() {
+    document.open();
+    document.write(`<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Xiriirka waa go'ay</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;font-family:sans-serif;text-align:center;padding:24px}
+.icon{font-size:72px;margin-bottom:24px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+h1{font-size:22px;font-weight:700;margin-bottom:12px}
+p{font-size:14px;color:#94a3b8;margin-bottom:28px;line-height:1.7}
+.btn{background:#3b82f6;color:#fff;border:none;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer}
+.sub{margin-top:16px;font-size:12px;color:#475569}
+</style>
+</head>
+<body>
+<div class="icon">📡</div>
+<h1>Xiriirka waa go'ay</h1>
+<p>Internetka ama serverka waa go'ay.<br>Fadlan xiriirka hubi oo dib u isku day.</p>
+<button class="btn" onclick="location.reload()">🔄 Dib u Isku Day</button>
+<p class="sub">Dhowr ilbiriqsi sug ka dibna dib u isku day</p>
+</body>
+</html>`);
+    document.close();
+  }
+
+  // Catch window-level errors
+  window.addEventListener('error', function(e) {
+    // Haddii script load failed oo page blank yahay
+    if (document.body && document.body.innerHTML.trim() === '') {
+      show500Page();
+    }
+  });
+
+  // Intercept fetch si 500 errors loo qabto
+  const _origFetch = window.fetch;
+  window.fetch = function() {
+    return _origFetch.apply(this, arguments).then(function(res) {
+      return res;
+    }).catch(function(err) {
+      // Network error — app-ka gudihiisa ka yimid, ha bedelin page-ka
+      return Promise.reject(err);
+    });
+  };
+
+  // Haddii page-ka 500 uu soo bandhigay (blank body ama error text)
+  window.addEventListener('load', function() {
+    const body = document.body;
+    if (!body) return;
+    const text = body.innerText || '';
+    // WebIntoApp 500 page-keeda waxaa ku jira "500" iyo "Server Error"
+    if (text.includes('500') && text.includes('Server Error') && !document.getElementById('loginScreen')) {
+      show500Page();
+    }
+  });
+})();
+</script>
 </body>
 </html>
