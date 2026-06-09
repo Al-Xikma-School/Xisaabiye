@@ -3376,12 +3376,25 @@ function doLogout() {
 }
 
 // Auto-restore session markuu page dib u load-gareeyo (WebIntoApp/PWA)
-function _tryRestoreSession() {
+function _tryRestoreSession(attempt) {
+  attempt = attempt || 1;
   try {
     const saved = localStorage.getItem('_session');
     if (!saved) return;
     const s = JSON.parse(saved);
     if (!s || !s.code || !s.username || !s.password) return;
+
+    // Haddii Firebase weli diyaar uusan ahayn, sug oo dib u isku day (max 10 jeer)
+    if (!window._firebaseReady || !window._appInitDone) {
+      if (attempt <= 10) {
+        setTimeout(function() { _tryRestoreSession(attempt + 1); }, 600);
+      }
+      return;
+    }
+
+    // Haddii user horay u galay, ha samaynin
+    if (window.currentUser) return;
+
     // Auto-fill oo login garee
     document.getElementById('loginSchoolCode').value = s.code;
     document.getElementById('loginUsername').value = s.username;
@@ -3389,6 +3402,12 @@ function _tryRestoreSession() {
     doLogin();
   } catch(e) {}
 }
+
+// Markuu WebIntoApp/PWA page dib u load-gareeyo, toos u bilow restore
+document.addEventListener('DOMContentLoaded', function() {
+  // Bilow restore bilowga, retry loop-ku Firebase sugayaa
+  setTimeout(function() { _tryRestoreSession(); }, 300);
+});
 
 // Allow Enter key to submit login
 document.addEventListener('DOMContentLoaded', () => {
