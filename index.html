@@ -200,8 +200,8 @@
   /* ── SIDEBAR ── */
   .sidebar {
     width: 240px;
-    background: #ffffff;
-    border-right: 1px solid rgba(249,115,22,0.15);
+    background: linear-gradient(180deg, #4c1d95 0%, #3b2f8f 35%, #312e81 65%, #1e3a8a 100%);
+    border-right: 1px solid rgba(255,255,255,0.08);
     display: flex;
     flex-direction: column;
     padding: 24px 0;
@@ -215,36 +215,36 @@
     align-items: center;
     gap: 10px;
     padding: 0 20px 28px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255,255,255,0.12);
   }
   .logo-icon {
     width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--accent-blue), #7c3aed);
+    background: linear-gradient(135deg, #fb923c, #f472b6);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
   }
-  .logo-text { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
-  .logo-sub { font-size: 10px; color: var(--text-muted); font-family: 'Noto Naskh Arabic'; }
+  .logo-text { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; color: #ffffff; }
+  .logo-sub { font-size: 10px; color: rgba(255,255,255,0.55); font-family: 'Noto Naskh Arabic'; }
 
   .sidebar-section { padding: 20px 12px 8px; }
   .sidebar-label {
     font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; color: var(--text-muted);
+    text-transform: uppercase; color: rgba(255,255,255,0.45);
     padding: 0 8px; margin-bottom: 6px;
   }
   .nav-item {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 12px; border-radius: var(--radius-sm);
     cursor: pointer; transition: all 0.2s;
-    font-size: 13.5px; font-weight: 500; color: var(--text-secondary);
+    font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.75);
     position: relative;
   }
-  .nav-item:hover { background: var(--surface2); color: var(--text-primary); }
+  .nav-item:hover { background: rgba(255,255,255,0.10); color: #ffffff; }
   .nav-item.active {
-    background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(234,88,12,0.08));
-    color: #f97316;
-    border: 1px solid rgba(249,115,22,0.22);
+    background: linear-gradient(135deg, rgba(251,146,60,0.28), rgba(244,114,182,0.18));
+    color: #ffffff;
+    border: 1px solid rgba(251,146,60,0.45);
   }
   .nav-item .icon { width: 18px; text-align: center; font-size: 15px; }
   /* Mushaharo sub-nav */
@@ -253,7 +253,7 @@
     flex-direction: column;
     gap: 2px;
     margin: 2px 0 4px 18px;
-    border-left: 2px solid rgba(249,115,22,0.25);
+    border-left: 2px solid rgba(251,146,60,0.35);
     padding-left: 10px;
   }
   .msh-subnav.open { display: flex; }
@@ -261,15 +261,15 @@
     display: flex; align-items: center; gap: 8px;
     padding: 7px 10px; border-radius: var(--radius-sm);
     cursor: pointer; transition: all 0.2s;
-    font-size: 12.5px; font-weight: 500; color: var(--text-secondary);
+    font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.65);
   }
-  .msh-subitem:hover { background: var(--surface2); color: var(--text-primary); }
-  .msh-subitem.active { background: rgba(249,115,22,0.10); color: #f97316; font-weight: 700; }
+  .msh-subitem:hover { background: rgba(255,255,255,0.10); color: #ffffff; }
+  .msh-subitem.active { background: rgba(251,146,60,0.20); color: #fdba74; font-weight: 700; }
   .nav-item .msh-arrow { margin-left:auto; font-size:10px; transition: transform 0.2s; }
   .nav-item.msh-open .msh-arrow { transform: rotate(90deg); }
 
   .nav-badge {
-    margin-left: auto; background: var(--accent-blue);
+    margin-left: auto; background: #fb923c;
     color: #fff; font-size: 10px; font-weight: 700;
     padding: 2px 7px; border-radius: 20px;
   }
@@ -281,13 +281,13 @@
     cursor: pointer; transition: all 0.2s;
     margin-bottom: 2px;
   }
-  .book-item:hover { background: var(--surface2); }
-  .book-item.active { background: rgba(0,224,158,0.08); border-left: 3px solid var(--accent-green); padding-left: 7px; }
+  .book-item:hover { background: rgba(255,255,255,0.10); }
+  .book-item.active { background: rgba(74,222,128,0.15); border-left: 3px solid #4ade80; padding-left: 7px; }
   .book-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .book-name { font-size: 12.5px; font-weight: 600; }
+  .book-name { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.85); }
   .book-bal { margin-left: auto; font-size: 11px; font-weight: 700; }
-  .book-bal.pos { color: #16a34a; }
-  .book-bal.neg { color: #dc2626; }
+  .book-bal.pos { color: #4ade80; }
+  .book-bal.neg { color: #f87171; }
 
   /* ── MAIN CONTENT ── */
   .main {
@@ -490,6 +490,93 @@
   .td-amount.out { color: #dc2626; }
   .td-amount.in { color: #16a34a; }
   .td-balance { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+
+  /* ── WARBIXINNADA (REPORTS PAGE) — COLORFUL CARDS ── */
+  #page-reports .charts-row .chart-card:nth-child(1) {
+    background: linear-gradient(150deg, #dbeeff 0%, #bfe0ff 55%, #a3d0ff 100%);
+    border: 1px solid rgba(37,99,235,0.22);
+  }
+  #page-reports .charts-row .chart-card:nth-child(1)::after {
+    background: linear-gradient(90deg, transparent, rgba(37,99,235,0.45), transparent);
+  }
+  #page-reports .charts-row .chart-card:nth-child(1):hover {
+    border-color: rgba(37,99,235,0.4);
+    box-shadow: 0 14px 40px rgba(37,99,235,0.18), 0 0 0 1px rgba(37,99,235,0.2);
+  }
+  #page-reports .charts-row .chart-card:nth-child(2) {
+    background: linear-gradient(150deg, #f2e3ff 0%, #e4c9ff 55%, #d3adff 100%);
+    border: 1px solid rgba(147,51,234,0.22);
+  }
+  #page-reports .charts-row .chart-card:nth-child(2)::after {
+    background: linear-gradient(90deg, transparent, rgba(147,51,234,0.45), transparent);
+  }
+  #page-reports .charts-row .chart-card:nth-child(2):hover {
+    border-color: rgba(147,51,234,0.4);
+    box-shadow: 0 14px 40px rgba(147,51,234,0.18), 0 0 0 1px rgba(147,51,234,0.2);
+  }
+
+  #page-reports .table-card {
+    background: linear-gradient(165deg, #e7fbef 0%, #ffffff 45%);
+    border: 1px solid rgba(22,163,74,0.22);
+  }
+  #page-reports .table-header {
+    background: linear-gradient(90deg, #16a34a, #0d9488 65%, #0284c7);
+    border-bottom: none;
+    padding: 16px 22px;
+  }
+  #page-reports .table-header .table-title { color: #ffffff; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  #page-reports .table-header .table-count {
+    background: rgba(255,255,255,0.25); color: #ffffff; font-weight: 800;
+  }
+  #page-reports thead {
+    background: linear-gradient(90deg, #0f766e, #0369a1);
+  }
+  #page-reports thead th {
+    color: #ffffff !important;
+    font-weight: 800;
+    opacity: 0.95;
+    border-bottom: none;
+  }
+
+  #page-reports #rptBooksTable tr:nth-child(6n+1) td { background: rgba(22,163,74,0.07); border-left: 3px solid rgba(22,163,74,0.55); }
+  #page-reports #rptBooksTable tr:nth-child(6n+2) td { background: rgba(220,38,38,0.06); border-left: 3px solid rgba(220,38,38,0.5); }
+  #page-reports #rptBooksTable tr:nth-child(6n+3) td { background: rgba(147,51,234,0.06); border-left: 3px solid rgba(147,51,234,0.5); }
+  #page-reports #rptBooksTable tr:nth-child(6n+4) td { background: rgba(146,64,14,0.07); border-left: 3px solid rgba(146,64,14,0.5); }
+  #page-reports #rptBooksTable tr:nth-child(6n+5) td { background: rgba(37,99,235,0.06); border-left: 3px solid rgba(37,99,235,0.5); }
+  #page-reports #rptBooksTable tr:nth-child(6n+6) td { background: rgba(219,119,6,0.07); border-left: 3px solid rgba(219,119,6,0.5); }
+  #page-reports #rptBooksTable tr:hover td { filter: brightness(0.97); }
+  #page-reports #rptBooksTable tr:last-child td {
+    background: linear-gradient(90deg, rgba(22,163,74,0.14), rgba(37,99,235,0.1)) !important;
+    border-left: 3px solid var(--accent-green) !important;
+    border-top: 2px solid rgba(22,163,74,0.3);
+  }
+
+  /* ── TRANSACTIONS PAGE — COLORFUL TABLE (same style as reports) ── */
+  #page-transactions .table-card {
+    background: linear-gradient(165deg, #e7fbef 0%, #ffffff 45%);
+    border: 1px solid rgba(22,163,74,0.22);
+  }
+  #page-transactions .table-header {
+    background: linear-gradient(90deg, #16a34a, #0d9488 65%, #0284c7);
+    border-bottom: none;
+    padding: 16px 22px;
+  }
+  #page-transactions .table-header .table-title { color: #ffffff; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  #page-transactions .table-header .table-count { background: rgba(255,255,255,0.25); color: #ffffff; font-weight: 800; }
+  #page-transactions .table-header .search-box { background: rgba(255,255,255,0.85); }
+  #page-transactions .table-header .search-box input { color: var(--text-primary); }
+  #page-transactions .table-header .search-box input::placeholder { color: var(--text-muted); }
+  #page-transactions .table-header .search-box span { filter: none; }
+  #page-transactions thead { background: linear-gradient(90deg, #0f766e, #0369a1); }
+  #page-transactions thead th { color: #ffffff !important; font-weight: 800; opacity: 0.95; border-bottom: none; }
+
+  #page-transactions #txTable2 tr:nth-child(6n+1) td { background: rgba(22,163,74,0.07); border-left: 3px solid rgba(22,163,74,0.55); }
+  #page-transactions #txTable2 tr:nth-child(6n+2) td { background: rgba(220,38,38,0.06); border-left: 3px solid rgba(220,38,38,0.5); }
+  #page-transactions #txTable2 tr:nth-child(6n+3) td { background: rgba(147,51,234,0.06); border-left: 3px solid rgba(147,51,234,0.5); }
+  #page-transactions #txTable2 tr:nth-child(6n+4) td { background: rgba(146,64,14,0.07); border-left: 3px solid rgba(146,64,14,0.5); }
+  #page-transactions #txTable2 tr:nth-child(6n+5) td { background: rgba(37,99,235,0.06); border-left: 3px solid rgba(37,99,235,0.5); }
+  #page-transactions #txTable2 tr:nth-child(6n+6) td { background: rgba(219,119,6,0.07); border-left: 3px solid rgba(219,119,6,0.5); }
+  #page-transactions #txTable2 tr:hover td { filter: brightness(0.97); }
 
   /* ── BOOKS OVERVIEW ── */
   .books-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -1933,8 +2020,9 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           <div class="chart-header">
             <div>
               <div class="chart-title">Xilli-xilli Balance</div>
-              <div class="chart-sub">Xilli-xilli haraaga joogtada ah</div>
+              <div class="chart-sub">Faa'iido/Khasaaraha bil kasta gaarkeeda</div>
             </div>
+            <select id="lineChartYearSelect" class="filter-select" onchange="buildCharts()" style="font-weight:700;color:#f97316;border-color:#f9731655"></select>
           </div>
           <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
         </div>
@@ -3626,13 +3714,34 @@ function buildCharts() {
   const lCtx = document.getElementById('lineChart');
   if (lCtx) {
     const lineLabels = ACAD_MONTHS;
-    const _lineAllowed = visibleBooks().map(b => b.name);
-    let running = 0;
-    const netLine = ACAD_MONTH_NUMS.map(m => {
-      const mIn  = allTx.filter(t=>t.type==='in'  && _lineAllowed.includes(t.book) && t.dateObj && (t.dateObj instanceof Date?t.dateObj:new Date(t.dateObj)).getMonth()===m).reduce((s,t)=>s+t.amount,0);
-      const mOut = allTx.filter(t=>t.type==='out' && _lineAllowed.includes(t.book) && t.dateObj && (t.dateObj instanceof Date?t.dateObj:new Date(t.dateObj)).getMonth()===m).reduce((s,t)=>s+t.amount,0);
-      running += mIn - mOut;
-      return running;
+    const _lineVisibleBooks = visibleBooks();
+    const _lineAllowed = (typeof _rptSelectedBooks !== 'undefined' && !_rptSelectedBooks.has('__all__'))
+      ? _lineVisibleBooks.filter(b => _rptSelectedBooks.has(String(b.id))).map(b => b.name)
+      : _lineVisibleBooks.map(b => b.name);
+
+    // Populate the academic-year dropdown once (keeps selection across rebuilds)
+    const lineYearSel = document.getElementById('lineChartYearSelect');
+    if (lineYearSel && lineYearSel.options.length === 0) {
+      const today = new Date();
+      const curAcadStart = today.getMonth() < 7 ? today.getFullYear() - 1 : today.getFullYear();
+      for (let y = curAcadStart - 3; y <= curAcadStart + 4; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y + '/' + (y + 1);
+        if (y === curAcadStart) opt.selected = true;
+        lineYearSel.appendChild(opt);
+      }
+    }
+    const lineAcadYearStart = lineYearSel ? parseInt(lineYearSel.value, 10)
+      : (new Date().getFullYear() - (new Date().getMonth() < 7 ? 1 : 0));
+
+    const netLine = ACAD_MONTH_NUMS.map((m, idx) => {
+      const yr = idx < 5 ? lineAcadYearStart : lineAcadYearStart + 1; // Aug-Dec = startYear, Jan-Jul = startYear+1
+      const inYear = t => { const d = t.dateObj instanceof Date ? t.dateObj : new Date(t.dateObj); return d.getMonth()===m && d.getFullYear()===yr; };
+      const mIn  = allTx.filter(t=>t.type==='in'  && _lineAllowed.includes(t.book) && t.dateObj && inYear(t)).reduce((s,t)=>s+t.amount,0);
+      const mOut = allTx.filter(t=>t.type==='out' && _lineAllowed.includes(t.book) && t.dateObj && inYear(t)).reduce((s,t)=>s+t.amount,0);
+      // Bishaan oo keliya haraageeda - lama darayo bilihii hore (ma aha wadar joogto ah)
+      return mIn - mOut;
     });
     if (_lineChartInst) _lineChartInst.destroy();
     _lineChartInst = new Chart(lCtx.getContext('2d'), {
@@ -4312,6 +4421,7 @@ function applyFilters() {
   renderTable(data, 'txTable2', 'txCount2');
   updateTxSummary(data, cutoffDate, includeOpening);
   lastFilteredData = data;
+  buildCharts();
 }
 
 function updateTxSummary(data, cutoffDate, includeOpening) {
@@ -5806,6 +5916,7 @@ function renderReportBooksTable() {
     <td style="text-align:left;font-weight:800">${totalTx}</td>
   </tr>`);
   tbody.innerHTML = rows.join('');
+  if (typeof buildCharts === 'function') buildCharts();
 }
 
 // ── BUDGET ──
