@@ -5944,15 +5944,30 @@ function printFilteredTx() {
   const typeLabel = typeVal==='in'?'Cash In':typeVal==='out'?'Cash Out':typeVal==='faalis'?'Dakhli Faalis':'Dhammaan';
   const bookLabel = document.getElementById('multiselectLabel')?.textContent || 'Dhammaan';
 
-  const txRows = data.map(t => `
-    <tr>
-      <td style="white-space:nowrap;color:#6b7280">${t.date}</td>
-      <td><strong style="color:#1a1a2e">${t.detail}</strong></td>
-      <td style="color:#374151">${t.book}</td>
-      <td><span class="type-badge ${t.type==='in'?'badge-in':t.type==='faalis'?'badge-faalis':'badge-out'}">${t.type==='in'?'Cash In':t.type==='faalis'?'✨ Dakhli Faalis':'Cash Out'}</span></td>
-      <td style="text-align:right;font-weight:800;color:${t.type==='out'?'#dc2626':t.type==='faalis'?'#7c3aed':'#16a34a'}">${t.type==='out'?'-':'+'}$${Math.abs(t.amount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-      <td style="text-align:right;color:#374151;font-weight:600">$${(t.balance).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-    </tr>`).join('');
+  const txPrintCols = ['date','detail','book','type','amount','balance'];
+  const txVisibleCols = txPrintCols.filter(k => k === 'type' ? true : !hiddenTxColumns.has(k));
+
+  const txHeaderDefs = {
+    date:    '<th>Taariikhda</th>',
+    detail:  '<th>Faahfaahinta</th>',
+    book:    '<th>Buug</th>',
+    type:    '<th>Nooca</th>',
+    amount:  '<th class="r">Xaddiga</th>',
+    balance: '<th class="r">Haraaga</th>'
+  };
+  const txHeaderRow = txVisibleCols.map(k => txHeaderDefs[k]).join('');
+
+  const txRows = data.map(t => {
+    const cellsMap = {
+      date:    `<td style="white-space:nowrap;color:#6b7280">${t.date}</td>`,
+      detail:  `<td><strong style="color:#1a1a2e">${t.detail}</strong></td>`,
+      book:    `<td style="color:#374151">${t.book}</td>`,
+      type:    `<td><span class="type-badge ${t.type==='in'?'badge-in':t.type==='faalis'?'badge-faalis':'badge-out'}">${t.type==='in'?'Cash In':t.type==='faalis'?'✨ Dakhli Faalis':'Cash Out'}</span></td>`,
+      amount:  `<td style="text-align:right;font-weight:800;color:${t.type==='out'?'#dc2626':t.type==='faalis'?'#7c3aed':'#16a34a'}">${t.type==='out'?'-':'+'}$${Math.abs(t.amount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`,
+      balance: `<td style="text-align:right;color:#374151;font-weight:600">$${(t.balance).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`
+    };
+    return '<tr>' + txVisibleCols.map(k => cellsMap[k]).join('') + '</tr>';
+  }).join('');
 
   const school = document.getElementById('schoolCodeDisplay')?.textContent || '';
   const totalInAmt  = data.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
@@ -6028,17 +6043,16 @@ function printFilteredTx() {
     </div>
     <table>
       <thead><tr>
-        <th>Taariikhda</th><th>Faahfaahinta</th><th>Buug</th><th>Nooca</th>
-        <th class="r">Xaddiga</th><th class="r">Haraaga</th>
+        ${txHeaderRow}
       </tr></thead>
       <tbody>${txRows}</tbody>
       <tfoot><tr>
-        <td colspan="4">📊 Wadarta</td>
-        <td style="text-align:right;color:${netAmt>=0?'#16a34a':'#dc2626'}">
+        <td colspan="${txVisibleCols.filter(k=>k==='date'||k==='detail'||k==='book'||k==='type').length || 1}">📊 Wadarta</td>
+        ${txVisibleCols.includes('amount') ? `<td style="text-align:right;color:${netAmt>=0?'#16a34a':'#dc2626'}">
           In: <span style="color:#16a34a">+$${totalInAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span> &nbsp;
           Out: <span style="color:#dc2626">-$${totalOutAmt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-        </td>
-        <td style="text-align:right;color:${netAmt>=0?'#16a34a':'#dc2626'}">${netAmt>=0?'+':'-'}$${Math.abs(netAmt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        </td>` : ''}
+        ${txVisibleCols.includes('balance') ? `<td style="text-align:right;color:${netAmt>=0?'#16a34a':'#dc2626'}">${netAmt>=0?'+':'-'}$${Math.abs(netAmt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>` : ''}
       </tr></tfoot>
     </table>
     <div class="footer">XISAABIYE · Warbixinta waxaa la sameeyay ${new Date().toLocaleString()} · ${data.length} macaamiil</div>
