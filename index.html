@@ -713,6 +713,35 @@
   .ms-option:hover { background: var(--surface2); }
   .ms-option input[type=checkbox] { accent-color: var(--accent-blue); width: 14px; height: 14px; cursor: pointer; }
 
+  /* ── TABLE TOOLBAR (columns / csv / whatsapp / select-all) ── */
+  .table-toolbar { display: flex; align-items: center; gap: 8px; }
+  .table-tool-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 700;
+    color: var(--text-primary); font-family: inherit; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .table-tool-btn:hover { border-color: var(--accent-orange); color: var(--accent-orange); transform: translateY(-1px); }
+  .table-tool-btn.wa:hover { border-color: #22c55e; color: #16a34a; }
+  .table-tool-btn.csv:hover { border-color: #0ea5e9; color: #0284c7; }
+  .table-tool-btn.transfer:hover { border-color: #7c3aed; color: #7c3aed; }
+  .table-tool-btn .tt-badge {
+    background: var(--accent-orange); color: #fff; border-radius: 20px;
+    font-size: 10px; font-weight: 800; padding: 1px 6px; min-width: 15px; text-align: center;
+  }
+  #page-transactions .table-tool-btn { background: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.4); }
+  #page-transactions .table-tool-btn:hover { background: #ffffff; }
+  .columns-dropdown {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 300;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px; min-width: 180px;
+    box-shadow: var(--shadow);
+  }
+  .col-check { width: 34px; text-align: center !important; }
+  .col-check input[type=checkbox], th.col-check input[type=checkbox] { accent-color: var(--accent-orange); width: 15px; height: 15px; cursor: pointer; }
+  tr.tx-row-selected td { background: rgba(249,115,22,0.07) !important; }
+
   /* ── DELETE & EDIT BTNS ── */
   .td-delete {
     background: none; border: none; cursor: pointer;
@@ -2003,6 +2032,15 @@ body.offline-mode #loginScreen { margin-top: 46px; }
         <div class="table-header">
           <div class="table-title">Macaamiilada Ugu Dambeeyey</div>
           <div class="table-count" id="txCount2">0 entries</div>
+          <div class="table-toolbar">
+            <div style="position:relative">
+              <button class="table-tool-btn" id="columnsToggleBtn" onclick="toggleColumnsMenu(event)" title="Tiirarka muuji/qari">👁️ Tiirarka</button>
+              <div class="columns-dropdown" id="columnsDropdown" style="display:none"></div>
+            </div>
+            <button class="table-tool-btn csv" onclick="exportTxCSV()" title="U dejiso CSV">⬇️ CSV</button>
+            <button class="table-tool-btn wa" onclick="shareTxWhatsApp()" title="La wadaag WhatsApp">🟢 WhatsApp <span class="tt-badge" id="txSelBadge" style="display:none">0</span></button>
+            <button class="table-tool-btn transfer" onclick="openBulkTransferTx()" title="U wareejin buug kale">🔄 Transfer <span class="tt-badge" id="txTransferBadge" style="display:none">0</span></button>
+          </div>
           <div class="search-box" style="margin-left:auto">
             <span style="color:var(--text-muted)">🔍</span>
             <input type="text" placeholder="Raadi..." oninput="applyFilters()" id="filterSearch">
@@ -2011,12 +2049,13 @@ body.offline-mode #loginScreen { margin-top: 46px; }
         <table>
           <thead>
             <tr>
-              <th>Taariikhda</th>
-              <th>Faahfaahinta</th>
-              <th>Buug</th>
-              <th>Xaddiga</th>
-              <th>Haraaga</th>
-              <th></th>
+              <th class="col-check"><input type="checkbox" id="selectAllTxBox" onchange="toggleSelectAllTx(this)" title="Dooro dhammaan"></th>
+              <th class="col-date">Taariikhda</th>
+              <th class="col-detail">Faahfaahinta</th>
+              <th class="col-book">Buug</th>
+              <th class="col-amount">Xaddiga</th>
+              <th class="col-balance">Haraaga</th>
+              <th class="col-actions"></th>
             </tr>
           </thead>
           <tbody id="txTable2"></tbody>
@@ -2121,17 +2160,25 @@ body.offline-mode #loginScreen { margin-top: 46px; }
         <div class="table-header">
           <div class="table-title">📋 Koobaadka Iskuul kasta</div>
           <div class="table-count" id="rptBookCount">–</div>
+          <div class="table-toolbar">
+            <div style="position:relative">
+              <button class="table-tool-btn" id="rptColumnsToggleBtn" onclick="toggleRptColumnsMenu(event)" title="Tiirarka muuji/qari">👁️ Tiirarka</button>
+              <div class="columns-dropdown" id="rptColumnsDropdown" style="display:none"></div>
+            </div>
+            <button class="table-tool-btn csv" onclick="exportRptCSV()" title="U dejiso CSV">⬇️ CSV</button>
+            <button class="table-tool-btn wa" onclick="shareRptWhatsApp()" title="La wadaag WhatsApp">🟢 WhatsApp</button>
+          </div>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Iskuulka</th>
-              <th style="text-align:left">Dakhliga Soo Gashay</th>
-              <th style="text-align:left">U Dhiman Dakhli</th>
-              <th style="text-align:left">Kharashka la Bixiyay</th>
-              <th style="text-align:left">U Dhiman Kharash</th>
-              <th style="text-align:left">Faa'iido / Khasaaro</th>
-              <th style="text-align:left">Macaamiil</th>
+              <th class="col-rpt-school">Iskuulka</th>
+              <th class="col-rpt-in" style="text-align:left">Dakhliga Soo Gashay</th>
+              <th class="col-rpt-gapin" style="text-align:left">U Dhiman Dakhli</th>
+              <th class="col-rpt-out" style="text-align:left">Kharashka la Bixiyay</th>
+              <th class="col-rpt-gapout" style="text-align:left">U Dhiman Kharash</th>
+              <th class="col-rpt-net" style="text-align:left">Faa'iido / Khasaaro</th>
+              <th class="col-rpt-tx" style="text-align:left">Macaamiil</th>
             </tr>
           </thead>
           <tbody id="rptBooksTable"></tbody>
@@ -2303,18 +2350,26 @@ body.offline-mode #loginScreen { margin-top: 46px; }
         <div class="table-header">
           <div class="table-title">Miisaaniyada Iskuul kasta</div>
           <div class="table-count" id="budCount">0 iskuul</div>
+          <div class="table-toolbar">
+            <div style="position:relative">
+              <button class="table-tool-btn" id="budColumnsToggleBtn" onclick="toggleBudColumnsMenu(event)" title="Tiirarka muuji/qari">👁️ Tiirarka</button>
+              <div class="columns-dropdown" id="budColumnsDropdown" style="display:none"></div>
+            </div>
+            <button class="table-tool-btn csv" onclick="exportBudCSV()" title="U dejiso CSV">⬇️ CSV</button>
+            <button class="table-tool-btn wa" onclick="shareBudWhatsApp()" title="La wadaag WhatsApp">🟢 WhatsApp</button>
+          </div>
         </div>
         <table>
           <thead>
             <tr>
-              <th>Iskuulka</th>
-              <th style="text-align:right">Dakhli Miisaaniyad</th>
-              <th style="text-align:right">Dakhli Soo Gashay</th>
-              <th style="text-align:right">U Dhiman Dakhli</th>
-              <th style="text-align:right">Kharash Miisaaniyad</th>
-              <th style="text-align:right">Kharash la Bixiyay</th>
-              <th style="text-align:right">U Dhiman Kharash</th>
-              <th style="text-align:right">Faa'iido / Khasaaro</th>
+              <th class="col-bud-school">Iskuulka</th>
+              <th class="col-bud-allocin" style="text-align:right">Dakhli Miisaaniyad</th>
+              <th class="col-bud-in" style="text-align:right">Dakhli Soo Gashay</th>
+              <th class="col-bud-gapin" style="text-align:right">U Dhiman Dakhli</th>
+              <th class="col-bud-allocout" style="text-align:right">Kharash Miisaaniyad</th>
+              <th class="col-bud-out" style="text-align:right">Kharash la Bixiyay</th>
+              <th class="col-bud-gapout" style="text-align:right">U Dhiman Kharash</th>
+              <th class="col-bud-net" style="text-align:right">Faa'iido / Khasaaro</th>
             </tr>
           </thead>
           <tbody id="budgetTable"></tbody>
@@ -3573,29 +3628,271 @@ function renderTable(data, tbodyId, countId) {
   const count = document.getElementById(countId);
   if(count) count.textContent = `${data.length} macaamiil`;
   const isViewer = currentUser && currentUser.role === 'Viewer';
+  const withCheckbox = tbodyId === 'txTable2';
   tbody.innerHTML = data.map((tx, i) => {
     const realIdx = allTx.indexOf(tx);
     const editedBadge = tx._edited ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px">(Edited)</span>` : '';
     const attachBadge = tx.attachmentUrl ? `<div style="display:inline-flex;align-items:center;gap:3px;margin-top:3px;background:rgba(79,138,255,0.10);border:1px solid rgba(79,138,255,0.25);border-radius:5px;padding:2px 6px;font-size:10px;font-weight:600;color:var(--accent-blue);cursor:pointer" onclick="event.stopPropagation();openImageModal('${tx.attachmentUrl.replace(/'/g,"\\'")}','${(tx.attachmentName||'Attachment').replace(/'/g,"\\'")}',${tx.attachmentUrl.startsWith('data:application/pdf')?'true':'false'})" title="Sawirka fur">📎 1 Attachment</div>` : '';
     const actionBtns = isViewer ? '' : `
-      <button class="td-transfer-btn" onclick="openTransferTx(${realIdx})" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);cursor:pointer;color:#a78bfa;font-size:12px;font-weight:700;padding:4px 9px;border-radius:7px;opacity:0;transition:all 0.2s;margin-right:3px;" title="U wareejin buug kale">🔄 Transfer</button>
       <button class="td-edit-btn" onclick="openEditTxModal(${realIdx})" style="background:none;border:none;cursor:pointer;color:var(--accent-blue);font-size:13px;padding:4px 6px;border-radius:6px;opacity:0;transition:all 0.2s;margin-right:2px;" title="Wax ka beddel">✏️</button>
       <button class="td-delete" onclick="deleteTx(${realIdx})" title="Tirtir">🗑</button>`;
+    const checkboxCell = withCheckbox ? `<td class="col-check"><input type="checkbox" class="tx-row-check" data-idx="${realIdx}" onchange="onTxRowCheck(this)" ${selectedTxRows.has(realIdx)?'checked':''}></td>` : '';
     return `
-    <tr>
-      <td><div class="td-date">${tx.date}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${tx.dateObj ? (() => { const d = tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); })() : ''}</div></td>
-      <td style="cursor:pointer" onclick="openEntryDetailsModal(${realIdx})" title="Faahfaahinta fiiri"><div class="td-detail">${tx.detail}${editedBadge}${tx.type==='faalis' ? ' <span style="font-size:10px;font-weight:700;color:#7c3aed;background:rgba(124,58,237,0.12);padding:1px 7px;border-radius:20px">✨ Faalis</span>' : ''}</div><div class="td-sub">Adiga</div></td>
-      <td><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span>${attachBadge ? `<div>${attachBadge}</div>` : ''}</td>
-      <td><div class="td-amount ${tx.type}">${tx.type==='out'?'-':'+'}$${fmtFull(tx.amount).replace('$','')}</div></td>
-      <td><div class="td-balance">$${fmtFull(tx.balance).replace('$','')}</div></td>
-      <td style="white-space:nowrap">${actionBtns}</td>
+    <tr${withCheckbox && selectedTxRows.has(realIdx) ? ' class="tx-row-selected"' : ''} data-real-idx="${realIdx}">
+      ${checkboxCell}
+      <td class="col-date"><div class="td-date">${tx.date}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${tx.dateObj ? (() => { const d = tx.dateObj instanceof Date ? tx.dateObj : new Date(tx.dateObj); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); })() : ''}</div></td>
+      <td class="col-detail" style="cursor:pointer" onclick="openEntryDetailsModal(${realIdx})" title="Faahfaahinta fiiri"><div class="td-detail">${tx.detail}${editedBadge}${tx.type==='faalis' ? ' <span style="font-size:10px;font-weight:700;color:#7c3aed;background:rgba(124,58,237,0.12);padding:1px 7px;border-radius:20px">✨ Faalis</span>' : ''}</div><div class="td-sub">Adiga</div></td>
+      <td class="col-book"><span style="font-size:12px;font-weight:600;color:var(--text-secondary)">${tx.book}</span>${attachBadge ? `<div>${attachBadge}</div>` : ''}</td>
+      <td class="col-amount"><div class="td-amount ${tx.type}">${tx.type==='out'?'-':'+'}$${fmtFull(tx.amount).replace('$','')}</div></td>
+      <td class="col-balance"><div class="td-balance">$${fmtFull(tx.balance).replace('$','')}</div></td>
+      <td class="col-actions" style="white-space:nowrap">${actionBtns}</td>
     </tr>`;
   }).join('');
   // hover reveal edit/delete buttons
   tbody.querySelectorAll('tr').forEach(row => {
-    row.addEventListener('mouseenter', () => row.querySelectorAll('.td-delete,.td-edit-btn,.td-transfer-btn').forEach(b=>b.style.opacity='1'));
-    row.addEventListener('mouseleave', () => row.querySelectorAll('.td-delete,.td-edit-btn,.td-transfer-btn').forEach(b=>b.style.opacity='0'));
+    row.addEventListener('mouseenter', () => row.querySelectorAll('.td-delete,.td-edit-btn').forEach(b=>b.style.opacity='1'));
+    row.addEventListener('mouseleave', () => row.querySelectorAll('.td-delete,.td-edit-btn').forEach(b=>b.style.opacity='0'));
   });
+  if (withCheckbox) {
+    applyTxColumnVisibility();
+    updateSelectAllTxState(data);
+    updateTxSelectionBadge();
+  }
+}
+
+// ── TX TABLE: COLUMN VISIBILITY, ROW SELECTION, CSV & WHATSAPP ──
+const txColumnsDef = [
+  { key: 'date',    label: 'Taariikhda' },
+  { key: 'detail',  label: 'Faahfaahinta' },
+  { key: 'book',    label: 'Buug' },
+  { key: 'amount',  label: 'Xaddiga' },
+  { key: 'balance', label: 'Haraaga' }
+];
+let hiddenTxColumns = new Set();
+try { hiddenTxColumns = new Set(JSON.parse(localStorage.getItem('xisaabiye_hiddenTxColumns') || '[]')); } catch(e) {}
+let selectedTxRows = new Set(); // holds allTx real indices selected by the user
+
+function applyTxColumnVisibility() {
+  const table = document.querySelector('#page-transactions .table-card table');
+  if (!table) return;
+  txColumnsDef.forEach(col => {
+    const hide = hiddenTxColumns.has(col.key);
+    table.querySelectorAll('.col-' + col.key).forEach(el => { el.style.display = hide ? 'none' : ''; });
+  });
+}
+
+function toggleColumnsMenu(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('columnsDropdown');
+  const isOpen = dd.style.display !== 'none';
+  document.querySelectorAll('.columns-dropdown,.multiselect-dropdown').forEach(d => d.style.display = 'none');
+  if (isOpen) return;
+  dd.innerHTML = txColumnsDef.map(col => `
+    <label class="ms-option">
+      <input type="checkbox" ${hiddenTxColumns.has(col.key) ? '' : 'checked'} onchange="toggleTxColumn('${col.key}', this.checked)">
+      ${col.label}
+    </label>`).join('') + `
+    <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+    <label class="ms-option" onclick="event.preventDefault();resetTxColumns()" style="color:var(--accent-blue)">↺ Dib u deji dhammaan</label>`;
+  dd.style.display = 'block';
+  setTimeout(() => {
+    document.addEventListener('click', function _closeCols(ev) {
+      if (!dd.contains(ev.target) && ev.target.id !== 'columnsToggleBtn') {
+        dd.style.display = 'none';
+        document.removeEventListener('click', _closeCols);
+      }
+    });
+  }, 0);
+}
+function toggleTxColumn(key, visible) {
+  if (visible) hiddenTxColumns.delete(key); else hiddenTxColumns.add(key);
+  try { localStorage.setItem('xisaabiye_hiddenTxColumns', JSON.stringify([...hiddenTxColumns])); } catch(e) {}
+  applyTxColumnVisibility();
+}
+function resetTxColumns() {
+  hiddenTxColumns.clear();
+  try { localStorage.setItem('xisaabiye_hiddenTxColumns', '[]'); } catch(e) {}
+  applyTxColumnVisibility();
+  document.getElementById('columnsDropdown').style.display = 'none';
+}
+
+// ── Row selection ("check all") ──
+function toggleSelectAllTx(box) {
+  const tbody = document.getElementById('txTable2');
+  const rows = tbody.querySelectorAll('.tx-row-check');
+  rows.forEach(chk => {
+    chk.checked = box.checked;
+    const idx = Number(chk.dataset.idx);
+    if (box.checked) selectedTxRows.add(idx); else selectedTxRows.delete(idx);
+    chk.closest('tr').classList.toggle('tx-row-selected', box.checked);
+  });
+  updateTxSelectionBadge();
+}
+function onTxRowCheck(chk) {
+  const idx = Number(chk.dataset.idx);
+  if (chk.checked) selectedTxRows.add(idx); else selectedTxRows.delete(idx);
+  chk.closest('tr').classList.toggle('tx-row-selected', chk.checked);
+  updateSelectAllTxState(lastFilteredData || []);
+  updateTxSelectionBadge();
+}
+function updateSelectAllTxState(data) {
+  const box = document.getElementById('selectAllTxBox');
+  if (!box) return;
+  if (!data.length) { box.checked = false; box.indeterminate = false; return; }
+  const visibleIdxs = data.map(tx => allTx.indexOf(tx));
+  const selectedCount = visibleIdxs.filter(i => selectedTxRows.has(i)).length;
+  box.checked = selectedCount === visibleIdxs.length;
+  box.indeterminate = selectedCount > 0 && selectedCount < visibleIdxs.length;
+}
+function updateTxSelectionBadge() {
+  const badge = document.getElementById('txSelBadge');
+  const trBadge = document.getElementById('txTransferBadge');
+  [badge, trBadge].forEach(b => {
+    if (!b) return;
+    if (selectedTxRows.size > 0) { b.style.display = 'inline-block'; b.textContent = selectedTxRows.size; }
+    else { b.style.display = 'none'; }
+  });
+}
+function getTxSelectionOrAll() {
+  const source = (lastFilteredData && lastFilteredData.length) ? lastFilteredData : allTx;
+  if (selectedTxRows.size > 0) {
+    return source.filter(tx => selectedTxRows.has(allTx.indexOf(tx)));
+  }
+  return source;
+}
+function getVisibleTxColumns() {
+  return txColumnsDef.filter(col => !hiddenTxColumns.has(col.key));
+}
+function txColValue(tx, key) {
+  if (key === 'date') return tx.date || '';
+  if (key === 'detail') return tx.detail || '';
+  if (key === 'book') return tx.book || '';
+  if (key === 'amount') return (tx.type === 'out' ? '-' : '+') + fmtFull(tx.amount);
+  if (key === 'balance') return fmtFull(tx.balance);
+  return '';
+}
+
+// ── CSV export ──
+function exportTxCSV() {
+  const rows = getTxSelectionOrAll();
+  if (!rows.length) { alert('Ma jiraan xog la soo dejin karo.'); return; }
+  const cols = getVisibleTxColumns();
+  const escCsv = v => `"${String(v).replace(/"/g, '""')}"`;
+  const header = cols.map(c => escCsv(c.label)).join(',');
+  const lines = rows.map(tx => cols.map(c => escCsv(txColValue(tx, c.key))).join(','));
+  const csv = '\uFEFF' + [header, ...lines].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `macaamiilada_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (typeof window._showLiveBadge === 'function') window._showLiveBadge(`⬇️ ${rows.length} xog ayaa loo dejiyay CSV`);
+}
+
+// ── WhatsApp share ──
+function shareTxWhatsApp() {
+  const rows = getTxSelectionOrAll();
+  if (!rows.length) { alert('Ma jiraan xog la wadaagi karo.'); return; }
+  const cols = getVisibleTxColumns();
+  const MAX_ROWS = 40;
+  const shown = rows.slice(0, MAX_ROWS);
+  let text = `📒 *Macaamiilada* (${rows.length} xog)\n\n`;
+  shown.forEach(tx => {
+    text += cols.map(c => `${c.label}: ${txColValue(tx, c.key)}`).join(' | ') + '\n';
+  });
+  if (rows.length > MAX_ROWS) text += `\n… iyo ${rows.length - MAX_ROWS} oo kale.`;
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+// ── REPORTS TABLE: COLUMN VISIBILITY, CSV & WHATSAPP ──
+const rptColumnsDef = [
+  { key: 'school', label: 'Iskuulka' },
+  { key: 'in',     label: 'Dakhliga Soo Gashay' },
+  { key: 'gapin',  label: 'U Dhiman Dakhli' },
+  { key: 'out',    label: 'Kharashka la Bixiyay' },
+  { key: 'gapout', label: 'U Dhiman Kharash' },
+  { key: 'net',    label: "Faa'iido / Khasaaro" },
+  { key: 'tx',     label: 'Macaamiil' }
+];
+let hiddenRptColumns = new Set();
+try { hiddenRptColumns = new Set(JSON.parse(localStorage.getItem('xisaabiye_hiddenRptColumns') || '[]')); } catch(e) {}
+let _rptExportRows = [];
+
+function applyRptColumnVisibility() {
+  const table = document.querySelector('#page-reports .table-card table');
+  if (!table) return;
+  rptColumnsDef.forEach(col => {
+    const hide = hiddenRptColumns.has(col.key);
+    table.querySelectorAll('.col-rpt-' + col.key).forEach(el => { el.style.display = hide ? 'none' : ''; });
+  });
+}
+function toggleRptColumnsMenu(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('rptColumnsDropdown');
+  const isOpen = dd.style.display !== 'none';
+  document.querySelectorAll('.columns-dropdown,.multiselect-dropdown').forEach(d => d.style.display = 'none');
+  if (isOpen) return;
+  dd.innerHTML = rptColumnsDef.map(col => `
+    <label class="ms-option">
+      <input type="checkbox" ${hiddenRptColumns.has(col.key) ? '' : 'checked'} onchange="toggleRptColumn('${col.key}', this.checked)">
+      ${col.label}
+    </label>`).join('') + `
+    <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+    <label class="ms-option" onclick="event.preventDefault();resetRptColumns()" style="color:var(--accent-blue)">↺ Dib u deji dhammaan</label>`;
+  dd.style.display = 'block';
+  setTimeout(() => {
+    document.addEventListener('click', function _closeCols(ev) {
+      if (!dd.contains(ev.target) && ev.target.id !== 'rptColumnsToggleBtn') {
+        dd.style.display = 'none';
+        document.removeEventListener('click', _closeCols);
+      }
+    });
+  }, 0);
+}
+function toggleRptColumn(key, visible) {
+  if (visible) hiddenRptColumns.delete(key); else hiddenRptColumns.add(key);
+  try { localStorage.setItem('xisaabiye_hiddenRptColumns', JSON.stringify([...hiddenRptColumns])); } catch(e) {}
+  applyRptColumnVisibility();
+}
+function resetRptColumns() {
+  hiddenRptColumns.clear();
+  try { localStorage.setItem('xisaabiye_hiddenRptColumns', '[]'); } catch(e) {}
+  applyRptColumnVisibility();
+  document.getElementById('rptColumnsDropdown').style.display = 'none';
+}
+function getVisibleRptColumns() { return rptColumnsDef.filter(col => !hiddenRptColumns.has(col.key)); }
+function exportRptCSV() {
+  if (!_rptExportRows.length) { alert('Ma jiraan xog la soo dejin karo.'); return; }
+  const cols = getVisibleRptColumns();
+  const escCsv = v => `"${String(v).replace(/"/g, '""')}"`;
+  const header = cols.map(c => escCsv(c.label)).join(',');
+  const lines = _rptExportRows.map(r => cols.map(c => escCsv(r[c.key])).join(','));
+  const csv = '\uFEFF' + [header, ...lines].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `warbixin_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (typeof window._showLiveBadge === 'function') window._showLiveBadge(`⬇️ Warbixinta ayaa loo dejiyay CSV`);
+}
+function shareRptWhatsApp() {
+  if (!_rptExportRows.length) { alert('Ma jiraan xog la wadaagi karo.'); return; }
+  const cols = getVisibleRptColumns();
+  let text = `📋 *Koobaadka Iskuul kasta*\n\n`;
+  _rptExportRows.forEach(r => {
+    text += cols.map(c => `${c.label}: ${r[c.key]}`).join(' | ') + '\n';
+  });
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
 }
 
 // ── STATS ──
@@ -5233,7 +5530,8 @@ function closeModal() {
 }
 
 // ── TRANSFER ──
-let _transferTxIdx = -1; // -1 = manual mode, >=0 = tx transfer mode
+let _transferTxIdx = -1; // -1 = manual mode, >=0 = single tx transfer mode
+let _transferTxIndices = null; // array of realIdx = bulk tx transfer mode
 
 // Called from row 🔄 button — transfer a specific transaction to another book
 function openTransferTx(idx) {
@@ -5277,6 +5575,84 @@ function openTransferTx(idx) {
   toSel.onchange = _updateTxTransferPreview;
 
   document.getElementById('transferModal').classList.add('open');
+}
+
+// Called from the transactions toolbar 🔄 Transfer button — bulk-transfer selected transactions
+function openBulkTransferTx() {
+  if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
+  if (!selectedTxRows.size) { showToast('⚠️ Marka hore dooro macaamiilada aad wareejinayso!'); return; }
+  if (books.length < 2) { showToast('⚠️ Ugu yaraan 2 buug ayaa loo baahan yahay!'); return; }
+
+  _transferTxIdx = -1;
+  _transferTxIndices = [...selectedTxRows];
+
+  const txs = _transferTxIndices.map(i => allTx[i]).filter(Boolean);
+  const total = txs.reduce((s,t) => s + (t.type==='out' ? -t.amount : t.amount), 0);
+
+  document.getElementById('trTxCard').style.display = 'block';
+  document.getElementById('trTxCardContent').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-weight:700;font-size:14px;color:var(--text-primary)">${txs.length} macaamiil oo la doortay</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Waxaa loo wareejinayaa hal buug oo la doorto</div>
+      </div>
+      <div style="font-size:18px;font-weight:900;color:${total>=0?'var(--accent-green)':'var(--accent-red)'}">${total>=0?'+':''}${fmtFull(total)}</div>
+    </div>`;
+
+  document.getElementById('trFromGroup').style.display = 'none';
+  document.getElementById('trAmountGroup').style.display = 'none';
+  document.getElementById('trModalSub').textContent = `Dooro buugga aad u wareejinayso ${txs.length} macaamiil`;
+
+  const toSel = document.getElementById('trToBook');
+  toSel.innerHTML = books.map(b => `<option value="${b.id}">${b.emoji} ${b.name} — ${fmtFull(b.balance)}</option>`).join('');
+
+  document.getElementById('trDetail').value = '';
+  document.getElementById('trPreview').style.display = 'none';
+  _updateBulkTransferPreview();
+  toSel.onchange = _updateBulkTransferPreview;
+
+  document.getElementById('transferModal').classList.add('open');
+}
+
+function _updateBulkTransferPreview() {
+  if (!_transferTxIndices || !_transferTxIndices.length) return;
+  const toId = parseInt(document.getElementById('trToBook').value);
+  const toBook = books.find(b => b.id === toId);
+  if (!toBook) return;
+
+  const txs = _transferTxIndices.map(i => allTx[i]).filter(Boolean);
+  // group by source book (skip any tx already in the destination book)
+  const bySource = {};
+  let toDelta = 0;
+  let skipped = 0;
+  txs.forEach(tx => {
+    if (tx.book === toBook.name) { skipped++; return; }
+    const d = (tx.type === 'in' || tx.type === 'faalis') ? -tx.amount : tx.amount; // undo from source
+    bySource[tx.book] = (bySource[tx.book] || 0) + d;
+    toDelta += (tx.type === 'in' || tx.type === 'faalis') ? tx.amount : -tx.amount;
+  });
+
+  const prev = document.getElementById('trPreview');
+  const prevTx = document.getElementById('trPreviewText');
+  const rowsHtml = Object.keys(bySource).map(bookName => {
+    const b = books.find(x => x.name === bookName);
+    if (!b) return '';
+    return `<div style="flex:1;min-width:110px">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">${b.emoji} ${b.name}</div>
+      <div style="color:var(--accent-red);font-weight:700">${fmtFull(b.balance)} → ${fmtFull(b.balance + bySource[bookName])}</div>
+    </div>`;
+  }).join('');
+  prevTx.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      ${rowsHtml}
+      <div style="font-size:20px;color:var(--accent-blue)">→</div>
+      <div style="flex:1;min-width:110px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">${toBook.emoji} ${toBook.name}</div>
+        <div style="color:var(--accent-green);font-weight:700">${fmtFull(toBook.balance)} → ${fmtFull(toBook.balance + toDelta)}</div>
+      </div>
+    </div>
+    ${skipped ? `<div style="font-size:11px;color:var(--text-muted);margin-top:8px">⚠️ ${skipped} macaamiil ayaa horeba buugga la doortay ku jira, waa la iska dhaafayaa.</div>` : ''}`;
+  prev.style.display = 'block';
 }
 
 function _updateTxTransferPreview() {
@@ -5341,6 +5717,7 @@ function openTransferModal() {
 function closeTransferModal() {
   document.getElementById('transferModal').classList.remove('open');
   _transferTxIdx = -1;
+  _transferTxIndices = null;
 }
 
 function updateTransferPreview() {
@@ -5368,6 +5745,47 @@ function updateTransferPreview() {
 }
 
 async function submitTransfer() {
+  // ── BULK TX TRANSFER MODE ──
+  if (_transferTxIndices && _transferTxIndices.length) {
+    const toId = parseInt(document.getElementById('trToBook').value);
+    const toBook = books.find(b => b.id === toId);
+    if (!toBook) return;
+    const detail = document.getElementById('trDetail').value.trim();
+
+    const touchedBooks = new Set([toBook]);
+    let moved = 0;
+    for (const idx of _transferTxIndices) {
+      const tx = allTx[idx];
+      if (!tx || tx.book === toBook.name) continue;
+      const fromBook = books.find(b => b.name === tx.book);
+      if (!fromBook) continue;
+
+      if (tx.type === 'in' || tx.type === 'faalis') { fromBook.balance -= tx.amount; toBook.balance += tx.amount; }
+      else { fromBook.balance += tx.amount; toBook.balance -= tx.amount; }
+
+      tx.book = toBook.name;
+      if (detail) tx.detail = detail;
+      tx.balance = toBook.balance;
+
+      touchedBooks.add(fromBook);
+      moved++;
+      await fbSaveTx(tx);
+    }
+    touchedBooks.forEach(b => { b.updated = 'Hadda'; });
+    for (const b of touchedBooks) await fbSaveBook(b);
+
+    selectedTxRows.clear();
+    renderSidebarBooks();
+    renderBooksGrid();
+    renderTable(allTx, 'txTable', 'txCount');
+    applyFilters();
+    updateStats();
+    closeTransferModal();
+    showToast(`✅ ${moved} macaamiil ayaa loo wareejiyay ${toBook.name}`);
+    window._notifSuppressUntil = Date.now() + 3000;
+    return;
+  }
+
   // ── TX TRANSFER MODE ──
   if (_transferTxIdx >= 0) {
     const tx = allTx[_transferTxIdx];
@@ -5714,15 +6132,16 @@ function printReport() {
       const sign = gap>=0 ? '+' : '';
       return `<span style="color:${c};font-weight:700">${sign}$${Math.abs(gap).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}<br><small>(${pct>=0?'+':''}${pct.toFixed(1)}%)</small></span>`;
     }
-    return `<tr>
-      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${rowColor};margin-right:6px"></span>${b.emoji} ${b.name}</td>
-      <td style="text-align:left;color:#00a86b;font-weight:700">+$${bIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:left">${gs(gapIn,gapInPct,false)}</td>
-      <td style="text-align:left;color:#cc2244;font-weight:700">-$${bOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:left">${gs(gapOut,gapOutPct,true)}</td>
-      <td style="text-align:left;font-weight:700;color:${bNet>=0?'#00a86b':'#cc2244'}">${bNet>=0?'+':''}$${Math.abs(bNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:left;color:#666">${bTx}</td>
-    </tr>`;
+    const cellsMap = {
+      school: `<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${rowColor};margin-right:6px"></span>${b.emoji} ${b.name}</td>`,
+      in:     `<td style="text-align:left;color:#00a86b;font-weight:700">+$${bIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+      gapin:  `<td style="text-align:left">${gs(gapIn,gapInPct,false)}</td>`,
+      out:    `<td style="text-align:left;color:#cc2244;font-weight:700">-$${bOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+      gapout: `<td style="text-align:left">${gs(gapOut,gapOutPct,true)}</td>`,
+      net:    `<td style="text-align:left;font-weight:700;color:${bNet>=0?'#00a86b':'#cc2244'}">${bNet>=0?'+':''}$${Math.abs(bNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+      tx:     `<td style="text-align:left;color:#666">${bTx}</td>`
+    };
+    return '<tr>' + Object.keys(cellsMap).filter(k => !hiddenRptColumns.has(k)).map(k => cellsMap[k]).join('') + '</tr>';
   }).join('');
 
   const net = totalIn - totalOut;
@@ -5737,15 +6156,17 @@ function printReport() {
     return `<span style="color:${c};font-weight:800">${sign}$${Math.abs(gap).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}<br><small>(${pct>=0?'+':''}${pct.toFixed(1)}%)</small></span>`;
   }
 
-  const totalRow = `<tr style="background:#fff7ed;font-weight:900;border-top:3px solid #f97316">
-    <td style="font-weight:800">📊 Wadarta Guud<br><small style="color:#888;font-weight:400">${displayBooks.length} iskuul · ${totalTx} xaaladood</small></td>
-    <td style="text-align:left;color:#16a34a;font-size:13px;font-weight:800">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    <td style="text-align:left">${grandGs(totalIn-totalAllocIn, totalAllocIn, false)}</td>
-    <td style="text-align:left;color:#dc2626;font-size:13px;font-weight:800">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    <td style="text-align:left">${grandGs(totalOut-totalAllocOut, totalAllocOut, true)}</td>
-    <td style="text-align:left;font-size:13px;font-weight:800;color:${net>=0?'#16a34a':'#dc2626'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    <td style="text-align:left;font-weight:800">${totalTx}</td>
-  </tr>`;
+  const totalCellsMap = {
+    school: `<td style="font-weight:800">📊 Wadarta Guud<br><small style="color:#888;font-weight:400">${displayBooks.length} iskuul · ${totalTx} xaaladood</small></td>`,
+    in:     `<td style="text-align:left;color:#16a34a;font-size:13px;font-weight:800">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+    gapin:  `<td style="text-align:left">${grandGs(totalIn-totalAllocIn, totalAllocIn, false)}</td>`,
+    out:    `<td style="text-align:left;color:#dc2626;font-size:13px;font-weight:800">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+    gapout: `<td style="text-align:left">${grandGs(totalOut-totalAllocOut, totalAllocOut, true)}</td>`,
+    net:    `<td style="text-align:left;font-size:13px;font-weight:800;color:${net>=0?'#16a34a':'#dc2626'}">${net>=0?'+':''}$${Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+    tx:     `<td style="text-align:left;font-weight:800">${totalTx}</td>`
+  };
+  const totalRow = '<tr style="background:#fff7ed;font-weight:900;border-top:3px solid #f97316">' +
+    Object.keys(totalCellsMap).filter(k => !hiddenRptColumns.has(k)).map(k => totalCellsMap[k]).join('') + '</tr>';
 
   const _prSchool = document.getElementById('schoolCodeDisplay')?.textContent || '';
   const w = window.open('','_blank','width=960,height=720');
@@ -5823,13 +6244,11 @@ function printReport() {
     <div class="section-head">Xaaladda Iskuulada – ${_prPeriodLabel}</div>
     <table>
       <thead><tr>
-        <th>Buugga / Iskuulka</th>
-        <th class="r">Dakhliga</th>
-        <th class="r">U Dhiman Dakhli</th>
-        <th class="r">Kharashka</th>
-        <th class="r">U Dhiman Kharash</th>
-        <th class="r">Faa'iido / Khasaaro</th>
-        <th class="r">Xaaladood</th>
+        ${['school','in','gapin','out','gapout','net','tx'].filter(k=>!hiddenRptColumns.has(k)).map(k=>({
+          school:'<th>Buugga / Iskuulka</th>', in:'<th class="r">Dakhliga</th>', gapin:'<th class="r">U Dhiman Dakhli</th>',
+          out:'<th class="r">Kharashka</th>', gapout:'<th class="r">U Dhiman Kharash</th>', net:'<th class="r">Faa\'iido / Khasaaro</th>',
+          tx:'<th class="r">Xaaladood</th>'
+        }[k])).join('')}
       </tr></thead>
       <tbody>${booksRows}${totalRow}</tbody>
     </table>
@@ -6045,6 +6464,7 @@ function renderReportBooksTable() {
   if (rptCount) rptCount.textContent = displayBooks.length + ' iskuul – ' + durLbl;
   let totalIn=0, totalOut=0, totalNet=0, totalTx=0;
   let totalAllocIn=0, totalAllocOut=0;
+  _rptExportRows = [];
   const rows = displayBooks.map(b => {
     const bIn    = allTx.filter(t=>t.book===b.name&&t.type==='in' &&_rFilter(t)).reduce((s,t)=>s+t.amount,0);
     const bOut   = allTx.filter(t=>t.book===b.name&&t.type==='out'&&_rFilter(t)).reduce((s,t)=>s+t.amount,0);
@@ -6068,18 +6488,25 @@ function renderReportBooksTable() {
       return `<div style="color:${color};font-weight:700">${sign}${fmtFull(gap)}</div><div style="font-size:11px;color:${color};opacity:0.8">${pSign}${pct.toFixed(1)}%</div>`;
     }
 
+    _rptExportRows.push({
+      school: b.name,
+      in: '+'+fmtFull(bIn), gapin: gapInPct===null?'–':(gapIn>=0?'+':'')+fmtFull(gapIn)+' ('+(gapInPct>=0?'+':'')+gapInPct.toFixed(1)+'%)',
+      out: '-'+fmtFull(bOut), gapout: gapOutPct===null?'–':(gapOut>=0?'+':'')+fmtFull(gapOut)+' ('+(gapOutPct>=0?'+':'')+gapOutPct.toFixed(1)+'%)',
+      net: (bNet>=0?'+':'')+fmtFull(bNet), tx: bTx
+    });
+
     return `<tr>
-      <td><span style="font-size:15px">${b.emoji}</span> <strong>${b.name}</strong></td>
-      <td style="text-align:left"><div class="td-amount in">+${fmtFull(bIn)}</div></td>
-      <td style="text-align:left">${gapCell(gapIn,gapInPct,false)}</td>
-      <td style="text-align:left"><div class="td-amount out">-${fmtFull(bOut)}</div></td>
-      <td style="text-align:left">${gapCell(gapOut,gapOutPct,true)}</td>
-      <td style="text-align:left">
+      <td class="col-rpt-school"><span style="font-size:15px">${b.emoji}</span> <strong>${b.name}</strong></td>
+      <td class="col-rpt-in" style="text-align:left"><div class="td-amount in">+${fmtFull(bIn)}</div></td>
+      <td class="col-rpt-gapin" style="text-align:left">${gapCell(gapIn,gapInPct,false)}</td>
+      <td class="col-rpt-out" style="text-align:left"><div class="td-amount out">-${fmtFull(bOut)}</div></td>
+      <td class="col-rpt-gapout" style="text-align:left">${gapCell(gapOut,gapOutPct,true)}</td>
+      <td class="col-rpt-net" style="text-align:left">
         <div style="font-weight:800;color:${bNet>=0?'var(--accent-green)':'var(--accent-red)'}">
           ${bNet>=0?'+':''}${fmtFull(bNet)}
         </div>
       </td>
-      <td style="text-align:left"><span class="table-count">${bTx}</span></td>
+      <td class="col-rpt-tx" style="text-align:left"><span class="table-count">${bTx}</span></td>
     </tr>`;
   });
   // grand total row
@@ -6094,17 +6521,18 @@ function renderReportBooksTable() {
     return `<strong style="color:${color}">${sign}${fmtFull(gap)} (${pct>=0?'+':''}${pct.toFixed(1)}%)</strong>`;
   }
   rows.push(`<tr style="background:var(--surface2);border-top:2px solid var(--border)">
-    <td><strong>📊 Wadarta Guud</strong></td>
-    <td style="text-align:left;color:var(--accent-green);font-weight:800">+${fmtFull(totalIn)}</td>
-    <td style="text-align:left">${grandGapCell(totalGapIn,totalAllocIn,false)}</td>
-    <td style="text-align:left;color:var(--accent-red);font-weight:800">-${fmtFull(totalOut)}</td>
-    <td style="text-align:left">${grandGapCell(totalGapOut,totalAllocOut,true)}</td>
-    <td style="text-align:left;font-weight:800;color:${totalNet>=0?'var(--accent-green)':'var(--accent-red)'}">
+    <td class="col-rpt-school"><strong>📊 Wadarta Guud</strong></td>
+    <td class="col-rpt-in" style="text-align:left;color:var(--accent-green);font-weight:800">+${fmtFull(totalIn)}</td>
+    <td class="col-rpt-gapin" style="text-align:left">${grandGapCell(totalGapIn,totalAllocIn,false)}</td>
+    <td class="col-rpt-out" style="text-align:left;color:var(--accent-red);font-weight:800">-${fmtFull(totalOut)}</td>
+    <td class="col-rpt-gapout" style="text-align:left">${grandGapCell(totalGapOut,totalAllocOut,true)}</td>
+    <td class="col-rpt-net" style="text-align:left;font-weight:800;color:${totalNet>=0?'var(--accent-green)':'var(--accent-red)'}">
       ${totalNet>=0?'+':''}${fmtFull(totalNet)}
     </td>
-    <td style="text-align:left;font-weight:800">${totalTx}</td>
+    <td class="col-rpt-tx" style="text-align:left;font-weight:800">${totalTx}</td>
   </tr>`);
   tbody.innerHTML = rows.join('');
+  applyRptColumnVisibility();
   if (typeof buildCharts === 'function') buildCharts();
 }
 
@@ -6121,6 +6549,7 @@ function renderBudgetPage(txList) {
   const displayBooks = _budFilteredBooks !== null ? _budFilteredBooks : visibleBooks();
 
   let totalAllocIn=0, totalAllocOut=0, totalIn=0, totalOut=0;
+  _budExportRows = [];
 
   const rows = displayBooks.map(b => {
     const allocIn  = budgets['in_'+b.id]  ?? 0;
@@ -6157,9 +6586,17 @@ function renderBudgetPage(txList) {
               <div style="color:${color};font-size:11px;opacity:0.85">${pctStr}</div>`;
     }
 
+    _budExportRows.push({
+      school: b.name, allocin: allocIn, in: '+'+fmtFull(bookIn),
+      gapin: gapInPct===null?'–':(gapIn>=0?'+':'')+fmtFull(gapIn)+' ('+(gapInPct>=0?'+':'')+gapInPct.toFixed(1)+'%)',
+      allocout: allocOut, out: '-'+fmtFull(bookOut),
+      gapout: gapOutPct===null?'–':(gapOut>=0?'+':'')+fmtFull(gapOut)+' ('+(gapOutPct>=0?'+':'')+gapOutPct.toFixed(1)+'%)',
+      net: (profit>=0?'+':'')+fmtFull(profit)
+    });
+
     return `
     <tr>
-      <td>
+      <td class="col-bud-school">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:18px">${b.emoji}</span>
           <div>
@@ -6170,7 +6607,7 @@ function renderBudgetPage(txList) {
           </div>
         </div>
       </td>
-      <td style="text-align:right">
+      <td class="col-bud-allocin" style="text-align:right">
         <input class="budget-input" type="number" min="0" step="1"
           id="bud_in_${b.id}" value="${allocIn}"
           oninput="_budInputDebounce('in',${b.id},this)"
@@ -6178,14 +6615,13 @@ function renderBudgetPage(txList) {
           placeholder="0"
           ${currentUser && currentUser.role==='Viewer' ? 'disabled style="opacity:0.4;pointer-events:none;cursor:not-allowed"' : ''}>
       </td>
-      </td>
-      <td style="text-align:right">
+      <td class="col-bud-in" style="text-align:right">
         <div class="td-amount in">+${fmtFull(bookIn)}</div>
       </td>
-      <td style="text-align:right">
+      <td class="col-bud-gapin" style="text-align:right">
         ${gapCell(gapIn, gapInPct, false)}
       </td>
-      <td style="text-align:right">
+      <td class="col-bud-allocout" style="text-align:right">
         <input class="budget-input" type="number" min="0" step="1"
           id="bud_out_${b.id}" value="${allocOut}"
           oninput="_budInputDebounce('out',${b.id},this)"
@@ -6193,13 +6629,13 @@ function renderBudgetPage(txList) {
           placeholder="0"
           ${currentUser && currentUser.role==='Viewer' ? 'disabled style="opacity:0.4;pointer-events:none;cursor:not-allowed"' : ''}>
       </td>
-      <td style="text-align:right">
+      <td class="col-bud-out" style="text-align:right">
         <div class="td-amount out">-${fmtFull(bookOut)}</div>
       </td>
-      <td style="text-align:right">
+      <td class="col-bud-gapout" style="text-align:right">
         ${gapCell(gapOut, gapOutPct, true)}
       </td>
-      <td style="text-align:right">
+      <td class="col-bud-net" style="text-align:right">
         <div style="font-weight:800;font-size:14px;color:${profit>=0?'var(--accent-green)':'var(--accent-red)'}">${profit>=0?'+':''}${fmtFull(profit)}</div>
       </td>
     </tr>`;
@@ -6207,6 +6643,7 @@ function renderBudgetPage(txList) {
 
   tbody.innerHTML = rows.join('');
   count.textContent = `${displayBooks.length} iskuul (${books.length} guud)`;
+  applyBudColumnVisibility();
 
   // Update summary label
   const labelEl = document.getElementById('budSummaryLabel');
@@ -6250,6 +6687,93 @@ function renderBudgetPage(txList) {
 
   // build/update charts
   buildBudgetCharts(txSource);
+}
+
+// ── BUDGET TABLE: COLUMN VISIBILITY, CSV & WHATSAPP ──
+const budColumnsDef = [
+  { key: 'school',   label: 'Iskuulka' },
+  { key: 'allocin',  label: 'Dakhli Miisaaniyad' },
+  { key: 'in',       label: 'Dakhli Soo Gashay' },
+  { key: 'gapin',    label: 'U Dhiman Dakhli' },
+  { key: 'allocout', label: 'Kharash Miisaaniyad' },
+  { key: 'out',      label: 'Kharash la Bixiyay' },
+  { key: 'gapout',   label: 'U Dhiman Kharash' },
+  { key: 'net',      label: "Faa'iido / Khasaaro" }
+];
+let hiddenBudColumns = new Set();
+try { hiddenBudColumns = new Set(JSON.parse(localStorage.getItem('xisaabiye_hiddenBudColumns') || '[]')); } catch(e) {}
+let _budExportRows = [];
+
+function applyBudColumnVisibility() {
+  const table = document.querySelector('#page-budget .table-card table');
+  if (!table) return;
+  budColumnsDef.forEach(col => {
+    const hide = hiddenBudColumns.has(col.key);
+    table.querySelectorAll('.col-bud-' + col.key).forEach(el => { el.style.display = hide ? 'none' : ''; });
+  });
+}
+function toggleBudColumnsMenu(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('budColumnsDropdown');
+  const isOpen = dd.style.display !== 'none';
+  document.querySelectorAll('.columns-dropdown,.multiselect-dropdown').forEach(d => d.style.display = 'none');
+  if (isOpen) return;
+  dd.innerHTML = budColumnsDef.map(col => `
+    <label class="ms-option">
+      <input type="checkbox" ${hiddenBudColumns.has(col.key) ? '' : 'checked'} onchange="toggleBudColumn('${col.key}', this.checked)">
+      ${col.label}
+    </label>`).join('') + `
+    <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+    <label class="ms-option" onclick="event.preventDefault();resetBudColumns()" style="color:var(--accent-blue)">↺ Dib u deji dhammaan</label>`;
+  dd.style.display = 'block';
+  setTimeout(() => {
+    document.addEventListener('click', function _closeCols(ev) {
+      if (!dd.contains(ev.target) && ev.target.id !== 'budColumnsToggleBtn') {
+        dd.style.display = 'none';
+        document.removeEventListener('click', _closeCols);
+      }
+    });
+  }, 0);
+}
+function toggleBudColumn(key, visible) {
+  if (visible) hiddenBudColumns.delete(key); else hiddenBudColumns.add(key);
+  try { localStorage.setItem('xisaabiye_hiddenBudColumns', JSON.stringify([...hiddenBudColumns])); } catch(e) {}
+  applyBudColumnVisibility();
+}
+function resetBudColumns() {
+  hiddenBudColumns.clear();
+  try { localStorage.setItem('xisaabiye_hiddenBudColumns', '[]'); } catch(e) {}
+  applyBudColumnVisibility();
+  document.getElementById('budColumnsDropdown').style.display = 'none';
+}
+function getVisibleBudColumns() { return budColumnsDef.filter(col => !hiddenBudColumns.has(col.key)); }
+function exportBudCSV() {
+  if (!_budExportRows.length) { alert('Ma jiraan xog la soo dejin karo.'); return; }
+  const cols = getVisibleBudColumns();
+  const escCsv = v => `"${String(v).replace(/"/g, '""')}"`;
+  const header = cols.map(c => escCsv(c.label)).join(',');
+  const lines = _budExportRows.map(r => cols.map(c => escCsv(r[c.key])).join(','));
+  const csv = '\uFEFF' + [header, ...lines].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `miisaaniyada_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (typeof window._showLiveBadge === 'function') window._showLiveBadge(`⬇️ Miisaaniyada ayaa loo dejiyay CSV`);
+}
+function shareBudWhatsApp() {
+  if (!_budExportRows.length) { alert('Ma jiraan xog la wadaagi karo.'); return; }
+  const cols = getVisibleBudColumns();
+  let text = `🎯 *Miisaaniyada Iskuul kasta*\n\n`;
+  _budExportRows.forEach(r => {
+    text += cols.map(c => `${c.label}: ${r[c.key]}`).join(' | ') + '\n';
+  });
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
 }
 
 let budBarChartInst = null, budNetChartInst = null;
@@ -6677,31 +7201,34 @@ function printBudget() {
       return `<span style="color:${color};font-weight:700">${sign}$${Math.abs(gap).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})} <small>(${pSign}${pct.toFixed(1)}%)</small></span>`;
     }
 
-    return `<tr>
-      <td>${b.emoji} <strong>${b.name}</strong></td>
-      <td style="text-align:right">$${allocIn.toLocaleString('en-US')}</td>
-      <td style="text-align:right;color:#00a86b;font-weight:700">+$${bIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:right">${gapStr(gapIn,gapInPct,false)}</td>
-      <td style="text-align:right">$${allocOut.toLocaleString('en-US')}</td>
-      <td style="text-align:right;color:#cc2244;font-weight:700">-$${bOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-      <td style="text-align:right">${gapStr(gapOut,gapOutPct,true)}</td>
-      <td style="text-align:right;color:${profit>=0?'#00a86b':'#cc2244'};font-weight:800">${profit>=0?'+':''}$${Math.abs(profit).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    </tr>`;
+    const cellsMap = {
+      school:   `<td>${b.emoji} <strong>${b.name}</strong></td>`,
+      allocin:  `<td style="text-align:right">$${allocIn.toLocaleString('en-US')}</td>`,
+      in:       `<td style="text-align:right;color:#00a86b;font-weight:700">+$${bIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+      gapin:    `<td style="text-align:right">${gapStr(gapIn,gapInPct,false)}</td>`,
+      allocout: `<td style="text-align:right">$${allocOut.toLocaleString('en-US')}</td>`,
+      out:      `<td style="text-align:right;color:#cc2244;font-weight:700">-$${bOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+      gapout:   `<td style="text-align:right">${gapStr(gapOut,gapOutPct,true)}</td>`,
+      net:      `<td style="text-align:right;color:${profit>=0?'#00a86b':'#cc2244'};font-weight:800">${profit>=0?'+':''}$${Math.abs(profit).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`
+    };
+    return '<tr>' + Object.keys(cellsMap).filter(k => !hiddenBudColumns.has(k)).map(k => cellsMap[k]).join('') + '</tr>';
   }).join('');
 
   const totalNet=totalIn-totalOut;
   const totalGapIn=totalIn-totalAllocIn;
   const totalGapOut=totalOut-totalAllocOut;
-  const grandRow=`<tr style="background:#f5f6ff;font-weight:800;border-top:2px solid #4f8aff">
-    <td>📊 WADARTA GUUD</td>
-    <td style="text-align:right">$${totalAllocIn.toLocaleString('en-US')}</td>
-    <td style="text-align:right;color:#00a86b">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    <td style="text-align:right;color:${totalGapIn>=0?'#00a86b':'#cc2244'}">${totalGapIn>=0?'+':''}$${Math.abs(totalGapIn).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    <td style="text-align:right">$${totalAllocOut.toLocaleString('en-US')}</td>
-    <td style="text-align:right;color:#cc2244">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    <td style="text-align:right;color:${totalGapOut<=0?'#00a86b':'#cc2244'}">${totalGapOut>=0?'+':''}$${Math.abs(totalGapOut).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-    <td style="text-align:right;color:${totalNet>=0?'#00a86b':'#cc2244'}">${totalNet>=0?'+':''}$${Math.abs(totalNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-  </tr>`;
+  const grandCellsMap = {
+    school:   `<td>📊 WADARTA GUUD</td>`,
+    allocin:  `<td style="text-align:right">$${totalAllocIn.toLocaleString('en-US')}</td>`,
+    in:       `<td style="text-align:right;color:#00a86b">+$${totalIn.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+    gapin:    `<td style="text-align:right;color:${totalGapIn>=0?'#00a86b':'#cc2244'}">${totalGapIn>=0?'+':''}$${Math.abs(totalGapIn).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+    allocout: `<td style="text-align:right">$${totalAllocOut.toLocaleString('en-US')}</td>`,
+    out:      `<td style="text-align:right;color:#cc2244">-$${totalOut.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+    gapout:   `<td style="text-align:right;color:${totalGapOut<=0?'#00a86b':'#cc2244'}">${totalGapOut>=0?'+':''}$${Math.abs(totalGapOut).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`,
+    net:      `<td style="text-align:right;color:${totalNet>=0?'#00a86b':'#cc2244'}">${totalNet>=0?'+':''}$${Math.abs(totalNet).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>`
+  };
+  const grandRow = '<tr style="background:#f5f6ff;font-weight:800;border-top:2px solid #4f8aff">' +
+    Object.keys(grandCellsMap).filter(k => !hiddenBudColumns.has(k)).map(k => grandCellsMap[k]).join('') + '</tr>';
 
   const w = window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -6728,14 +7255,12 @@ function printBudget() {
   </div>
   <table>
     <thead><tr>
-      <th>Iskuulka</th>
-      <th style="text-align:right">Dakhli Miisaaniyad</th>
-      <th style="text-align:right">Dakhli Soo Gashay</th>
-      <th style="text-align:right">U Dhiman Dakhli</th>
-      <th style="text-align:right">Kharash Miisaaniyad</th>
-      <th style="text-align:right">Kharash la Bixiyay</th>
-      <th style="text-align:right">U Dhiman Kharash</th>
-      <th style="text-align:right">Faa'iido/Khasaaro</th>
+      ${['school','allocin','in','gapin','allocout','out','gapout','net'].filter(k=>!hiddenBudColumns.has(k)).map(k=>({
+        school:'<th>Iskuulka</th>', allocin:'<th style="text-align:right">Dakhli Miisaaniyad</th>', in:'<th style="text-align:right">Dakhli Soo Gashay</th>',
+        gapin:'<th style="text-align:right">U Dhiman Dakhli</th>', allocout:'<th style="text-align:right">Kharash Miisaaniyad</th>',
+        out:'<th style="text-align:right">Kharash la Bixiyay</th>', gapout:'<th style="text-align:right">U Dhiman Kharash</th>',
+        net:'<th style="text-align:right">Faa\'iido/Khasaaro</th>'
+      }[k])).join('')}
     </tr></thead>
     <tbody>${booksRows}${grandRow}</tbody>
   </table>
