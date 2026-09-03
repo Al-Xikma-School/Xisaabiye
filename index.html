@@ -25,6 +25,9 @@
 <title>XISAABIYE – مدرسة الحكمة</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -139,6 +142,16 @@
           if (typeof applyBudgetFilter === 'function') applyBudgetFilter();
           else if (typeof buildBudgetCharts === 'function') buildBudgetCharts();
         }
+      }
+    }, () => {});
+  };
+
+  // ── School profile / logo listener (school-aware, set up after login) ──
+  window._setupProfileListener = function(schoolCode) {
+    onSnapshot(doc(db, `schools/${schoolCode}/settings`, 'profile'), (snap) => {
+      if (snap.exists()) {
+        window._schoolProfile = snap.data();
+        if (window._appInitDone && typeof _applySchoolProfileToUI === 'function') _applySchoolProfileToUI();
       }
     }, () => {});
   };
@@ -1681,7 +1694,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="logo">
-    <div class="logo-icon" style="background:none;padding:0;overflow:hidden"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMWExZjNhIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6IzBkMTEyOCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmx1ZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0ZjhhZmYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDBlMDllIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZ2xvdyI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjIuNSIgcmVzdWx0PSJjb2xvcmVkQmx1ciIvPgogICAgICA8ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImNvbG9yZWRCbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiByeD0iNDQiIGZpbGw9InVybCgjYmcpIi8+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI4NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC41Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxMDAsMTAgMTAzLDIwIDExMywyMCAxMDUsMjYgMTA4LDM3IDEwMCwzMSA5MiwzNyA5NSwyNiA4NywyMCA5NywyMCIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNjUsNDUgMTY3LDUxIDE3Myw1MSAxNjgsNTUgMTcwLDYxIDE2NSw1NyAxNjAsNjEgMTYyLDU1IDE1Nyw1MSAxNjMsNTEiIGZpbGw9IiNGRkQ3MDAiIGZpbHRlcj0idXJsKCNnbG93KSIgb3BhY2l0eT0iMC45Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxODUsMTAwIDE4NywxMDYgMTkzLDEwNiAxODgsMTEwIDE5MCwxMTYgMTg1LDExMiAxODAsMTE2IDE4MiwxMTAgMTc3LDEwNiAxODMsMTA2IiBmaWxsPSIjRkZENzAwIiBmaWx0ZXI9InVybCgjZ2xvdykiIG9wYWNpdHk9IjAuOCIvPgogIDxwb2x5Z29uIHBvaW50cz0iMTY1LDE1NSAxNjcsMTYxIDE3MywxNjEgMTY4LDE2NSAxNzAsMTcxIDE2NSwxNjcgMTYwLDE3MSAxNjIsMTY1IDE1NywxNjEgMTYzLDE2MSIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjkiLz4KICA8cG9seWdvbiBwb2ludHM9IjEwMCwxNzggMTAzLDE4OCAxMTMsMTg4IDEwNSwxOTQgMTA4LDIwMCAxMDAsMTk2IDkyLDIwMCA5NSwxOTQgODcsMTg4IDk3LDE4OCIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjg1Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIzNSwxNTUgMzcsMTYxIDQzLDE2MSAzOCwxNjUgNDAsMTcxIDM1LDE2NyAzMCwxNzEgMzIsMTY1IDI3LDE2MSAzMywxNjEiIGZpbGw9IiNGRkQ3MDAiIGZpbHRlcj0idXJsKCNnbG93KSIgb3BhY2l0eT0iMC45Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNSwxMDAgMTcsMTA2IDIzLDEwNiAxOCwxMTAgMjAsMTE2IDE1LDExMiAxMCwxMTYgMTIsMTEwIDcsMTA2IDEzLDEwNiIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjgiLz4KICA8cG9seWdvbiBwb2ludHM9IjM1LDQ1IDM3LDUxIDQzLDUxIDM4LDU1IDQwLDYxIDM1LDU3IDMwLDYxIDMyLDU1IDI3LDUxIDMzLDUxIiBmaWxsPSIjRkZENzAwIiBmaWx0ZXI9InVybCgjZ2xvdykiIG9wYWNpdHk9IjAuOSIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsIFRhaG9tYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI1MiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9InVybCgjYmx1ZSkiIGZpbHRlcj0idXJsKCNnbG93KSI+JiN4NjQ1OyYjeDYyRDsmI3g2Mjc7JiN4NjMzOyYjeDYyODs8L3RleHQ+CiAgPGxpbmUgeDE9IjU1IiB5MT0iMTMyIiB4Mj0iMTQ1IiB5Mj0iMTMyIiBzdHJva2U9InVybCgjYmx1ZSkiIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjUiLz4KPC9zdmc+" style="width:36px;height:36px;border-radius:10px;display:block"></div>
+    <div class="logo-icon" style="background:none;padding:0;overflow:hidden"><img id="appLogoImg" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMWExZjNhIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6IzBkMTEyOCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmx1ZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0ZjhhZmYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDBlMDllIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZ2xvdyI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjIuNSIgcmVzdWx0PSJjb2xvcmVkQmx1ciIvPgogICAgICA8ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImNvbG9yZWRCbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiByeD0iNDQiIGZpbGw9InVybCgjYmcpIi8+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI4NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2JsdWUpIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC41Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxMDAsMTAgMTAzLDIwIDExMywyMCAxMDUsMjYgMTA4LDM3IDEwMCwzMSA5MiwzNyA5NSwyNiA4NywyMCA5NywyMCIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNjUsNDUgMTY3LDUxIDE3Myw1MSAxNjgsNTUgMTcwLDYxIDE2NSw1NyAxNjAsNjEgMTYyLDU1IDE1Nyw1MSAxNjMsNTEiIGZpbGw9IiNGRkQ3MDAiIGZpbHRlcj0idXJsKCNnbG93KSIgb3BhY2l0eT0iMC45Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxODUsMTAwIDE4NywxMDYgMTkzLDEwNiAxODgsMTEwIDE5MCwxMTYgMTg1LDExMiAxODAsMTE2IDE4MiwxMTAgMTc3LDEwNiAxODMsMTA2IiBmaWxsPSIjRkZENzAwIiBmaWx0ZXI9InVybCgjZ2xvdykiIG9wYWNpdHk9IjAuOCIvPgogIDxwb2x5Z29uIHBvaW50cz0iMTY1LDE1NSAxNjcsMTYxIDE3MywxNjEgMTY4LDE2NSAxNzAsMTcxIDE2NSwxNjcgMTYwLDE3MSAxNjIsMTY1IDE1NywxNjEgMTYzLDE2MSIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjkiLz4KICA8cG9seWdvbiBwb2ludHM9IjEwMCwxNzggMTAzLDE4OCAxMTMsMTg4IDEwNSwxOTQgMTA4LDIwMCAxMDAsMTk2IDkyLDIwMCA5NSwxOTQgODcsMTg4IDk3LDE4OCIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjg1Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIzNSwxNTUgMzcsMTYxIDQzLDE2MSAzOCwxNjUgNDAsMTcxIDM1LDE2NyAzMCwxNzEgMzIsMTY1IDI3LDE2MSAzMywxNjEiIGZpbGw9IiNGRkQ3MDAiIGZpbHRlcj0idXJsKCNnbG93KSIgb3BhY2l0eT0iMC45Ii8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNSwxMDAgMTcsMTA2IDIzLDEwNiAxOCwxMTAgMjAsMTE2IDE1LDExMiAxMCwxMTYgMTIsMTEwIDcsMTA2IDEzLDEwNiIgZmlsbD0iI0ZGRDcwMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIiBvcGFjaXR5PSIwLjgiLz4KICA8cG9seWdvbiBwb2ludHM9IjM1LDQ1IDM3LDUxIDQzLDUxIDM4LDU1IDQwLDYxIDM1LDU3IDMwLDYxIDMyLDU1IDI3LDUxIDMzLDUxIiBmaWxsPSIjRkZENzAwIiBmaWx0ZXI9InVybCgjZ2xvdykiIG9wYWNpdHk9IjAuOSIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsIFRhaG9tYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI1MiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9InVybCgjYmx1ZSkiIGZpbHRlcj0idXJsKCNnbG93KSI+JiN4NjQ1OyYjeDYyRDsmI3g2Mjc7JiN4NjMzOyYjeDYyODs8L3RleHQ+CiAgPGxpbmUgeDE9IjU1IiB5MT0iMTMyIiB4Mj0iMTQ1IiB5Mj0iMTMyIiBzdHJva2U9InVybCgjYmx1ZSkiIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIwLjUiLz4KPC9zdmc+" style="width:36px;height:36px;border-radius:10px;display:block;object-fit:cover"></div>
     <div>
       <div class="logo-text">XISAABIYE</div>
       <div class="logo-sub">مدرسة الحكمة</div>
@@ -2038,7 +2051,10 @@ body.offline-mode #loginScreen { margin-top: 46px; }
               <div class="columns-dropdown" id="columnsDropdown" style="display:none"></div>
             </div>
             <button class="table-tool-btn csv" onclick="exportTxCSV()" title="U dejiso CSV">⬇️ CSV</button>
-            <button class="table-tool-btn wa" onclick="shareTxWhatsApp()" title="La wadaag WhatsApp">🟢 WhatsApp <span class="tt-badge" id="txSelBadge" style="display:none">0</span></button>
+            <div style="position:relative">
+              <button class="table-tool-btn wa" onclick="openWaFormatPicker(event,'waFormatDropdown_tx','tx')" title="La wadaag WhatsApp">🟢 WhatsApp <span class="tt-badge" id="txSelBadge" style="display:none">0</span></button>
+              <div class="columns-dropdown" id="waFormatDropdown_tx" style="display:none"></div>
+            </div>
             <button class="table-tool-btn transfer" onclick="openBulkTransferTx()" title="U wareejin buug kale">🔄 Transfer <span class="tt-badge" id="txTransferBadge" style="display:none">0</span></button>
           </div>
           <div class="search-box" style="margin-left:auto">
@@ -2166,7 +2182,10 @@ body.offline-mode #loginScreen { margin-top: 46px; }
               <div class="columns-dropdown" id="rptColumnsDropdown" style="display:none"></div>
             </div>
             <button class="table-tool-btn csv" onclick="exportRptCSV()" title="U dejiso CSV">⬇️ CSV</button>
-            <button class="table-tool-btn wa" onclick="shareRptWhatsApp()" title="La wadaag WhatsApp">🟢 WhatsApp</button>
+            <div style="position:relative">
+              <button class="table-tool-btn wa" onclick="openWaFormatPicker(event,'waFormatDropdown_rpt','rpt')" title="La wadaag WhatsApp">🟢 WhatsApp</button>
+              <div class="columns-dropdown" id="waFormatDropdown_rpt" style="display:none"></div>
+            </div>
           </div>
         </div>
         <table>
@@ -2356,7 +2375,10 @@ body.offline-mode #loginScreen { margin-top: 46px; }
               <div class="columns-dropdown" id="budColumnsDropdown" style="display:none"></div>
             </div>
             <button class="table-tool-btn csv" onclick="exportBudCSV()" title="U dejiso CSV">⬇️ CSV</button>
-            <button class="table-tool-btn wa" onclick="shareBudWhatsApp()" title="La wadaag WhatsApp">🟢 WhatsApp</button>
+            <div style="position:relative">
+              <button class="table-tool-btn wa" onclick="openWaFormatPicker(event,'waFormatDropdown_bud','bud')" title="La wadaag WhatsApp">🟢 WhatsApp</button>
+              <div class="columns-dropdown" id="waFormatDropdown_bud" style="display:none"></div>
+            </div>
           </div>
         </div>
         <table>
@@ -2400,6 +2422,20 @@ body.offline-mode #loginScreen { margin-top: 46px; }
           </div>
           <div class="settings-fields">
             <div class="form-group">
+              <label class="form-label">Astaanta Iskuulka (Logo)</label>
+              <div style="display:flex;align-items:center;gap:14px">
+                <div id="bizLogoPreviewWrap" style="width:64px;height:64px;border-radius:14px;background:var(--surface2);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+                  <img id="bizLogoPreview" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+                  <span id="bizLogoPlaceholder" style="font-size:22px;opacity:0.4">🏫</span>
+                </div>
+                <div style="flex:1">
+                  <input type="file" accept="image/*" id="bizLogoInput" style="display:none" onchange="onBizLogoSelected(this)">
+                  <button type="button" class="btn" style="width:100%;justify-content:center" onclick="document.getElementById('bizLogoInput').click()">🖼️ Soo Geli Sawir</button>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:5px">Waxaa lagu isticmaali doonaa daabacaadda, PDF-ka iyo WhatsApp</div>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
               <label class="form-label">Magaca Ganacsiga</label>
               <input class="form-input" id="bizName" value="مدرسة الحكمة" placeholder="Business name">
             </div>
@@ -2417,7 +2453,7 @@ body.offline-mode #loginScreen { margin-top: 46px; }
                 <option>Other</option>
               </select>
             </div>
-            <button class="btn btn-green" onclick="saveSettings()" style="width:100%;justify-content:center">💾 Keydi</button>
+            <button class="btn btn-green" onclick="saveSchoolProfile()" style="width:100%;justify-content:center">💾 Keydi</button>
           </div>
         </div>
         <!-- Team Members -->
@@ -3399,6 +3435,9 @@ document.addEventListener('firebaseReady', async function() {
     Object.assign(budgets, window._budgets);
   }
 
+  // Apply school profile / logo if it arrived before init finished
+  if (window._schoolProfile && typeof _applySchoolProfileToUI === 'function') _applySchoolProfileToUI();
+
   initApp();
   window._appInitDone = true;
   document.dispatchEvent(new Event('appReady'));
@@ -3519,6 +3558,7 @@ function doLogin() {
     window._currentSchoolCode = code;
     window._setupSchoolListeners(code);
     window._setupBudgetsListener(code);
+    window._setupProfileListener(code);
 
     currentUser = member;
     // Keydi session localStorage si page reload ka dib uu toos u soo galo
@@ -3770,6 +3810,115 @@ function txColValue(tx, key) {
   if (key === 'amount') return (tx.type === 'out' ? '-' : '+') + fmtFull(tx.amount);
   if (key === 'balance') return fmtFull(tx.balance);
   return '';
+}
+
+// ── WhatsApp format picker (Excel / PDF / Word) shared by tx, reports & budget tables ──
+let _waPickerCtx = null;
+function openWaFormatPicker(e, ddId, type) {
+  e.stopPropagation();
+  const dd = document.getElementById(ddId);
+  if (!dd) return;
+  const isOpen = dd.style.display !== 'none';
+  document.querySelectorAll('.columns-dropdown,.multiselect-dropdown').forEach(d => d.style.display = 'none');
+  if (isOpen) return;
+  _waPickerCtx = type;
+  dd.innerHTML = `
+    <label class="ms-option" onclick="sendWaFormat('excel')">📊 Excel (.xlsx)</label>
+    <label class="ms-option" onclick="sendWaFormat('pdf')">📕 PDF</label>
+    <label class="ms-option" onclick="sendWaFormat('word')">📄 Word (.doc)</label>`;
+  dd.style.display = 'block';
+  setTimeout(() => {
+    document.addEventListener('click', function _closeWa(ev) {
+      if (!dd.contains(ev.target)) {
+        dd.style.display = 'none';
+        document.removeEventListener('click', _closeWa);
+      }
+    });
+  }, 0);
+}
+function _buildWaExportData(type) {
+  if (type === 'tx') {
+    const rows = getTxSelectionOrAll();
+    const cols = getVisibleTxColumns();
+    return { title: 'Macaamiilada', filenameBase: 'macaamiilada',
+      header: cols.map(c => c.label), rows: rows.map(tx => cols.map(c => txColValue(tx, c.key))) };
+  }
+  if (type === 'rpt') {
+    const cols = getVisibleRptColumns();
+    return { title: 'Koobaadka Iskuul kasta', filenameBase: 'warbixin',
+      header: cols.map(c => c.label), rows: _rptExportRows.map(r => cols.map(c => r[c.key])) };
+  }
+  if (type === 'bud') {
+    const cols = getVisibleBudColumns();
+    return { title: 'Miisaaniyada Iskuul kasta', filenameBase: 'miisaaniyada',
+      header: cols.map(c => c.label), rows: _budExportRows.map(r => cols.map(c => r[c.key])) };
+  }
+  return { title: '', filenameBase: 'xog', header: [], rows: [] };
+}
+function sendWaFormat(fmt) {
+  document.querySelectorAll('.columns-dropdown').forEach(d => d.style.display = 'none');
+  const type = _waPickerCtx;
+  const data = _buildWaExportData(type);
+  if (!data.rows.length) { alert('Ma jiraan xog la wadaagi karo.'); return; }
+  const dateStr = new Date().toISOString().slice(0,10);
+  const logoUrl = _getSchoolLogoDataUrl();
+  const schoolName = _getSchoolName();
+  let blob, filename;
+  if (fmt === 'excel') {
+    const ws = XLSX.utils.aoa_to_sheet([[schoolName], [data.title], [], data.header, ...data.rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, data.title.slice(0,28) || 'Sheet1');
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    filename = `${data.filenameBase}_${dateStr}.xlsx`;
+  } else if (fmt === 'pdf') {
+    const doc = new jspdf.jsPDF();
+    let titleX = 14, titleY = 15;
+    if (logoUrl) {
+      try {
+        const fmt2 = logoUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(logoUrl, fmt2, 14, 8, 16, 16);
+        titleX = 34;
+      } catch (e) { /* ignore bad image */ }
+    }
+    doc.setFontSize(13);
+    doc.text(schoolName, titleX, titleY - 3);
+    doc.setFontSize(11);
+    doc.setTextColor(120);
+    doc.text(data.title, titleX, titleY + 3);
+    doc.setTextColor(0);
+    doc.autoTable({ head: [data.header], body: data.rows, startY: 24, styles: { fontSize: 8 } });
+    blob = doc.output('blob');
+    filename = `${data.filenameBase}_${dateStr}.pdf`;
+  } else {
+    let html = `<html><head><meta charset="utf-8"></head><body>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${logoUrl ? `<img src="${logoUrl}" style="width:48px;height:48px">` : ''}
+        <div><div style="font-weight:bold;font-size:16px">${schoolName}</div><h2 style="margin:2px 0">${data.title}</h2></div>
+      </div>
+      <table border="1" cellspacing="0" cellpadding="4"><tr>${data.header.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    data.rows.forEach(r => { html += `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`; });
+    html += `</table></body></html>`;
+    blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    filename = `${data.filenameBase}_${dateStr}.doc`;
+  }
+  shareFileViaWhatsApp(blob, filename, `📒 ${schoolName} — ${data.title}`);
+}
+async function shareFileViaWhatsApp(blob, filename, textMsg) {
+  try {
+    const file = new File([blob], filename, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: filename, text: textMsg });
+      return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (typeof showToast === 'function') showToast('⬇️ Faylka waa la soo dejiyay — ku lifaaq WhatsApp gacanta');
+  window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`, '_blank');
 }
 
 // ── CSV export ──
@@ -5386,6 +5535,99 @@ function saveSettings() {
   showToast('✅ Settings waa la keydsaday!');
 }
 
+// ── School logo upload ──
+let _pendingLogoDataUrl = null; // set once a new file has been read+compressed, cleared after save
+function onBizLogoSelected(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('⚠️ Fadlan dooro sawir sax ah!'); return; }
+  _compressImageToDataUrl(file, 300, 0.85).then(dataUrl => {
+    _pendingLogoDataUrl = dataUrl;
+    const img = document.getElementById('bizLogoPreview');
+    const ph = document.getElementById('bizLogoPlaceholder');
+    img.src = dataUrl;
+    img.style.display = 'block';
+    ph.style.display = 'none';
+  }).catch(() => showToast('⚠️ Sawirka lama akhrin karin!'));
+}
+function _compressImageToDataUrl(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.min(maxDim / w, maxDim / h);
+          w = Math.round(w * ratio); h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function saveSchoolProfile() {
+  const name = document.getElementById('bizName').value.trim();
+  const address = document.getElementById('bizAddr').value.trim();
+  const category = document.getElementById('bizCat').value;
+  const logoDataUrl = _pendingLogoDataUrl || (window._schoolProfile && window._schoolProfile.logoDataUrl) || null;
+
+  window._schoolProfile = { name, address, category, logoDataUrl };
+  _applySchoolProfileToUI();
+
+  try {
+    if (typeof doc === 'function' && window._schoolBasePath) {
+      await setDoc(doc(db(), `${window._schoolBasePath}/settings`, 'profile'), window._schoolProfile);
+    }
+    showToast('✅ Settings waa la keydsaday!');
+  } catch (e) {
+    console.error('saveSchoolProfile', e);
+    showToast('⚠️ Lama keydin karin — internetka hubi!');
+  }
+  _pendingLogoDataUrl = null;
+}
+function _applySchoolProfileToUI() {
+  const p = window._schoolProfile;
+  if (!p) return;
+  if (p.name) {
+    const subEl = document.querySelector('.logo-sub');
+    if (subEl) subEl.textContent = p.name;
+    const bizNameEl = document.getElementById('bizName');
+    if (bizNameEl && document.activeElement !== bizNameEl) bizNameEl.value = p.name;
+    const loginEl = document.getElementById('loginSchoolName');
+    if (loginEl) loginEl.textContent = p.name;
+  }
+  if (p.address) {
+    const bizAddrEl = document.getElementById('bizAddr');
+    if (bizAddrEl && document.activeElement !== bizAddrEl) bizAddrEl.value = p.address;
+  }
+  if (p.category) {
+    const bizCatEl = document.getElementById('bizCat');
+    if (bizCatEl) bizCatEl.value = p.category;
+  }
+  if (p.logoDataUrl) {
+    const img = document.getElementById('bizLogoPreview');
+    const ph = document.getElementById('bizLogoPlaceholder');
+    if (img) { img.src = p.logoDataUrl; img.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+    const appLogo = document.getElementById('appLogoImg');
+    if (appLogo) appLogo.src = p.logoDataUrl;
+    const loginLogo = document.querySelector('#loginScreen .login-logo-icon img');
+    if (loginLogo) loginLogo.src = p.logoDataUrl;
+  }
+}
+function _getSchoolLogoDataUrl() { return (window._schoolProfile && window._schoolProfile.logoDataUrl) || null; }
+function _getSchoolName() { return (window._schoolProfile && window._schoolProfile.name) || document.querySelector('.logo-sub')?.textContent || 'مدرسة الحكمة'; }
+function _getSchoolAddress() { return (window._schoolProfile && window._schoolProfile.address) || 'Garowe, Puntland'; }
+
 function confirmClear() {
   document.getElementById('clearAllPassword').value = '';
   document.getElementById('clearAllError').style.display = 'none';
@@ -5970,6 +6212,7 @@ function printFilteredTx() {
   }).join('');
 
   const school = document.getElementById('schoolCodeDisplay')?.textContent || '';
+  const _logoUrl1 = _getSchoolLogoDataUrl(), _schName1 = _getSchoolName(), _schAddr1 = _getSchoolAddress();
   const totalInAmt  = data.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
   const totalOutAmt = data.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
   const netAmt      = totalInAmt - totalOutAmt;
@@ -6017,10 +6260,10 @@ function printFilteredTx() {
   <div class="page-wrap">
     <div class="pdf-header">
       <div class="pdf-logo">
-        <div class="pdf-logo-icon">X</div>
+        ${_logoUrl1 ? `<img src="${_logoUrl1}" style="width:44px;height:44px;border-radius:12px;object-fit:cover">` : `<div class="pdf-logo-icon">X</div>`}
         <div>
           <div class="pdf-title">XISAABIYE</div>
-          <div class="pdf-sub">مدرسة الحكمة · Garowe, Puntland${school?' · '+school:''}</div>
+          <div class="pdf-sub">${_schName1} · ${_schAddr1}${school?' · '+school:''}</div>
         </div>
       </div>
       <div class="pdf-meta">
@@ -6183,6 +6426,7 @@ function printReport() {
     Object.keys(totalCellsMap).filter(k => !hiddenRptColumns.has(k)).map(k => totalCellsMap[k]).join('') + '</tr>';
 
   const _prSchool = document.getElementById('schoolCodeDisplay')?.textContent || '';
+  const _logoUrl2 = _getSchoolLogoDataUrl(), _schName2 = _getSchoolName(), _schAddr2 = _getSchoolAddress();
   const w = window.open('','_blank','width=960,height=720');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Warbixinta – XISAABIYE</title>
@@ -6225,10 +6469,10 @@ function printReport() {
   <div class="page-wrap">
     <div class="pdf-header">
       <div class="pdf-logo">
-        <div class="pdf-logo-icon">X</div>
+        ${_logoUrl2 ? `<img src="${_logoUrl2}" style="width:44px;height:44px;border-radius:12px;object-fit:cover">` : `<div class="pdf-logo-icon">X</div>`}
         <div>
           <div class="pdf-title">XISAABIYE</div>
-          <div class="pdf-sub">مدرسة الحكمة · Garowe, Puntland${_prSchool?' · '+_prSchool:''}</div>
+          <div class="pdf-sub">${_schName2} · ${_schAddr2}${_prSchool?' · '+_prSchool:''}</div>
         </div>
       </div>
       <div class="pdf-meta">
@@ -7245,6 +7489,7 @@ function printBudget() {
     Object.keys(grandCellsMap).filter(k => !hiddenBudColumns.has(k)).map(k => grandCellsMap[k]).join('') + '</tr>';
 
   const w = window.open('','_blank');
+  const _logoUrl3 = _getSchoolLogoDataUrl(), _schName3 = _getSchoolName(), _schAddr3 = _getSchoolAddress();
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Miisaaniyada – XISAABIYE</title>
   <style>
@@ -7262,8 +7507,11 @@ function printBudget() {
     @media print{body{padding:15px}}
   </style></head><body>
   <div class="header">
-    <h1>🎯 Miisaaniyada Iskuulka</h1>
-    <p>XISAABIYE – مدرسة الحكمة · Garowe, Puntland</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px">
+      ${_logoUrl3 ? `<img src="${_logoUrl3}" style="width:40px;height:40px;border-radius:10px;object-fit:cover">` : ''}
+      <h1 style="margin:0">🎯 Miisaaniyada Iskuulka</h1>
+    </div>
+    <p>XISAABIYE – ${_schName3} · ${_schAddr3}</p>
     ${printBooks.length < books.length ? '<p style="margin-top:4px;color:#4f8aff;font-weight:700">Iskuulada la doortay: ' + printBooks.map(b=>b.name).join(', ') + '</p>' : ''}
     <p style="margin-top:4px">La daabacay: ${new Date().toLocaleDateString('en-GB',{dateStyle:'full'})}</p>
   </div>
@@ -8311,6 +8559,7 @@ function printMshPays() {
   }).join('');
   const totalPaid = mshPays.reduce((a,p)=>a+p.amount,0);
   const school = document.getElementById('schoolCodeDisplay')?.textContent || '';
+  const _logoUrl4 = _getSchoolLogoDataUrl();
   const win = window.open('', '_blank', 'width=900,height=700');
   win.document.write(`<!DOCTYPE html><html lang="so"><head><meta charset="UTF-8">
   <title>Mushaharka la Bixiyay — XISAABIYE</title>
@@ -8333,9 +8582,12 @@ function printMshPays() {
     }
   </style></head><body>
   <div class="header">
-    <div>
-      <h2>💸 Mushaharka la Bixiyay</h2>
-      <div class="sub">Iskuulka: <b>${school}</b> &nbsp;|&nbsp; Taariikhda: <b>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</b> &nbsp;|&nbsp; XISAABIYE</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      ${_logoUrl4 ? `<img src="${_logoUrl4}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0">` : ''}
+      <div>
+        <h2>💸 Mushaharka la Bixiyay</h2>
+        <div class="sub">Iskuulka: <b>${school}</b> &nbsp;|&nbsp; Taariikhda: <b>${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</b> &nbsp;|&nbsp; XISAABIYE</div>
+      </div>
     </div>
     <button class="no-print" onclick="window.print()" style="background:#f97316;border:none;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨️ Daabac</button>
   </div>
