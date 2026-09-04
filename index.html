@@ -53,6 +53,21 @@
   window._storage = storage;
   window._storageRef = storageRef;
   window._uploadBytes = uploadBytes;
+  // Expose Firestore functions so plain (non-module) <script> blocks can call
+  // doc(), setDoc(), etc. directly — without this, calls like setDoc(doc(...))
+  // made outside this module silently throw "doc is not defined" and get
+  // swallowed by try/catch, so writes (settings, budgets, profile) never persist.
+  window.doc = doc;
+  window.setDoc = setDoc;
+  window.getDoc = getDoc;
+  window.collection = collection;
+  window.getDocs = getDocs;
+  window.addDoc = addDoc;
+  window.deleteDoc = deleteDoc;
+  window.onSnapshot = onSnapshot;
+  window.writeBatch = writeBatch;
+  window.query = query;
+  window.orderBy = orderBy;
   window._getDownloadURL = getDownloadURL;
   window._fbLib = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, onSnapshot, writeBatch, query, orderBy };
 
@@ -3905,20 +3920,33 @@ function sendWaFormat(fmt) {
   shareFileViaWhatsApp(blob, filename, `📒 ${schoolName} — ${data.title}`);
 }
 async function shareFileViaWhatsApp(blob, filename, textMsg) {
-  try {
-    const file = new File([blob], filename, { type: blob.type });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  const file = new File([blob], filename, { type: blob.type });
+  let canShareFiles = false;
+  try { canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canShareFiles = false; }
+
+  if (navigator.share && canShareFiles) {
+    try {
       await navigator.share({ files: [file], title: filename, text: textMsg });
       return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return; // user cancelled the share sheet themselves
+      console.warn('Web Share (files) failed, falling back to download:', e);
+      // fall through to the download + WhatsApp-text fallback below
     }
-  } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+
+  // Fallback: download the file, then open WhatsApp with a text message so the
+  // user can attach it manually. This also covers installed/standalone app
+  // windows where the native file-share sheet may be blocked or unavailable.
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
   if (typeof showToast === 'function') showToast('⬇️ Faylka waa la soo dejiyay — ku lifaaq WhatsApp gacanta');
-  window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`, '_blank');
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(textMsg)}`;
+  const win = window.open(waUrl, '_blank');
+  if (!win) window.location.href = waUrl;
 }
 
 // ── CSV export ──
