@@ -3374,8 +3374,12 @@ async function restoreRecycledTx(recycleDocId) {
     else book.balance -= restored.amount;
     await fbSaveBook(book);
   }
+  if (typeof restored.dateObj === 'string') restored.dateObj = new Date(restored.dateObj);
   await fbSaveTx(restored);
-  allTx.push(restored);
+  // Firebase listener may already have added it to allTx - only add if it's not there yet
+  if (!allTx.some(t => t === restored || (restored._docId && t._docId === restored._docId))) {
+    allTx.push(restored);
+  }
   await fbDeleteRecycledTx(recycleDocId);
   renderSidebarBooks();
   renderBooksGrid();
@@ -4833,11 +4837,13 @@ async function submitEditTx() {
 
 // ── DELETE TRANSACTION ──
 let _pendingDeleteIdx = null;
+let _pendingDeleteTx = null;
 
 function deleteTx(idx) {
   if (currentUser && currentUser.role === 'Viewer') { showToast('⛔ Awood kuma lihid!'); return; }
   if(idx < 0 || idx >= allTx.length) return;
   _pendingDeleteIdx = idx;
+  _pendingDeleteTx = allTx[idx]; // hayso transaction-ka laftiisa, ma aha index kaliya
   document.getElementById('deleteTxPassword').value = '';
   document.getElementById('deleteTxError').style.display = 'none';
   document.getElementById('deleteTxModal').classList.add('open');
@@ -4847,6 +4853,7 @@ function deleteTx(idx) {
 function closeDeleteTxModal() {
   document.getElementById('deleteTxModal').classList.remove('open');
   _pendingDeleteIdx = null;
+  _pendingDeleteTx = null;
 }
 
 async function confirmDeleteTx() {
@@ -4858,10 +4865,10 @@ async function confirmDeleteTx() {
     return;
   }
   document.getElementById('deleteTxModal').classList.remove('open');
-  const idx = _pendingDeleteIdx;
+  const tx = _pendingDeleteTx;
   _pendingDeleteIdx = null;
-  if(idx < 0 || idx >= allTx.length) return;
-  const tx = allTx[idx];
+  _pendingDeleteTx = null;
+  if (!tx) return;
   // Reverse balance effect on book
   const book = books.find(b=>b.name===tx.book);
   if(book) {
@@ -4874,9 +4881,11 @@ async function confirmDeleteTx() {
     try {
       const { collection, getDocs } = fbLib();
       const snap = await getDocs(collection(db(), `${window._schoolBasePath}/transactions`));
+      const usedIds = new Set(allTx.filter(t => t !== tx && t._docId).map(t => t._docId));
       snap.forEach(d => {
+        if (tx._docId || usedIds.has(d.id)) return;
         const data = d.data();
-        if (data.detail === tx.detail && data.amount === tx.amount && data.date === tx.date) {
+        if (data.detail === tx.detail && data.amount === tx.amount && data.date === tx.date && data.book === tx.book && data.type === tx.type) {
           tx._docId = d.id;
         }
       });
@@ -4886,7 +4895,8 @@ async function confirmDeleteTx() {
   const recycledTx = { ...tx, _deletedAt: new Date().toISOString(), _deletedBy: currentUser.username };
   await fbSaveRecycledTx(recycledTx);
   await fbDeleteTx(tx);
-  allTx.splice(idx, 1);
+  // Firestore listener may already have replaced allTx, so remove by reference / _docId (NOT by index)
+  allTx = allTx.filter(t => t !== tx && !(tx._docId && t._docId === tx._docId));
   renderSidebarBooks();
   renderBooksGrid();
   renderTable(allTx, 'txTable', 'txCount');
